@@ -1,0 +1,1 @@
+[10-Jul-2025 17:31:19 UTC] PHP Deprecated:  explode(): Passing null to parameter #2 ($string) of type string is deprecated in C:\xampp\htdocs\transfer\themes\altum\views\transfer\index.php on line 241
