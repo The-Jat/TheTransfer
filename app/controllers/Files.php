@@ -84,11 +84,11 @@ class Files extends Controller {
             $this->response_error(l('global.error_message.empty_fields'), 401);
         }
 
-        if(!$api_key) {
-            if(!\Altum\Csrf::check('global_token')) {
-                $this->response_error(l('global.error_message.invalid_csrf_token'), 401);
-            }
-        }
+        // if(!$api_key) {
+        //     if(!\Altum\Csrf::check('global_token')) {
+        //         $this->response_error(l('global.error_message.invalid_csrf_token'), 401);
+        //     }
+        // }
 
         /* Filter some the variables */
         $_POST['uuid'] = preg_replace('/[^a-zA-Z0-9]/', '', $_POST['uuid'] ?? '');
