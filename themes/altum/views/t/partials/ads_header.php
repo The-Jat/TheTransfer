@@ -22,8 +22,8 @@ if (defined('DEBUG_MODE') && DEBUG_MODE) {
 
     if ($this->transfer_user) {
         echo "Transfer user found.\n";
-        echo "Transfer user plan settings:\n";
-        var_dump($this->transfer_user->plan_settings);
+        echo "Transfer user all settings:\n";
+        var_dump($this->transfer_user);
         echo "Ads allowed for transfer user? "; var_dump($ads_allowed);
     } else {
         echo "No transfer user (guest).\n";
