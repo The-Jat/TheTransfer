@@ -3,6 +3,9 @@ class AltumUploader {
     constructor(options, translations) {
         /* Provided configuration options */
         this.options = {
+            /* Use this to handle file uploads directly to S3 storage */
+            is_direct_offload_upload: true,
+
             /* Selector for the upload button */
             upload_button_selector: null,
 
@@ -20,6 +23,9 @@ class AltumUploader {
 
             /* Parallel uploading */
             parallel_file_uploading: false,
+
+            /* Maximum number of files to upload in parallel */
+            parallel_upload_limit: 3,
 
             /* How many files can be selected */
             files_per_transfer_limit: 1,
@@ -63,6 +69,7 @@ class AltumUploader {
             files_per_transfer_limit: `You can not select more than %s files per transfer.`,
             transfer_size_limit: `You can not upload more than %s per transfer.`,
             storage_size_limit: `You can not upload more than %s in total.`,
+            duplicate_file: `This file has already been added.`,
             ...translations
         };
 
@@ -89,6 +96,8 @@ class AltumUploader {
             upload_file_success: [],
             removed_file: [],
             removed_files: [],
+            uploading_files: [],
+            finished_uploading_files : []
         };
 
         this.initiate();
@@ -348,6 +357,15 @@ class AltumUploader {
     }
 
     add_file(file, alerts = true) {
+        /* Prevent duplicate files (same name and size) */
+        for(let file_uuid in this.files) {
+            let existing_file = this.files[file_uuid];
+            if(existing_file.name === file.name && existing_file.size === file.size) {
+                if(alerts) alert(this.translations.duplicate_file);
+                return false;
+            }
+        }
+
         /* Check for the files per transfer limit */
         if(this.options.files_per_transfer_limit != -1 && this.extra.total_files >= this.options.files_per_transfer_limit) {
             if(alerts) alert(this.translations.files_per_transfer_limit.replace('%s', this.options.files_per_transfer_limit));
@@ -393,11 +411,6 @@ class AltumUploader {
         /* Emit event */
         this.emit('added_file', file);
 
-        /* Auto file upload */
-        // if(this.options.auto_upload) {
-        //     await this.upload_file(file);
-        // }
-
         return true;
     }
 
@@ -412,7 +425,7 @@ class AltumUploader {
         delete this.files[file_uuid];
 
         /* Send delete request if needed */
-        if(file.upload_progress > 0 && this.options.delete_file_endpoint_url) {
+        if(file.altum.upload_progress > 0 && this.options.delete_file_endpoint_url) {
 
             /* Delete the uploaded chunks */
             const form = new FormData();
@@ -422,7 +435,7 @@ class AltumUploader {
             }
 
             /* Send request to server */
-            let response = await fetch(this.options.delete_file_endpoint_url, {
+            let response = fetch(this.options.delete_file_endpoint_url, {
                 method: 'post',
                 body: form
             });
@@ -455,6 +468,18 @@ class AltumUploader {
 
     /* Data sending */
     async upload_files() {
+        /* Emit event */
+        this.emit('uploading_files');
+
+        /* Only upload files not yet uploaded */
+        let pending_files = Object.values(this.files).filter(file => file.altum.upload_progress < 100);
+
+        if(pending_files.length === 0) {
+            this.emit('finished_uploading_files');
+            window.removeEventListener('beforeunload', this.alert_when_closing_window);
+            return true;
+        }
+
         /* How many files are we uploading? */
         let total_files = this.extra.total_files;
 
@@ -470,7 +495,23 @@ class AltumUploader {
             }
 
             if(this.options.parallel_file_uploading) {
-                upload_promises.push(this.upload_file(file));
+
+                /* Upload files in batches of parallel_upload_limit */
+                let index = 0;
+                let batch_size = this.options.parallel_upload_limit;
+                while(index < pending_files.length) {
+                    let batch = pending_files.slice(index, index + batch_size);
+                    let results = await Promise.all(batch.map(file => this.upload_file(file)));
+
+                    /* If any upload failed, stop */
+                    if(results.includes(false)) {
+                        window.removeEventListener('beforeunload', this.alert_when_closing_window);
+                        return false;
+                    }
+
+                    index += batch_size;
+                }
+
             } else {
                 let upload_file = await this.upload_file(file);
 
@@ -483,17 +524,6 @@ class AltumUploader {
             }
         }
 
-        /* Wait for all parallel uploads to complete */
-        if(this.options.parallel_file_uploading) {
-            let results = await Promise.all(upload_promises);
-
-            /* If any upload failed, stop and return false */
-            if(results.includes(false)) {
-                window.removeEventListener('beforeunload', this.alert_when_closing_window);
-                return false;
-            }
-        }
-
         /* Remove tab closing event listener */
         window.removeEventListener('beforeunload', this.alert_when_closing_window);
 
@@ -501,6 +531,9 @@ class AltumUploader {
         if(total_files < this.extra.total_files) {
             return await this.upload_files();
         }
+
+        /* Emit event */
+        this.emit('finished_uploading_files');
 
         return true;
     }
@@ -516,43 +549,23 @@ class AltumUploader {
             return true;
         }
 
-        const total_chunks = Math.ceil(file.size / this.options.chunk_size_limit);
-        let index = 0;
-
-        for (let chunk_offset = 0; chunk_offset < file.size; chunk_offset += this.options.chunk_size_limit) {
-
-            /* Make sure the file was not deleted */
-            if(this.files[file.altum.uuid] === undefined) {
-                return false;
-            }
+        /* Direct file upload offload */
+        if(this.options.is_direct_offload_upload) {
+            /* Detect chunking */
+            let chunk_size_limit = 5 * 1024 * 1024;
+            let total_chunks = Math.ceil(file.size / chunk_size_limit);
+            let index = 0;
 
             /* Prepare the form data to send chunks */
-            const form = new FormData();
-
-            const chunk = file.slice(chunk_offset, chunk_offset + this.options.chunk_size_limit);
-            const chunk_size = chunk.size;
-            form.set('file', chunk);
-
+            let form = new FormData();
             form.set('uuid', file.altum.uuid);
             form.set('chunk_index', index);
             form.set('total_chunks', total_chunks);
             form.set('total_file_size', file.size);
             form.set('file_name', file.name);
-            for(let [key, value] of Object.entries(this.options.upload_file_endpoint_params)) {
+            for (let [key, value] of Object.entries(this.options.upload_file_endpoint_params)) {
                 form.set(key, value);
             }
-
-            /* Upload progress */
-            this.files[file.altum.uuid].uploaded_size = file.altum.uploaded_size += chunk_size;
-            this.files[file.altum.uuid].upload_progress = file.altum.upload_progress = (file.altum.uploaded_size * 100 / file.size).toFixed(2);
-            if(file.altum.upload_progress > 100) this.files[file.altum.uuid].upload_progress = file.altum.upload_progress = 100;
-
-            /* Update total stats */
-            this.extra.total_uploaded_size += chunk_size;
-            this.extra.total_upload_progress = (this.extra.total_uploaded_size * 100 / this.extra.total_size).toFixed(2);
-
-            /* Emit event */
-            this.emit('uploading_file', file);
 
             /* Send request to server */
             let response = await fetch(this.options.upload_file_endpoint_url, {
@@ -565,7 +578,7 @@ class AltumUploader {
                 data = await response.json();
             } catch (error) { /* :) */ }
 
-            if(!response.ok) {
+            if (!response.ok) {
                 /* Reset progress */
                 file.altum.uploaded_size = 0;
                 file.altum.upload_progress = 0;
@@ -575,10 +588,158 @@ class AltumUploader {
                 return false;
             }
 
-            /* Emit event */
-            this.emit('upload_file_success', {file, response_data: data});
+            let file_name = data.data.file_name;
+            let offload_id = data.data.offload_id;
+            let upload_urls = data.data.upload_urls;
+            let url_index = 0;
 
-            index++;
+            /* Prepare the parts - responses from external */
+            let uploaded_chunks = [];
+
+            /* Start to upload */
+            for (let chunk_offset = 0; chunk_offset < file.size; chunk_offset += chunk_size_limit) {
+                /* Make sure the file was not deleted */
+                if (this.files[file.altum.uuid] === undefined) {
+                    return false;
+                }
+
+                /* Prepare to send chunks */
+                const chunk = file.slice(chunk_offset, chunk_offset + chunk_size_limit);
+                const chunk_size = chunk.size;
+
+                /* Upload progress */
+                this.files[file.altum.uuid].uploaded_size = file.altum.uploaded_size += chunk_size;
+                this.files[file.altum.uuid].upload_progress = file.altum.upload_progress = (file.altum.uploaded_size * 100 / file.size).toFixed(2);
+                if (file.altum.upload_progress > 100) this.files[file.altum.uuid].upload_progress = file.altum.upload_progress = 100;
+
+                /* Update total stats */
+                this.extra.total_uploaded_size += chunk_size;
+                this.extra.total_upload_progress = (this.extra.total_uploaded_size * 100 / this.extra.total_size).toFixed(2);
+
+                /* Emit event */
+                this.emit('uploading_file', file);
+
+                /* Send request to server */
+                let response = await fetch(upload_urls[url_index], {
+                    method: 'PUT',
+                    body: chunk
+                });
+
+                if (!response.ok) {
+                    /* Reset progress */
+                    file.altum.uploaded_size = 0;
+                    file.altum.upload_progress = 0;
+
+                    /* Emit event */
+                    this.emit('upload_file_error', {file, response_data: data});
+                    return false;
+                }
+
+                uploaded_chunks.push({
+                    PartNumber: url_index + 1,
+                    ETag: response.headers.get('etag')
+                });
+
+                /* Emit event */
+                this.emit('upload_file_success', {file, response_data: data});
+
+                index++;
+                url_index++;
+            }
+
+            /* Prepare the form data to send chunks */
+            form = new FormData();
+            form.set('offload_id', offload_id);
+            form.set('uploaded_chunks', JSON.stringify(uploaded_chunks));
+            form.set('file_name', file_name);
+            form.set('uuid', file.altum.uuid);
+            for (let [key, value] of Object.entries(this.options.upload_file_endpoint_params)) {
+                form.set(key, value);
+            }
+
+            /* Send request to server */
+            response = await fetch(this.options.upload_file_endpoint_url, {
+                method: 'post',
+                body: form
+            });
+
+            data = null;
+            try {
+                data = await response.json();
+            } catch (error) { /* :) */ }
+
+
+            return true;
+        }
+
+        /* Through server uploading */
+        else {
+
+            const total_chunks = Math.ceil(file.size / this.options.chunk_size_limit);
+            let index = 0;
+
+            for (let chunk_offset = 0; chunk_offset < file.size; chunk_offset += this.options.chunk_size_limit) {
+
+                /* Make sure the file was not deleted */
+                if (this.files[file.altum.uuid] === undefined) {
+                    return false;
+                }
+
+                /* Prepare the form data to send chunks */
+                const form = new FormData();
+
+                const chunk = file.slice(chunk_offset, chunk_offset + this.options.chunk_size_limit);
+                const chunk_size = chunk.size;
+                form.set('file', chunk);
+
+                form.set('uuid', file.altum.uuid);
+                form.set('chunk_index', index);
+                form.set('total_chunks', total_chunks);
+                form.set('total_file_size', file.size);
+                form.set('file_name', file.name);
+                for (let [key, value] of Object.entries(this.options.upload_file_endpoint_params)) {
+                    form.set(key, value);
+                }
+
+                /* Upload progress */
+                this.files[file.altum.uuid].uploaded_size = file.altum.uploaded_size += chunk_size;
+                this.files[file.altum.uuid].upload_progress = file.altum.upload_progress = (file.altum.uploaded_size * 100 / file.size).toFixed(2);
+                if (file.altum.upload_progress > 100) this.files[file.altum.uuid].upload_progress = file.altum.upload_progress = 100;
+
+                /* Update total stats */
+                this.extra.total_uploaded_size += chunk_size;
+                this.extra.total_upload_progress = (this.extra.total_uploaded_size * 100 / this.extra.total_size).toFixed(2);
+
+                /* Emit event */
+                this.emit('uploading_file', file);
+
+                /* Send request to server */
+                let response = await fetch(this.options.upload_file_endpoint_url, {
+                    method: 'post',
+                    body: form
+                });
+
+                let data = null;
+                try {
+                    data = await response.json();
+                } catch (error) { /* :) */ }
+
+                if (!response.ok) {
+                    /* Reset progress */
+                    file.altum.uploaded_size = 0;
+                    file.altum.upload_progress = 0;
+
+                    /* Emit event */
+                    this.emit('upload_file_error', {file, response_data: data});
+                    return false;
+                }
+
+                /* Emit event */
+                this.emit('upload_file_success', {file, response_data: data});
+
+                index++;
+            }
+
         }
 
         return true;

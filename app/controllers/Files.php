@@ -30,8 +30,7 @@ class Files extends Controller {
         redirect('not-found');
     }
 
-    public function create_api() {
-
+    private function initiate_create_api() {
         set_time_limit(0);
 
         if(empty($_POST)) {
@@ -71,8 +70,196 @@ class Files extends Controller {
             }
         }
 
+        if(!$api_key) {
+            if(!\Altum\Csrf::check('global_token')) {
+                $this->response_error(l('global.error_message.invalid_csrf_token'), 401);
+            }
+        }
+    }
+
+    public function create_api_offload() {
+
+        $this->initiate_create_api();
+
+        if(!settings()->transfers->is_direct_offload_upload || !\Altum\Plugin::is_active('offload') || !settings()->offload->uploads_url) {
+            $this->response_error(l('global.error_message.basic'), 401);
+        }
+
+        /* Finishing external upload */
+        if(isset($_POST['offload_id'])) {
+            $uuid = hex2bin($_POST['uuid']);
+
+            /* Check for required fields */
+            $required_fields = ['uuid', 'uploaded_chunks'];
+
+            foreach($required_fields as $field) {
+                if(!isset($_POST[$field])) {
+                    $this->response_error(l('global.error_message.empty_fields'), 401);
+                    break 1;
+                }
+            }
+
+            /* Get the file from the database */
+            if(!$file = db()->where('file_uuid', $uuid)->getOne('files')) {
+                $this->response_error(l('global.error_message.basic'), 401);
+            }
+
+            if($file->status != 'uploading') {
+                $this->response_error(l('global.error_message.basic'), 401);
+            }
+
+            $uploaded_chunks = json_decode($_POST['uploaded_chunks'], true);
+
+            try {
+                $s3 = new \Aws\S3\S3Client(get_aws_s3_config());
+
+                /* Params */
+                $complete_multipart_upload_params = [
+                    'Bucket' => settings()->offload->storage_name,
+                    'Key' => UPLOADS_URL_PATH . Uploads::get_path('files') . $file->name,
+                    'UploadId' => $file->offload_id,
+                    'MultipartUpload' => [
+                        'Parts' => $uploaded_chunks
+                    ],
+                ];
+
+                if(!empty($_POST['file_encryption_is_enabled'])) {
+                    $complete_multipart_upload_params['ServerSideEncryption'] = 'AES256';
+                }
+
+                /* Generate multipart upload */
+                $multipart_upload = $s3->getCommand('CompleteMultipartUpload', $complete_multipart_upload_params);
+
+                /* 🚀 */
+                $result = $s3->execute($multipart_upload);
+
+                /* Update the file entry */
+                db()->where('file_id', $file->file_id)->update('files', [
+                    'status' => 'uploaded'
+                ]);
+
+                Response::jsonapi_success([]);
+            } catch (\Exception $exception) {
+                $this->response_error($exception->getMessage(), 401);
+            }
+        }
+
+        /* Initiate external upload */
+
         /* Check for required fields */
-        $required_fields = ['uuid', 'chunk_index', 'total_chunks', 'file_name'];
+        $required_fields = ['uuid', 'file_name', 'total_chunks', 'chunk_index'];
+
+        foreach($required_fields as $field) {
+            if(!isset($_POST[$field])) {
+                $this->response_error(l('global.error_message.empty_fields'), 401);
+                break 1;
+            }
+        }
+
+        /* Filter some of the variables */
+        $_POST['uuid'] = preg_replace('/[^a-zA-Z0-9]/', '', $_POST['uuid'] ?? '');
+        $_POST['uuid'] = hex2bin($_POST['uuid']);
+        if(!$_POST['uuid']) {
+            $_POST['uuid'] = str_replace('-', '', random_bytes(16));
+        }
+        $_POST['password'] = !empty($_POST['password']) && $this->user->plan_settings->password_protection_is_enabled ? $_POST['password'] : null;
+        $_POST['file_encryption_is_enabled'] = $this->user->plan_settings->file_encryption_is_enabled ? (bool) ($_POST['file_encryption_is_enabled'] ?? false) : false;
+        $_POST['total_file_size'] = (int) $_POST['total_file_size'] ?? null;
+
+        /* Chunking */
+        $_POST['total_chunks'] = (int) $_POST['total_chunks'];
+        $_POST['chunk_index'] = (int) $_POST['chunk_index'];
+
+        /* Uploaded file processing */
+        $file_name = input_clean($_POST['file_name']);
+        $file_extension = mb_strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+
+        /* Check for any errors */
+        if(!strpos($file_name, '.')) {
+            $this->response_error(l('global.error_message.invalid_file_type'), 401);
+        }
+
+        $blacklisted_file_extensions = explode(',', settings()->transfers->blacklisted_file_extensions);
+        if(in_array($file_extension, $blacklisted_file_extensions)) {
+            $this->response_error(l('global.error_message.invalid_file_type'), 401);
+        }
+
+        /* Generate random file name */
+        $new_file_name = generate_readable_uuid() . '.' . $file_extension;
+
+        try {
+            $s3 = new \Aws\S3\S3Client(get_aws_s3_config());
+
+            /* Params */
+            $create_multipart_upload_params = [
+                'Bucket' => settings()->offload->storage_name,
+                'Key' => UPLOADS_URL_PATH . Uploads::get_path('files') . $new_file_name,
+            ];
+
+            if(!empty($_POST['file_encryption_is_enabled'])) {
+                $create_multipart_upload_params['ServerSideEncryption'] = 'AES256';
+            }
+
+            /* Generate multipart upload */
+            $multipart_upload = $s3->getCommand('CreateMultipartUpload', $create_multipart_upload_params);
+            $multipart_upload_result = $s3->execute($multipart_upload);
+            $multipart_upload_id = $multipart_upload_result['UploadId'];
+
+            /* Prepare array */
+            $upload_urls = [];
+
+            /* Generate pre signed URLs */
+            for($i = 1; $i <= $_POST['total_chunks']; $i++) {
+                $upload_request = $s3->getCommand('UploadPart', [
+                    'Bucket' => settings()->offload->storage_name,
+                    'Key' => UPLOADS_URL_PATH . Uploads::get_path('files') . $new_file_name,
+                    'UploadId' => $multipart_upload_id,
+                    'PartNumber' => $i
+                ]);
+
+                $presigned_request = $s3->createPresignedRequest($upload_request, '+1 hours');
+
+                $upload_urls[] = $presigned_request->getUri();
+            }
+
+        } catch (\Exception $exception) {
+            $this->response_error($exception->getMessage(), 401);
+        }
+
+        /* Database query */
+        $file_id = db()->insert('files', [
+            'file_uuid' => $_POST['uuid'],
+            'offload_id' => $multipart_upload_id,
+            'uploader_id' => md5(get_ip()),
+            'user_id' => $this->user->user_id ?? null,
+            'name' => $new_file_name,
+            'original_name' => $file_name,
+            'size' => $_POST['total_file_size'],
+            'status' => 'uploading',
+            'is_encrypted' => (int) $_POST['file_encryption_is_enabled'],
+            'datetime' => get_date(),
+        ]);
+
+        Response::jsonapi_success([
+            'offload_id' => $multipart_upload_id,
+            'upload_urls' => $upload_urls,
+            'file_name' => $new_file_name,
+        ]);
+    }
+
+    public function create_api() {
+
+        /* Check for exceeded post_max_size */
+        if($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES)) {
+            header('HTTP/1.1 413 Payload Too Large');
+            die();
+        }
+
+        $this->initiate_create_api();
+
+        /* Check for required fields */
+        $required_fields = ['uuid', 'file_name', 'total_chunks', 'chunk_index'];
+
         foreach($required_fields as $field) {
             if(!isset($_POST[$field])) {
                 $this->response_error(l('global.error_message.empty_fields'), 401);
@@ -84,29 +271,34 @@ class Files extends Controller {
             $this->response_error(l('global.error_message.empty_fields'), 401);
         }
 
-        if(!$api_key) {
-            if(!\Altum\Csrf::check('global_token')) {
-                $this->response_error(l('global.error_message.invalid_csrf_token'), 401);
-            }
-        }
-
-        /* Filter some the variables */
+        /* Filter some of the variables */
         $_POST['uuid'] = preg_replace('/[^a-zA-Z0-9]/', '', $_POST['uuid'] ?? '');
         $_POST['uuid'] = hex2bin($_POST['uuid']);
         if(!$_POST['uuid']) {
             $_POST['uuid'] = str_replace('-', '', random_bytes(16));
         }
-        $_POST['total_chunks'] = (int) $_POST['total_chunks'];
-        $_POST['chunk_index'] = (int) $_POST['chunk_index'];
-        $_POST['total_chunks'] = (int) $_POST['total_chunks'];
         $_POST['password'] = !empty($_POST['password']) && $this->user->plan_settings->password_protection_is_enabled ? $_POST['password'] : null;
         $_POST['file_encryption_is_enabled'] = $this->user->plan_settings->file_encryption_is_enabled ? (bool) ($_POST['file_encryption_is_enabled'] ?? false) : false;
+        $_POST['total_file_size'] = (int) $_POST['total_file_size'] ?? null;
 
-        /* Uploaded file */
+        /* Chunking */
+        $_POST['total_chunks'] = (int) $_POST['total_chunks'];
+        $_POST['chunk_index'] = (int) $_POST['chunk_index'];
+
+        /* Uploaded file processing */
         $file_name = input_clean($_POST['file_name']);
-        $file_extension = explode('.', $file_name);
-        $file_extension = mb_strtolower(end($file_extension));
+        $file_extension = mb_strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
         $file_temp = $_FILES['file']['tmp_name'];
+
+        /* Check for any errors */
+        if(!strpos($file_name, '.')) {
+            $this->response_error(l('global.error_message.invalid_file_type'), 401);
+        }
+
+        $blacklisted_file_extensions = explode(',', settings()->transfers->blacklisted_file_extensions);
+        if(in_array($file_extension, $blacklisted_file_extensions)) {
+            $this->response_error(l('global.error_message.invalid_file_type'), 401);
+        }
 
         /* Check for any errors */
         if($_FILES['file']['error'] == UPLOAD_ERR_INI_SIZE) {
@@ -115,15 +307,6 @@ class Files extends Controller {
 
         if($_FILES['file']['error'] && $_FILES['file']['error'] != UPLOAD_ERR_INI_SIZE) {
             $this->response_error(l('global.error_message.file_upload'), 401);
-        }
-
-        if(!strpos($file_name, '.')) {
-            $this->response_error(l('global.error_message.invalid_file_type'), 401);
-        }
-
-        $blacklisted_file_extensions = explode(',', settings()->transfers->blacklisted_file_extensions);
-        if(in_array($file_extension, $blacklisted_file_extensions)) {
-            $this->response_error(l('global.error_message.invalid_file_type'), 401);
         }
 
         if(!\Altum\Plugin::is_active('offload') || (\Altum\Plugin::is_active('offload') && !settings()->offload->uploads_url)) {
@@ -149,7 +332,7 @@ class Files extends Controller {
             $file_temp_source = @fopen($file_temp, 'rb');
 
             /* Upload the file without encryption */
-            while($buffer = fread($file_temp_source, 5000 * 16)) {
+            while($buffer = fread($file_temp_source, 1024 * 1024)) {
                 fwrite($file_destination, $buffer);
             }
 
@@ -200,7 +383,7 @@ class Files extends Controller {
             $file_temp_source = @fopen($file_temp, 'rb');
 
             /* Upload the file without encryption */
-            while($buffer = fread($file_temp_source, 5000 * 16)) {
+            while($buffer = fread($file_temp_source, 1024 * 1024)) {
                 fwrite($file_destination, $buffer);
             }
 
@@ -249,6 +432,7 @@ class Files extends Controller {
                     $uploader = new \Aws\S3\MultipartUploader($s3, Uploads::get_full_path('files') . $new_file_name, [
                         'Bucket' => settings()->offload->storage_name,
                         'Key' => UPLOADS_URL_PATH . Uploads::get_path('files') . $new_file_name,
+                        'part_size' => (settings()->transfers->offload_chunk_size_limit ?? 10) * 1024 * 1024,
                     ]);
 
                     /* Upload */
@@ -320,7 +504,7 @@ class Files extends Controller {
         }
 
         /* Delete uploaded file */
-        Uploads::delete_uploaded_file($file->name, 'files');
+        Uploads::delete_uploaded_file_and_potential_residue($file->name, 'files', $file->offload_id);
 
         /* Delete the resource */
         db()->where('file_id', $file->file_id)->delete('files');
@@ -333,7 +517,7 @@ class Files extends Controller {
 
         /* Team checks */
         if(\Altum\Teams::is_delegated() && !\Altum\Teams::has_access('delete.transfers')) {
-            Alerts::add_info(l('global.info_message.team_no_access'));
+            Alerts::add_error(l('global.info_message.team_no_access'));
             redirect('transfers');
         }
 
@@ -351,7 +535,7 @@ class Files extends Controller {
         $file_id = (int) $_POST['file_id'];
 
         /* Get file details */
-        if(!$file = db()->where('file_id', $file_id)->getOne('files', ['file_id', 'transfer_id', 'name', 'original_name'])) {
+        if(!$file = db()->where('file_id', $file_id)->getOne('files', ['file_id', 'transfer_id', 'name', 'original_name', 'offload_id'])) {
             redirect();
         }
 
@@ -363,7 +547,7 @@ class Files extends Controller {
         if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
             /* Delete uploaded file */
-            Uploads::delete_uploaded_file($file->name, 'files');
+            Uploads::delete_uploaded_file_and_potential_residue($file->name, 'files', $file->offload_id);
 
             /* Delete the resource */
             db()->where('file_id', $file->file_id)->delete('files');

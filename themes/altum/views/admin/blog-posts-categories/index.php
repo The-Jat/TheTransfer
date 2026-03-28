@@ -1,25 +1,25 @@
 <?php defined('ALTUMCODE') || die() ?>
 
 <?php if(!settings()->content->blog_is_enabled): ?>
-    <div class="alert alert-warning">
-        <i class="fas fa-fw fa-exclamation-triangle text-warning mr-1"></i>
-        <?= sprintf(l('admin_blog.warning_message.disabled'), '<a href="' . url('admin/settings/content') . '" class="font-weight-bold">', '</a>') ?>
+    <div class="alert alert-info">
+        <i class="fas fa-fw fa-info-circle mr-1"></i>
+        <?= sprintf(l('global.info_message.admin_feature_disabled'), url('admin/settings/content')) ?>
     </div>
 <?php endif ?>
 
 <?php if(count($data->blog_posts_categories) || $data->filters->has_applied_filters): ?>
 
     <div class="d-flex flex-column flex-md-row justify-content-between mb-4">
-        <h1 class="h3 mb-3 mb-md-0"><i class="fas fa-fw fa-xs fa-map text-primary-900 mr-2"></i> <?= l('admin_blog_posts_categories.header') ?></h1>
+        <h1 class="h3 mb-3 mb-md-0 text-truncate"><i class="fas fa-fw fa-xs fa-map text-primary-900 mr-2"></i> <?= l('admin_blog_posts_categories.header') ?></h1>
 
         <div class="d-flex position-relative">
             <div>
-                <a href="<?= url('admin/blog-posts-category-create') ?>" class="btn btn-primary"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_blog_posts_categories.create') ?></a>
+                <a href="<?= url('admin/blog-posts-category-create') ?>" class="btn btn-primary text-nowrap"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_blog_posts_categories.create') ?></a>
             </div>
 
             <div class="ml-3">
                 <div class="dropdown">
-                    <button type="button" class="btn <?= $data->filters->has_applied_filters ? 'btn-secondary' : 'btn-gray-300' ?> filters-button dropdown-toggle-simple" data-toggle="dropdown" data-boundary="viewport" data-tooltip title="<?= l('global.filters.header') ?>" data-tooltip-hide-on-click>
+                    <button type="button" class="btn <?= $data->filters->has_applied_filters ? 'btn-secondary' : 'btn-gray-300' ?> filters-button dropdown-toggle-simple" data-toggle="dropdown" data-boundary="viewport" data-tooltip data-html="true" title="<?= l('global.filters.tooltip') ?>" data-tooltip-hide-on-click>
                         <i class="fas fa-fw fa-sm fa-filter"></i>
                     </button>
 
@@ -175,7 +175,7 @@
                                     <i class="fas fa-fw fa-calendar text-muted"></i>
                                 </span>
 
-                                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.last_datetime_tooltip'), ($row->last_datetime ? '<br />' . \Altum\Date::get($row->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($row->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->last_datetime) . ')</small>' : '<br />-')) ?>">
+                                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.last_datetime_tooltip'), ($row->last_datetime ? '<br />' . \Altum\Date::get($row->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($row->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->last_datetime) . ')</small>' : '<br />' . l('global.na'))) ?>">
                                     <i class="fas fa-fw fa-history text-muted"></i>
                                 </span>
                             </div>
@@ -211,7 +211,7 @@
                     <p class="text-muted"><?= l('admin_blog_posts_categories.subheader_no_data') ?></p>
 
                     <div>
-                        <a href="<?= url('admin/blog-posts-category-create') ?>" class="btn btn-primary"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_blog_posts_categories.create') ?></a>
+                        <a href="<?= url('admin/blog-posts-category-create') ?>" class="btn btn-primary text-nowrap"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_blog_posts_categories.create') ?></a>
                     </div>
                 </div>
             </div>

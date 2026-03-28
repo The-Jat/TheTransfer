@@ -163,7 +163,7 @@ class TeamsMembers extends Controller {
         if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
             /* Login the team member */
-            $_SESSION['team_id'] = $team_member->team_id;
+            session_set('team_id', $team_member->team_id);
 
             /* Clear the cache */
             cache()->deleteItem('team_member?team_id=' . $team_member->team_id . '&user_id=' . $team_member->user_id);

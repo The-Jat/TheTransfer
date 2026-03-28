@@ -40,8 +40,8 @@ class AccountLogs extends Controller {
         while($row = $logs_result->fetch_object()) $logs[] = $row;
 
         /* Export handler */
-        process_export_json($logs, 'include', ['id', 'user_id', 'type', 'ip', 'continent_code', 'country_code', 'city_name', 'device_type', 'os_name', 'browser_name', 'browser_name', 'datetime']);
-        process_export_csv($logs, 'include', ['id', 'user_id', 'type', 'ip', 'continent_code', 'country_code', 'city_name', 'device_type', 'os_name', 'browser_name', 'browser_name', 'datetime']);
+        process_export_json($logs, ['id', 'user_id', 'type', 'ip', 'continent_code', 'country_code', 'city_name', 'device_type', 'os_name', 'browser_name', 'browser_name', 'datetime']);
+        process_export_csv($logs, ['id', 'user_id', 'type', 'ip', 'continent_code', 'country_code', 'city_name', 'device_type', 'os_name', 'browser_name', 'browser_name', 'datetime']);
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/pagination', (array) $this))->run(['paginator' => $paginator]);

@@ -26,10 +26,14 @@ class AdminPayments extends Controller {
 
     public function index() {
 
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('admin');
+        }
+
         $payment_processors = require APP_PATH . 'includes/payment_processors.php';
 
         /* Prepare the filtering system */
-        $filters = (new \Altum\Filters(['status', 'plan_id', 'user_id', 'type', 'processor', 'frequency', 'taxes_ids'], ['payment_id', 'code'], ['id', 'total_amount', 'email', 'datetime', 'name'], [], ['taxes_ids' => 'json_contains']));
+        $filters = (new \Altum\Filters(['id', 'status', 'plan_id', 'user_id', 'type', 'processor', 'frequency', 'taxes_ids'], ['payment_id', 'code'], ['id', 'total_amount', 'email', 'datetime', 'name'], [], ['taxes_ids' => 'json_contains']));
         $filters->set_default_order_by('id', $this->user->preferences->default_order_type ?? settings()->main->default_order_type);
         $filters->set_default_results_per_page($this->user->preferences->default_results_per_page ?? settings()->main->default_results_per_page);
 
@@ -59,8 +63,8 @@ class AdminPayments extends Controller {
         }
 
         /* Export handler */
-        process_export_json($payments, 'include', ['id', 'user_id', 'plan_id', 'payment_id', 'email', 'name', 'processor', 'type', 'frequency', 'billing', 'taxes_ids', 'base_amount', 'code', 'discount_amount', 'total_amount', 'currency', 'status', 'datetime']);
-        process_export_csv($payments, 'include', ['id', 'user_id', 'plan_id', 'payment_id', 'email', 'name', 'processor', 'type', 'frequency', 'base_amount', 'code', 'discount_amount', 'total_amount', 'currency', 'status', 'datetime']);
+        process_export_json($payments, ['id', 'user_id', 'plan_id', 'payment_id', 'email', 'name', 'processor', 'type', 'frequency', 'billing', 'taxes_ids', 'base_amount', 'code', 'discount_amount', 'total_amount', 'currency', 'status', 'datetime']);
+        process_export_csv($payments, ['id', 'user_id', 'plan_id', 'payment_id', 'email', 'name', 'processor', 'type', 'frequency', 'base_amount', 'code', 'discount_amount', 'total_amount', 'currency', 'status', 'datetime']);
 
         /* Requested plan details */
         $plans = (new \Altum\Models\Plan())->get_plans();
@@ -85,6 +89,10 @@ class AdminPayments extends Controller {
 
 
     public function delete() {
+
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('admin');
+        }
 
         $payment_id = isset($this->params[0]) ? (int) $this->params[0] : null;
 
@@ -114,6 +122,10 @@ class AdminPayments extends Controller {
     }
 
     public function approve() {
+
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('admin');
+        }
 
         $payment_id = (isset($this->params[0])) ? (int) $this->params[0] : null;
 

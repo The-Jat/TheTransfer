@@ -91,7 +91,7 @@ class NotificationHandlers {
         );
     }
 
-    private static function handle_webhook(object $notification_handler, array $notification_data) {
+    public static function handle_webhook(object $notification_handler, array $notification_data) {
         fire_and_forget('post', $notification_handler->settings->webhook, $notification_data);
     }
 
@@ -261,7 +261,7 @@ class NotificationHandlers {
 
         try {
             \Unirest\Request::post(
-                'https://graph.facebook.com/v18.0/' . settings()->notification_handlers->whatsapp_number_id . '/messages',
+                'https://graph.facebook.com/v23.0/' . settings()->notification_handlers->whatsapp_number_id . '/messages',
                 [
                     'Authorization' => 'Bearer ' . settings()->notification_handlers->whatsapp_access_token,
                     'Content-Type' => 'application/json'

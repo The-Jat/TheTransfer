@@ -1,6 +1,6 @@
 <?php defined('ALTUMCODE') || die() ?>
 
-<div>
+<div id="users">
     <div class="form-group custom-control custom-switch">
         <input id="register_is_enabled" name="register_is_enabled" type="checkbox" class="custom-control-input" <?= settings()->users->register_is_enabled ? 'checked="checked"' : null?>>
         <label class="custom-control-label" for="register_is_enabled"><i class="fas fa-fw fa-sm fa-user-plus text-muted mr-1"></i> <?= l('admin_settings.users.register_is_enabled') ?></label>
@@ -45,6 +45,12 @@
     </div>
 
     <div class="form-group custom-control custom-switch">
+        <input id="email_aliases_is_enabled" name="email_aliases_is_enabled" type="checkbox" class="custom-control-input" <?= settings()->users->email_aliases_is_enabled ? 'checked="checked"' : null?>>
+        <label class="custom-control-label" for="email_aliases_is_enabled"><i class="fas fa-fw fa-sm fa-at text-muted mr-1"></i> <?= l('admin_settings.users.email_aliases_is_enabled') ?></label>
+        <small class="form-text text-muted"><?= l('admin_settings.users.email_aliases_is_enabled_help') ?></small>
+    </div>
+
+    <div class="form-group custom-control custom-switch">
         <input id="email_confirmation" name="email_confirmation" type="checkbox" class="custom-control-input" <?= settings()->users->email_confirmation ? 'checked="checked"' : null?>>
         <label class="custom-control-label" for="email_confirmation"><i class="fas fa-fw fa-sm fa-envelope text-muted mr-1"></i> <?= l('admin_settings.users.email_confirmation') ?></label>
         <small class="form-text text-muted"><?= l('admin_settings.users.email_confirmation_help') ?></small>
@@ -56,48 +62,60 @@
         <small class="form-text text-muted"><?= l('admin_settings.users.welcome_email_is_enabled_help') ?></small>
     </div>
 
-    <div class="form-group">
-        <label for="auto_delete_unconfirmed_users"><i class="fas fa-fw fa-sm fa-user-minus text-muted mr-1"></i> <?= l('admin_settings.users.auto_delete_unconfirmed_users') ?></label>
-        <div class="input-group">
-            <input id="auto_delete_unconfirmed_users" type="number" min="0" name="auto_delete_unconfirmed_users" class="form-control" value="<?= settings()->users->auto_delete_unconfirmed_users ?>" />
-            <div class="input-group-append">
-                <span class="input-group-text"><?= l('global.date.days') ?></span>
+    <button class="btn btn-block btn-gray-200 font-size-little-small font-weight-450 my-4" type="button" data-toggle="collapse" data-target="#cleanup_container" aria-expanded="false" aria-controls="cleanup_container">
+        <i class="fas fa-fw fa-broom fa-sm mr-1"></i> <?= l('admin_settings.users.cleanup') ?>
+    </button>
+
+    <div class="collapse" data-parent="#users" id="cleanup_container">
+        <div class="form-group">
+            <label for="auto_delete_unconfirmed_users"><i class="fas fa-fw fa-sm fa-user-minus text-muted mr-1"></i> <?= l('admin_settings.users.auto_delete_unconfirmed_users') ?></label>
+            <div class="input-group">
+                <input id="auto_delete_unconfirmed_users" type="number" min="0" name="auto_delete_unconfirmed_users" class="form-control" value="<?= settings()->users->auto_delete_unconfirmed_users ?>" />
+                <div class="input-group-append">
+                    <span class="input-group-text"><?= l('global.date.days') ?></span>
+                </div>
             </div>
+            <small class="form-text text-muted"><?= l('admin_settings.users.auto_delete_unconfirmed_users_help') ?></small>
         </div>
-        <small class="form-text text-muted"><?= l('admin_settings.users.auto_delete_unconfirmed_users_help') ?></small>
+
+        <div class="form-group">
+            <label for="auto_delete_inactive_users"><i class="fas fa-fw fa-sm fa-users-slash text-muted mr-1"></i> <?= l('admin_settings.users.auto_delete_inactive_users') ?></label>
+            <div class="input-group">
+                <input id="auto_delete_inactive_users" type="number" min="0" name="auto_delete_inactive_users" class="form-control" value="<?= settings()->users->auto_delete_inactive_users ?>" />
+                <div class="input-group-append">
+                    <span class="input-group-text"><?= l('global.date.days') ?></span>
+                </div>
+            </div>
+            <small class="form-text text-muted"><?= l('admin_settings.users.auto_delete_inactive_users_help') ?></small>
+        </div>
+
+        <div class="form-group">
+            <label for="user_deletion_reminder"><i class="fas fa-fw fa-sm fa-calendar-minus text-muted mr-1"></i> <?= l('admin_settings.users.user_deletion_reminder') ?></label>
+            <div class="input-group">
+                <input id="user_deletion_reminder" type="text" max="<?= settings()->users->auto_delete_inactive_users - 1 ?>" name="user_deletion_reminder" class="form-control" value="<?= settings()->users->user_deletion_reminder ?>" />
+                <div class="input-group-append">
+                    <span class="input-group-text"><?= l('global.date.days') ?></span>
+                </div>
+            </div>
+            <small class="form-text text-muted"><?= l('admin_settings.users.user_deletion_reminder_help') ?></small>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label for="auto_delete_inactive_users"><i class="fas fa-fw fa-sm fa-users-slash text-muted mr-1"></i> <?= l('admin_settings.users.auto_delete_inactive_users') ?></label>
-        <div class="input-group">
-            <input id="auto_delete_inactive_users" type="number" min="0" name="auto_delete_inactive_users" class="form-control" value="<?= settings()->users->auto_delete_inactive_users ?>" />
-            <div class="input-group-append">
-                <span class="input-group-text"><?= l('global.date.days') ?></span>
-            </div>
-        </div>
-        <small class="form-text text-muted"><?= l('admin_settings.users.auto_delete_inactive_users_help') ?></small>
-    </div>
-
-    <div class="form-group">
-        <label for="user_deletion_reminder"><i class="fas fa-fw fa-sm fa-calendar-minus text-muted mr-1"></i> <?= l('admin_settings.users.user_deletion_reminder') ?></label>
-        <div class="input-group">
-            <input id="user_deletion_reminder" type="text" max="<?= settings()->users->auto_delete_inactive_users - 1 ?>" name="user_deletion_reminder" class="form-control" value="<?= settings()->users->user_deletion_reminder ?>" />
-            <div class="input-group-append">
-                <span class="input-group-text"><?= l('global.date.days') ?></span>
-            </div>
-        </div>
-        <small class="form-text text-muted"><?= l('admin_settings.users.user_deletion_reminder_help') ?></small>
-    </div>
-
-    <button class="btn btn-block btn-gray-200 my-4" type="button" data-toggle="collapse" data-target="#security_container" aria-expanded="false" aria-controls="security_container">
+    <button class="btn btn-block btn-gray-200 font-size-little-small font-weight-450 my-4" type="button" data-toggle="collapse" data-target="#lockouts_container" aria-expanded="false" aria-controls="lockouts_container">
         <i class="fas fa-fw fa-shield-alt fa-sm mr-1"></i> <?= l('admin_settings.users.lockouts') ?>
     </button>
 
-    <div class="collapse" id="security_container">
+    <div class="collapse" data-parent="#users" id="lockouts_container">
         <div class="form-group">
             <label for="blacklisted_domains"><i class="fas fa-fw fa-sm fa-ban text-muted mr-1"></i> <?= l('admin_settings.users.blacklisted_domains') ?></label>
-            <textarea id="blacklisted_domains" name="blacklisted_domains" class="form-control"><?= implode(',', settings()->users->blacklisted_domains) ?></textarea>
+            <textarea id="blacklisted_domains" name="blacklisted_domains" class="form-control"><?= implode(',', settings()->users->blacklisted_domains ?? []) ?></textarea>
             <small class="form-text text-muted"><?= l('admin_settings.users.blacklisted_domains_help') ?></small>
+        </div>
+
+        <div class="form-group">
+            <label for="blacklisted_ips"><i class="fas fa-fw fa-sm fa-eye-slash text-muted mr-1"></i> <?= l('admin_settings.users.blacklisted_ips') ?></label>
+            <textarea id="blacklisted_ips" name="blacklisted_ips" class="form-control"><?= implode(',', settings()->users->blacklisted_ips ?? []) ?></textarea>
+            <small class="form-text text-muted"><?= l('admin_settings.users.blacklisted_ips_help') ?></small>
         </div>
 
         <div class="form-group">

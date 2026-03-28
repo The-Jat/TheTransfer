@@ -225,7 +225,7 @@ class AdminApiUsers extends Controller {
 
         /* Check for any errors */
         foreach($required_fields as $field) {
-            if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+            if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                 $this->response_error(l('global.error_message.empty_fields'), 401);
                 break 1;
             }
@@ -413,7 +413,7 @@ class AdminApiUsers extends Controller {
         }
 
         /* Define some needed variables */
-        $one_time_login_code = md5($user->email . $user->datetime . time());
+        $one_time_login_code = md5(uniqid('', true) . random_bytes(16));
 
         /* Update the basic user settings */
         db()->where('user_id', $user->user_id)->update('users', ['one_time_login_code' => $one_time_login_code]);

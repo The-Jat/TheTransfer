@@ -24,13 +24,17 @@ class AdminCodeCreate extends Controller {
 
     public function index() {
 
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('admin');
+        }
+
         set_time_limit(0);
 
         /* Requested plan details */
         $plans = (new \Altum\Models\Plan())->get_plans();
 
         if(!empty($_POST)) {
-            /* Filter some the variables */
+            /* Filter some of the variables */
             $_POST['name'] = input_clean($_POST['name'], 64);
             $_POST['type'] = in_array($_POST['type'], ['discount', 'redeemable']) ? input_clean($_POST['type']) : 'discount';
             $_POST['days'] = $_POST['type'] == 'redeemable' ? (int) $_POST['days'] : null;

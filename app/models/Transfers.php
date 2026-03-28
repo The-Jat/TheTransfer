@@ -49,7 +49,7 @@ class Transfers extends Model {
 
         /* Get all files related to the transfer */
         $files_result = database()->query("
-                SELECT `file_id`, `name`
+                SELECT `file_id`, `name`, `offload_id`
                 FROM `files`
                 WHERE `transfer_id` = {$transfer_id}
             ");
@@ -57,7 +57,7 @@ class Transfers extends Model {
         while($file = $files_result->fetch_object()) {
 
             /* Delete the stored file */
-            Uploads::delete_uploaded_file($file->name, 'files');
+            Uploads::delete_uploaded_file_and_potential_residue($file->name, 'files', $file->offload_id);
 
             /* Delete the resource */
             db()->where('file_id', $file->file_id)->delete('files');

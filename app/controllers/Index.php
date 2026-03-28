@@ -29,6 +29,11 @@ class Index extends Controller {
             header('Location: ' . settings()->main->index_url); die();
         }
 
+        /* Opengraph image */
+        if(settings()->main->opengraph) {
+            \Altum\Meta::set_social_image(\Altum\Uploads::get_full_url('opengraph') . settings()->main->opengraph);
+        }
+
         /* Get available custom domains */
         $domains = (new \Altum\Models\Domain())->get_available_domains_by_user($this->user);
 
@@ -97,7 +102,7 @@ class Index extends Controller {
 
                 while($row = $blog_posts_result->fetch_object()) {
                     /* Transform content if needed */
-                    $row->content = json_decode($row->content) ? convert_editorjs_json_to_html($row->content) : nl2br($row->content);
+                    $row->content = json_decode($row->content) ? convert_editorjs_json_to_html($row->content) : output_blog_post_content($row->content);
 
                     $blog_posts[] = $row;
                 }

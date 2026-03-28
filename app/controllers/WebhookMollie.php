@@ -24,6 +24,14 @@ class WebhookMollie extends Controller {
 
     public function index() {
 
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('not-found');
+        }
+
+        if((strtoupper($_SERVER['REQUEST_METHOD']) != 'POST')) {
+            redirect('not-found');
+        }
+
         if((strtoupper($_SERVER['REQUEST_METHOD']) != 'POST' ) || empty($_POST['id'])) {
             die();
         }
@@ -73,6 +81,7 @@ class WebhookMollie extends Controller {
                         'interval' => $interval,
                         'startDate' => $start_date,
                         'webhookUrl' => SITE_URL . 'webhook-mollie',
+                        'metadata' => $payment->metadata,
                     ]);
                 } catch (\Exception $exception) {
                     echo $exception->getCode() . ':' . $exception->getMessage();

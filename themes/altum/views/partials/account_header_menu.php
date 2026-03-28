@@ -30,6 +30,8 @@
 
 <?php ob_start() ?>
 <script>
+    'use strict';
+    
     document.querySelector('select[name="account_header_menu"]').addEventListener('change', event => {
         window.location = document.querySelector('select[name="account_header_menu"]').value;
     })

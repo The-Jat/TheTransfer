@@ -1,6 +1,6 @@
 <?php defined('ALTUMCODE') || die() ?>
 
-<div class="container <?= settings()->content->blog_columns == 1 ? 'col-8' : null ?>">
+<div class="container <?= settings()->content->blog_columns == 1 ? 'col-lg-8' : null ?>">
     <?php if(settings()->main->breadcrumbs_is_enabled): ?>
         <nav aria-label="breadcrumb">
             <ol class="custom-breadcrumbs small">

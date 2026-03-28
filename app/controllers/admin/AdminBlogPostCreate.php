@@ -25,7 +25,7 @@ class AdminBlogPostCreate extends Controller {
     public function index() {
 
         if(!empty($_POST)) {
-            /* Filter some the variables */
+            /* Filter some of the variables */
             $_POST['url'] = input_clean(get_slug($_POST['url']), 256);
             $_POST['title'] = input_clean($_POST['title'], 256);
             $_POST['description'] = input_clean($_POST['description'], 256);
@@ -35,13 +35,14 @@ class AdminBlogPostCreate extends Controller {
             $_POST['blog_posts_category_id'] = empty($_POST['blog_posts_category_id']) ? null : (int) $_POST['blog_posts_category_id'];
             $_POST['language'] = !empty($_POST['language']) ? input_clean($_POST['language']) : null;
             $_POST['is_published'] = (int) isset($_POST['is_published']);
+            $_POST['content'] = $_POST['editor'] == 'wysiwyg' ? quilljs_to_bootstrap($_POST['content']) : $_POST['content'];
 
             //ALTUMCODE:DEMO if(DEMO) Alerts::add_error('This command is blocked on the demo.');
 
             /* Check for any errors */
             $required_fields = ['title', 'url'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }

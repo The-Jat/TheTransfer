@@ -1,6 +1,6 @@
 <?php defined('ALTUMCODE') || die() ?>
 
-<?php if(count(\Altum\Plugin::$plugins)): ?>
+<?php if (!empty(\Altum\Plugin::$plugins)): ?>
 
     <?php
     if(ALTUMCODE == 66) {
@@ -30,7 +30,13 @@
         <?php foreach(\Altum\Plugin::$plugins as $plugin): ?>
             <div class="col-md-6 col-xl-4 p-3">
                 <div class="card h-100">
-                    <div class="card-body d-flex justify-content-between flex-column">
+                    <div class="card-body d-flex justify-content-between flex-column position-relative">
+                        <?php if($plugin->actions && ($plugin->status !== -2 && $plugin->status != 'inexistent')): ?>
+                            <div class="position-absolute" style="right: 1.5rem;">
+                                <?= include_view(THEME_PATH . 'views/admin/plugins/admin_plugin_dropdown_button.php', ['id' => $plugin->plugin_id, 'status' => $plugin->status, 'settings_url' => $plugin->settings_url ?? null]) ?>
+                            </div>
+                        <?php endif ?>
+
                         <div>
                             <div class="d-flex justify-content-center mb-3">
                                 <div class="plugin-avatar rounded-circle d-flex justify-content-center align-items-center" style="<?= $plugin->avatar_style ?? null ?>">
@@ -56,8 +62,8 @@
                                     </a>
                                 <?php else: ?>
                                     <span class="badge badge-light mr-3">
-                                    <i class="fas fa-fw fa-sm fa-code-branch mr-1"></i> <?= 'v' . $plugin->version ?>
-                                </span>
+                                        <i class="fas fa-fw fa-sm fa-code-branch mr-1"></i> <?= 'v' . $plugin->version ?>
+                                    </span>
                                 <?php endif ?>
                             <?php endif ?>
 
@@ -79,12 +85,6 @@
                                 <span class="badge badge-success">
                                     <i class="fas fa-fw fa-sm fa-check mr-1"></i> <?= l('admin_plugins.status_active') ?>
                                 </span>
-                            <?php endif ?>
-
-                            <?php if($plugin->actions && ($plugin->status !== -2 && $plugin->status != 'inexistent')): ?>
-                                <div class="ml-3">
-                                    <?= include_view(THEME_PATH . 'views/admin/plugins/admin_plugin_dropdown_button.php', ['id' => $plugin->plugin_id, 'status' => $plugin->status, 'settings_url' => $plugin->settings_url ?? null]) ?>
-                                </div>
                             <?php endif ?>
                         </div>
                     </div>

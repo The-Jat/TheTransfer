@@ -41,7 +41,7 @@ class TransferDownloads extends Controller {
 
         /* Check for plan access */
         if(!$this->user->plan_settings->analytics_is_enabled) {
-            Alerts::add_info(l('global.info_message.plan_feature_no_access'));
+            Alerts::add_error(l('global.info_message.plan_feature_no_access'));
             redirect('transfer/' . $transfer->transfer_id);
         }
 
@@ -60,6 +60,10 @@ class TransferDownloads extends Controller {
                 /* Get the required statistics */
                 $pageviews = [];
                 $pageviews_chart = [];
+                $totals = [
+                    'pageviews' => 0,
+                    'visitors' => 0,
+                ];
 
                 $convert_tz_sql = get_convert_tz_sql('`datetime`', $this->user->timezone);
 
@@ -89,6 +93,9 @@ class TransferDownloads extends Controller {
                         'pageviews' => $row->pageviews,
                         'visitors' => $row->visitors
                     ];
+
+                    $totals['pageviews'] += $row->pageviews;
+                    $totals['visitors'] += $row->visitors;
                 }
 
                 $pageviews_chart = get_chart_data($pageviews_chart);
@@ -137,7 +144,6 @@ class TransferDownloads extends Controller {
 
             case 'referrer_host':
             case 'continent_code':
-            case 'country':
             case 'os':
             case 'browser':
             case 'device':
@@ -168,7 +174,7 @@ class TransferDownloads extends Controller {
                         `{$columns[$type]}`
                     ORDER BY
                         `total` DESC
-                    LIMIT 250
+                    
                 ");
 
                 break;
@@ -191,7 +197,32 @@ class TransferDownloads extends Controller {
                         `referrer_path`
                     ORDER BY
                         `total` DESC
-                    LIMIT 250
+                    
+                ");
+
+                break;
+
+            case 'country':
+
+                $continent_code = isset($_GET['continent_code']) ? input_clean($_GET['continent_code']) : null;
+
+                $result = database()->query("
+                    SELECT
+                        `country_code`,
+                        " . ($continent_code ? "`continent_code`," : null) . "
+                        COUNT(*) AS `total`
+                    FROM
+                         `downloads`
+                    WHERE
+                        `transfer_id` = {$transfer->transfer_id}
+                        " . ($continent_code ? "AND `continent_code` = '{$continent_code}'" : null) . "
+                        AND (`datetime` BETWEEN '{$datetime['query_start_date']}' AND '{$datetime['query_end_date']}')
+                    GROUP BY
+                        " . ($continent_code ? "`continent_code`," : null) . "
+                        `country_code`
+                    ORDER BY
+                        `total` DESC
+                    
                 ");
 
                 break;
@@ -216,7 +247,7 @@ class TransferDownloads extends Controller {
                         `city_name`
                     ORDER BY
                         `total` DESC
-                    LIMIT 250
+                    
                 ");
 
 
@@ -238,7 +269,7 @@ class TransferDownloads extends Controller {
                         `utm_source`
                     ORDER BY
                         `total` DESC
-                    LIMIT 250
+                    
                 ");
 
                 break;
@@ -261,7 +292,7 @@ class TransferDownloads extends Controller {
                         `utm_medium`
                     ORDER BY
                         `total` DESC
-                    LIMIT 250
+                    
                 ");
 
                 break;
@@ -286,7 +317,7 @@ class TransferDownloads extends Controller {
                         `utm_campaign`
                     ORDER BY
                         `total` DESC
-                    LIMIT 250
+                    
                 ");
 
                 break;
@@ -309,7 +340,7 @@ class TransferDownloads extends Controller {
                     GROUP BY
                         `hour`
                     ORDER BY
-                        `hour`
+                        `total` DESC
                 ");
 
                 break;
@@ -362,7 +393,8 @@ class TransferDownloads extends Controller {
                     'datetime' => $datetime,
                     'latest' => $latest,
                     'pageviews' => $pageviews,
-                    'pageviews_chart' => $pageviews_chart
+                    'pageviews_chart' => $pageviews_chart,
+                    'totals' => $totals,
                 ];
 
                 break;
@@ -424,6 +456,7 @@ class TransferDownloads extends Controller {
                     'datetime' => $datetime,
 
                     'referrer_host' => $referrer_host ?? null,
+                    'continent_code' => $continent_code ?? null,
                     'country_code' => $country_code ?? null,
                     'utm_source' => $utm_source ?? null,
                     'utm_medium' => $utm_medium ?? null,
@@ -438,8 +471,8 @@ class TransferDownloads extends Controller {
         Title::set(sprintf(l('transfer_statistics.title'), $transfer->url));
 
         /* Export handler */
-        process_export_csv($statistics, 'basic');
-        process_export_json($statistics, 'basic');
+        process_export_csv($statistics);
+        process_export_json($statistics);
 
         $data['type'] = $type;
         $view = new \Altum\View('transfer-downloads/statistics_' . $type, (array) $this);
@@ -481,7 +514,7 @@ class TransferDownloads extends Controller {
 
         /* Team checks */
         if(\Altum\Teams::is_delegated() && !\Altum\Teams::has_access('delete.transfers')) {
-            Alerts::add_info(l('global.info_message.team_no_access'));
+            Alerts::add_error(l('global.info_message.team_no_access'));
             redirect('transfer-downloads/' . $transfer->transfer_id);
         }
 

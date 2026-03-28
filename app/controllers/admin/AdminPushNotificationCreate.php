@@ -30,22 +30,16 @@ class AdminPushNotificationCreate extends Controller {
         }
 
         if(!empty($_POST)) {
-            /* Filter some the variables */
+            /* Filter some of the variables */
             $_POST['title'] = input_clean($_POST['title'], 64);
             $_POST['description'] = input_clean($_POST['description'], 128);
             $_POST['url'] = get_url($_POST['url'], 512);
             $_POST['segment'] = in_array($_POST['segment'], ['all', 'custom', 'filter']) ? input_clean($_POST['segment']) : 'all';
 
             $_POST['push_subscribers_ids'] = trim($_POST['push_subscribers_ids'] ?? '');
-            if($_POST['push_subscribers_ids']) {
-                $_POST['push_subscribers_ids'] = explode(',', $_POST['push_subscribers_ids'] ?? '');
-                if(count($_POST['push_subscribers_ids'])) {
-                    $_POST['push_subscribers_ids'] = array_map(function ($user_id) {
-                        return (int) $user_id;
-                    }, $_POST['push_subscribers_ids']);
-                    $_POST['push_subscribers_ids'] = array_unique($_POST['push_subscribers_ids']);
-                }
-            }
+            $_POST['push_subscribers_ids'] = array_filter(array_map('intval', explode(',', $_POST['push_subscribers_ids'])));
+            $_POST['push_subscribers_ids'] = array_values(array_unique($_POST['push_subscribers_ids']));
+            $_POST['push_subscribers_ids'] = $_POST['push_subscribers_ids'] ?: [0];
 
             //ALTUMCODE:DEMO if(DEMO) Alerts::add_error('This command is blocked on the demo.');
 
@@ -55,7 +49,7 @@ class AdminPushNotificationCreate extends Controller {
 
             $required_fields = ['title', 'description'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }
@@ -120,10 +114,12 @@ class AdminPushNotificationCreate extends Controller {
                         break;
                 }
 
-                $push_subscribers_ids = [];
-                foreach($push_subscribers as $push_subscriber) {
-                    $push_subscribers_ids[] = $push_subscriber->push_subscriber_id;
-                }
+                /* Get all the contacts ids */
+                $push_subscribers_ids = array_column($push_subscribers, 'push_subscriber_id');
+                $push_subscribers_count = count($push_subscribers_ids);
+
+                /* Free memory */
+                unset($push_subscribers);
 
                 /* Database query */
                 $push_notification_id = db()->insert('push_notifications', [
@@ -134,7 +130,7 @@ class AdminPushNotificationCreate extends Controller {
                     'settings' => json_encode($settings),
                     'push_subscribers_ids' => json_encode($push_subscribers_ids),
                     'sent_push_subscribers_ids' => '[]',
-                    'total_push_notifications' => count($push_subscribers_ids),
+                    'total_push_notifications' => $push_subscribers_count,
                     'status' => isset($_POST['save']) ? 'draft' : 'processing',
                     'datetime' => get_date(),
                 ]);
@@ -156,7 +152,7 @@ class AdminPushNotificationCreate extends Controller {
             'description' => $_GET['description'] ?? $_POST['description'] ?? null,
             'url' => $_GET['url'] ?? $_POST['url'] ?? null,
             'segment' => $_GET['segment'] ?? $_POST['segment'] ?? 'all',
-            'push_subscribers_ids' => $_POST['push_subscribers_ids'] ?? null,
+            'push_subscribers_ids' => implode(',', $_POST['push_subscribers_ids'] ?? []),
             'filters_is_registered' => $_POST['filters_is_registered'] ?? [],
             'filters_continents' => $_POST['filters_continents'] ?? [],
             'filters_countries' => $_POST['filters_countries'] ?? [],

@@ -21,7 +21,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <?php if(count($data->continents)): ?>
+                <?php if (!empty($data->continents)): ?>
                     <?php foreach ($data->continents as $continent_code => $total): ?>
                         <tr>
                             <td class="text-nowrap">
@@ -60,7 +60,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <?php if(count($data->countries)): ?>
+                <?php if (!empty($data->countries)): ?>
                     <?php foreach ($data->countries as $country_code => $total): ?>
                         <tr>
                             <td class="text-nowrap">
@@ -104,7 +104,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <?php if(count($data->cities)): ?>
+                <?php if (!empty($data->cities)): ?>
                     <?php foreach ($data->cities as $concatenated_data => $total): ?>
                         <?php
                         $exploded = explode('#', $concatenated_data);
@@ -150,7 +150,38 @@
 
 <script>
     'use strict';
+    
+let hsl_to_hex = (hsl_string) => {
+        /* Extract values */
+        const match = hsl_string.match(/hsl\(\s*(\d+),\s*(\d+)%?,\s*(\d+)%?\s*\)/);
+        if (!match) return null;
+        let hue = parseInt(match[1], 10);
+        let saturation = parseInt(match[2], 10) / 100;
+        let lightness = parseInt(match[3], 10) / 100;
 
+        /* Convert to rgb */
+        let chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+        let x = chroma * (1 - Math.abs((hue / 60) % 2 - 1));
+        let m = lightness - chroma / 2;
+        let red1 = 0, green1 = 0, blue1 = 0;
+
+        if (hue < 60) { red1 = chroma; green1 = x; blue1 = 0; }
+        else if (hue < 120) { red1 = x; green1 = chroma; blue1 = 0; }
+        else if (hue < 180) { red1 = 0; green1 = chroma; blue1 = x; }
+        else if (hue < 240) { red1 = 0; green1 = x; blue1 = chroma; }
+        else if (hue < 300) { red1 = x; green1 = 0; blue1 = chroma; }
+        else { red1 = chroma; green1 = 0; blue1 = x; }
+
+        let red = Math.round((red1 + m) * 255);
+        let green = Math.round((green1 + m) * 255);
+        let blue = Math.round((blue1 + m) * 255);
+
+        /* Convert to hex */
+        return '#' + [red, green, blue].map(x =>
+            x.toString(16).padStart(2, '0')
+        ).join('');
+    }
+    
     /* Create the map */
     new svgMap({
         targetElementID: 'countries_map',
@@ -165,9 +196,9 @@
             applyData: 'users',
             values: <?= json_encode($data->countries_map) ?>,
         },
-        colorMin: css.getPropertyValue('--primary-100'),
-        colorMax: css.getPropertyValue('--primary-800'),
-        colorNoData: css.getPropertyValue('--gray-200'),
+        colorMin: hsl_to_hex(css.getPropertyValue('--primary-100')),
+        colorMax: hsl_to_hex(css.getPropertyValue('--primary-800')),
+        colorNoData: hsl_to_hex(css.getPropertyValue('--gray-200')),
         flagType: 'emoji',
         noDataText: <?= json_encode(l('global.no_data')) ?>
     });

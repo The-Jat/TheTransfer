@@ -2,19 +2,26 @@
 
 <div class="container">
     <?= \Altum\Alerts::output_alerts() ?>
+
+    <?php if($this->user->plan_settings->team_members_limit != -1 && $data->total_team_members > $this->user->plan_settings->team_members_limit): ?>
+        <div class="alert alert-danger">
+            <i class="fas fa-fw fa-times-circle text-danger mr-2"></i> <?= sprintf(settings()->payment->is_enabled ? l('global.info_message.plan_feature_limit_removal_with_upgrade') : l('global.info_message.plan_feature_limit_removal'), '<strong>' . $data->total_team_members - $this->user->plan_settings->team_members_limit, mb_strtolower(l('team_members.title')) . '</strong>', '<a href="' . url('plan') . '" class="font-weight-bold text-reset">' . l('global.info_message.plan_upgrade') . '</a>') ?>
+        </div>
+    <?php endif ?>
+
     <?php if(settings()->main->breadcrumbs_is_enabled): ?>
-<nav aria-label="breadcrumb">
-        <ol class="custom-breadcrumbs small">
-            <li>
-                <a href="<?= url('teams-system') ?>"><?= l('teams_system.breadcrumb') ?></a><i class="fas fa-fw fa-angle-right"></i>
-            </li>
-            <li>
-                <a href="<?= url('teams') ?>"><?= l('teams.breadcrumb') ?></a><i class="fas fa-fw fa-angle-right"></i>
-            </li>
-            <li class="active" aria-current="page"><?= l('team.breadcrumb') ?></li>
-        </ol>
-    </nav>
-<?php endif ?>
+        <nav aria-label="breadcrumb">
+            <ol class="custom-breadcrumbs small">
+                <li>
+                    <a href="<?= url('teams-system') ?>"><?= l('teams_system.breadcrumb') ?></a><i class="fas fa-fw fa-angle-right"></i>
+                </li>
+                <li>
+                    <a href="<?= url('teams') ?>"><?= l('teams.breadcrumb') ?></a><i class="fas fa-fw fa-angle-right"></i>
+                </li>
+                <li class="active" aria-current="page"><?= l('team.breadcrumb') ?></li>
+            </ol>
+        </nav>
+    <?php endif ?>
 
     <div class="row mb-4">
         <div class="col-12 col-lg d-flex align-items-center mb-3 mb-lg-0 text-truncate">
@@ -24,7 +31,7 @@
         <div class="col-12 col-lg-auto d-flex flex-wrap gap-3 d-print-none">
             <div>
                 <?php if($this->user->plan_settings->team_members_limit != -1 && $data->total_team_members >= $this->user->plan_settings->team_members_limit): ?>
-                    <button type="button" class="btn btn-primary disabled" data-toggle="tooltip" title="<?= l('global.info_message.plan_feature_limit') ?>">
+                    <button type="button" class="btn btn-primary disabled" <?= get_plan_feature_limit_reached_info() ?>>
                         <i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('team_members.create') ?>
                     </button>
                 <?php else: ?>
@@ -41,22 +48,22 @@
                     </button>
 
                     <div class="dropdown-menu dropdown-menu-right d-print-none">
-                        <a href="<?= url('team/' . $data->team->team_id . '?' . $data->filters->get_get() . '&export=csv')  ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->csv ? null : 'disabled' ?>">
+                        <a href="<?= url('team/' . $data->team->team_id . '?' . $data->filters->get_get() . '&export=csv')  ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->csv ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->csv ? null : get_plan_feature_disabled_info() ?>>
                             <i class="fas fa-fw fa-sm fa-file-csv mr-2"></i> <?= sprintf(l('global.export_to'), 'CSV') ?>
                         </a>
-                        <a href="<?= url('team/' . $data->team->team_id . '?' . $data->filters->get_get() . '&export=json') ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->json ? null : 'disabled' ?>">
+                        <a href="<?= url('team/' . $data->team->team_id . '?' . $data->filters->get_get() . '&export=json') ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->json ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->json ? null : get_plan_feature_disabled_info() ?>>
                             <i class="fas fa-fw fa-sm fa-file-code mr-2"></i> <?= sprintf(l('global.export_to'), 'JSON') ?>
-                    </a>
-                    <a href="#" onclick="window.print();return false;" class="dropdown-item <?= $this->user->plan_settings->export->pdf ? null : 'disabled' ?>">
-                        <i class="fas fa-fw fa-sm fa-file-pdf mr-2"></i> <?= sprintf(l('global.export_to'), 'PDF') ?>
-                    </a>
+                        </a>
+                        <a href="#" class="dropdown-item <?= $this->user->plan_settings->export->pdf ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->pdf ? $this->user->plan_settings->export->pdf ? 'onclick="event.preventDefault(); window.print();"' : 'disabled pointer-events-all' : get_plan_feature_disabled_info() ?>>
+                            <i class="fas fa-fw fa-sm fa-file-pdf mr-2"></i> <?= sprintf(l('global.export_to'), 'PDF') ?>
+                        </a>
                     </div>
                 </div>
             </div>
 
             <div>
                 <div class="dropdown">
-                    <button type="button" class="btn <?= $data->filters->has_applied_filters ? 'btn-dark' : 'btn-light' ?> filters-button dropdown-toggle-simple <?= count($data->team_members) || $data->filters->has_applied_filters ? null : 'disabled' ?>" data-toggle="dropdown" data-boundary="viewport" data-tooltip title="<?= l('global.filters.header') ?>" data-tooltip-hide-on-click>
+                    <button type="button" class="btn <?= $data->filters->has_applied_filters ? 'btn-dark' : 'btn-light' ?> filters-button dropdown-toggle-simple <?= count($data->team_members) || $data->filters->has_applied_filters ? null : 'disabled' ?>" data-toggle="dropdown" data-boundary="viewport" data-tooltip data-html="true" title="<?= l('global.filters.tooltip') ?>" data-tooltip-hide-on-click>
                         <i class="fas fa-fw fa-sm fa-filter"></i>
                     </button>
 
@@ -126,7 +133,7 @@
         </div>
     </div>
 
-    <?php if(count($data->team_members)): ?>
+    <?php if (!empty($data->team_members)): ?>
         <div class="table-responsive table-custom-container">
             <table class="table table-custom">
                 <thead>
@@ -151,7 +158,7 @@
                                         <span class="text-muted"><?= $row->email ?></span>
                                     </div>
                                 <?php else: ?>
-                                    <img src="<?= get_user_avatar($row->user_avatar, $row->user_email) ?>" class="team-user-avatar rounded-circle mr-3" alt="" />
+                                    <img src="<?= get_user_avatar($row->avatar, $row->user_email) ?>" class="team-user-avatar rounded-circle mr-3" alt="" />
 
                                     <div class="d-flex flex-column align-self-center">
                                         <span class="text-muted small"><?= $row->user_email ?></span>
@@ -211,23 +218,23 @@
         <div class="mt-3"><?= $data->pagination ?></div>
     <?php else: ?>
         <?= include_view(THEME_PATH . 'views/partials/no_data.php', [
-            'filters_get' => $data->filters->get ?? [],
-            'name' => 'team_members',
-            'has_secondary_text' => true,
+                'filters_get' => $data->filters->get ?? [],
+                'name' => 'team_members',
+                'has_secondary_text' => true,
         ]); ?>
     <?php endif ?>
 </div>
 
 <?php \Altum\Event::add_content(include_view(THEME_PATH . 'views/partials/universal_delete_modal_form.php', [
-    'name' => 'team',
-    'resource_id' => 'team_id',
-    'has_dynamic_resource_name' => true,
-    'path' => 'teams/delete'
+        'name' => 'team',
+        'resource_id' => 'team_id',
+        'has_dynamic_resource_name' => true,
+        'path' => 'teams/delete'
 ]), 'modals'); ?>
 
 <?php \Altum\Event::add_content(include_view(THEME_PATH . 'views/partials/universal_delete_modal_form.php', [
-    'name' => 'team_member',
-    'resource_id' => 'team_member_id',
-    'has_dynamic_resource_name' => true,
-    'path' => 'teams-members/delete'
+        'name' => 'team_member',
+        'resource_id' => 'team_member_id',
+        'has_dynamic_resource_name' => true,
+        'path' => 'teams-members/delete'
 ]), 'modals'); ?>

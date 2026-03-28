@@ -26,8 +26,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    /* On modal show load new data */
+    
+/* On modal show load new data */
     $('#user_log_delete_modal').on('show.bs.modal', event => {
         let id = $(event.relatedTarget).data('id');
 

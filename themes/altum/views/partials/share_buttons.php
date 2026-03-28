@@ -20,7 +20,7 @@
     <?php endif ?>
 
     <?php if(($data->print_is_enabled ?? true) && settings()->socials->share_buttons->print): ?>
-        <button type="button" class="<?= $data->class ?> rounded-2x" style="color: #808080; background-color: rgba(128, 128, 128, 0.1);" data-toggle="tooltip" title="<?= l('page.print') ?>" onclick="window.print()" data-tooltip-hide-on-click>
+        <button type="button" class="<?= $data->class ?> rounded-2x" style="color: #808080; background-color: rgba(128, 128, 128, 0.1);" data-toggle="tooltip" title="<?= l('page.print') ?>" onclick="window.print();return false;" data-tooltip-hide-on-click>
             <i class="fas fa-fw fa-sm fa-print"></i>
         </button>
     <?php endif ?>
@@ -104,7 +104,7 @@
     <?php endif ?>
 
     <?php if(($data->print_is_enabled ?? true) && settings()->socials->share_buttons->print): ?>
-        <button type="button" class="<?= $data->class ?> rounded-2x" style="color: #808080; background-color: rgba(128, 128, 128, 0.1);" title="<?= l('page.print') ?>" onclick="window.print()" data-tooltip-hide-on-click>
+        <button type="button" class="<?= $data->class ?> rounded-2x" style="color: #808080; background-color: rgba(128, 128, 128, 0.1);" title="<?= l('page.print') ?>" onclick="window.print();return false;" data-tooltip-hide-on-click>
             <div class="svg-sm d-flex"><?= include_view(ASSETS_PATH . '/images/icons/pdf.svg') ?></div>
         </button>
     <?php endif ?>
@@ -172,6 +172,8 @@
 
 <?php ob_start() ?>
     <script>
+    'use strict';
+    
         document.querySelectorAll('[data-native-share]').forEach(element => {
             if(navigator.share) {
                 element.classList.remove('d-none');

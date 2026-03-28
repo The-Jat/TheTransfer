@@ -2,14 +2,14 @@
 
 <div class="container">
     <?php if(settings()->main->breadcrumbs_is_enabled): ?>
-<nav aria-label="breadcrumb">
-        <ol class="custom-breadcrumbs small">
-            <li><a href="<?= url() ?>"><?= l('index.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
-            <li><a href="<?= url('api-documentation') ?>"><?= l('api_documentation.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
-            <li class="active" aria-current="page"><?= l('account_logs.title') ?></li>
-        </ol>
-    </nav>
-<?php endif ?>
+        <nav aria-label="breadcrumb">
+            <ol class="custom-breadcrumbs small">
+                <li><a href="<?= url() ?>"><?= l('index.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
+                <li><a href="<?= url('api-documentation') ?>"><?= l('api_documentation.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
+                <li class="active" aria-current="page"><?= l('account_logs.title') ?></li>
+            </ol>
+        </nav>
+    <?php endif ?>
 
     <h1 class="h4 mb-4"><?= l('account_logs.title') ?></h1>
 
@@ -78,7 +78,7 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
+                        <pre data-shiki="json">
 {
     "data": [
         {
@@ -88,7 +88,7 @@
             "continent_code": "EU",
             "country_code": "IT",
             "city_name": "Rome",
-            "datetime": "<?= get_date() ?>"
+            "datetime": "<?= get_date() ?>",
         },
     ],
     "meta": {
@@ -98,18 +98,18 @@
         "total_pages": 1
     },
     "links": {
-        "first": "<?= SITE_URL ?>api/logs?&page=1",
-        "last": "<?= SITE_URL ?>api/logs?&page=1",
+        "first": "<?= SITE_URL ?>api/logs?page=1",
+        "last": "<?= SITE_URL ?>api/logs?page=1",
         "next": null,
         "prev": null,
-        "self": "<?= SITE_URL ?>api/logs?&page=1"
+        "self": "<?= SITE_URL ?>api/logs?page=1"
     }
-}
-                        </div>
+}</pre>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 

@@ -26,6 +26,10 @@ class ApiPayments extends Controller {
 
     public function index() {
 
+        if(!settings()->payment->is_enabled) {
+            redirect('not-found');
+        }
+
         $this->verify_request();
 
         /* Decide what to continue with */

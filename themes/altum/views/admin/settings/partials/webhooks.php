@@ -2,6 +2,12 @@
 
 <div>
     <div class="form-group">
+        <label for="wait_for_response_domains"><i class="fas fa-fw fa-sm fa-globe text-muted mr-1"></i> <?= l('admin_settings.webhooks.wait_for_response_domains') ?></label>
+        <textarea id="wait_for_response_domains" name="wait_for_response_domains" class="form-control"><?= implode(',', settings()->webhooks->wait_for_response_domains ?? []) ?></textarea>
+        <small class="form-text text-muted"><?= l('admin_settings.webhooks.wait_for_response_domains_help') ?></small>
+    </div>
+    
+    <div class="form-group">
         <label for="user_new"><?= l('admin_settings.webhooks.user_new') ?></label>
         <input id="user_new" type="url" name="user_new" class="form-control" value="<?= settings()->webhooks->user_new ?>" />
         <small class="form-text text-muted"><?= sprintf(l('admin_settings.webhooks.help'), '<code>' . implode('</code>, <code>', ['user_id', 'email', 'name', 'source', 'is_newsletter_subscribed', 'datetime']) . '</code>') ?></small>

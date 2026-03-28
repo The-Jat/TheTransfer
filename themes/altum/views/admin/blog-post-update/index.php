@@ -57,25 +57,25 @@
 
             <div class="form-group">
                 <label for="editor"><i class="fas fa-fw fa-sm fa-newspaper text-muted mr-1"></i> <?= l('admin_blog.editor') ?></label>
-                <div class="row btn-group-toggle" data-toggle="buttons">
-                    <div class="col-12 col-lg-4">
-                        <label class="btn btn-light btn-block text-truncate <?= $data->blog_post->editor == 'wysiwyg' ? 'active"' : null?>">
+                <div class="row btn-group-toggle m-n2" data-toggle="buttons">
+                    <div class="p-2 col-12 col-lg-4">
+                        <label class="btn btn-light btn-block font-size-small mb-0 text-truncate <?= $data->blog_post->editor == 'wysiwyg' ? 'active"' : null?>">
                             <input type="radio" name="editor" value="wysiwyg" class="custom-control-input" <?= $data->blog_post->editor == 'wysiwyg' ? 'checked="checked"' : null?> required="required" />
                             <i class="fas fa-eye fa-fw fa-sm mr-1"></i> <?= l('admin_blog.editor_wysiwyg') ?>
                         </label>
                     </div>
 
-                    <div class="col-12 col-lg-4">
-                        <label class="btn btn-light btn-block text-truncate <?= $data->blog_post->editor == 'blocks' ? 'active"' : null?>">
+                    <div class="p-2 col-12 col-lg-4">
+                        <label class="btn btn-light btn-block font-size-small mb-0 text-truncate <?= $data->blog_post->editor == 'blocks' ? 'active"' : null?>">
                             <input type="radio" name="editor" value="blocks" class="custom-control-input" <?= $data->blog_post->editor == 'blocks' ? 'checked="checked"' : null?> required="required" />
                             <i class="fas fa-th-large fa-fw fa-sm mr-1"></i> <?= l('admin_blog.editor_blocks') ?>
                         </label>
                     </div>
 
-                    <div class="col-12 col-lg-4">
-                        <label class="btn btn-light btn-block text-truncate <?= $data->blog_post->editor == 'raw' ? 'active"' : null?>">
+                    <div class="p-2 col-12 col-lg-4">
+                        <label class="btn btn-light btn-block font-size-small mb-0 text-truncate <?= $data->blog_post->editor == 'raw' ? 'active"' : null?>">
                             <input type="radio" name="editor" value="raw" class="custom-control-input" <?= $data->blog_post->editor == 'raw' ? 'checked="checked"' : null?> required="required" />
-                            <i class="fas fa-pen-nib fa-fw fa-sm mr-1"></i> <?= l('admin_blog.editor_raw') ?>
+                            <i class="fas fa-code fa-fw fa-sm mr-1"></i> <?= l('admin_blog.editor_raw') ?>
                         </label>
                     </div>
                 </div>
@@ -87,7 +87,7 @@
                     <div id="quill"></div>
                 </div>
                 <div class="bg-gray-100 rounded p-3" id="editorjs"></div>
-                <textarea name="content" id="content" class="form-control d-none" style="height: 15rem;"><?= e($data->blog_post->content) ?></textarea>
+                <textarea name="content" id="content" class="form-control d-none" style="height: 15rem;"><?= $data->blog_post->editor == 'blocks' ? e(bootstrap_to_quilljs($data->blog_post->content)) : e($data->blog_post->content) ?></textarea>
             </div>
 
             <div class="form-group">
@@ -105,7 +105,7 @@
                 <label class="custom-control-label" for="is_published"><?= l('admin_blog.is_published') ?></label>
             </div>
 
-            <button class="btn btn-block btn-gray-200 my-4" type="button" data-toggle="collapse" data-target="#advanced_container" aria-expanded="false" aria-controls="advanced_container">
+            <button class="btn btn-block btn-gray-200 font-size-little-small font-weight-450 my-4" type="button" data-toggle="collapse" data-target="#advanced_container" aria-expanded="false" aria-controls="advanced_container">
                 <i class="fas fa-fw fa-user-tie fa-sm mr-1"></i> <?= l('admin_blog.advanced') ?>
             </button>
 
@@ -135,6 +135,8 @@
         </form>
     </div>
 </div>
+
+<?php include_view(THEME_PATH . 'views/partials/codemirror_js.php') ?>
 
 <?php ob_start() ?>
 <link href="<?= ASSETS_FULL_URL . 'css/libraries/quill.snow.css?v=' . PRODUCT_CODE ?>" rel="stylesheet" media="screen,print">
@@ -166,7 +168,7 @@
 <script>
     'use strict';
 
-    const is_valid_json = (str) => {
+const is_valid_json = (str) => {
         try {
             JSON.parse(str);
             return true;
@@ -181,7 +183,7 @@
         holder: 'editorjs',
 
         /* Data */
-        data: is_valid_json(document.querySelector('#content').innerText) ? JSON.parse(document.querySelector('#content').innerText) : {},
+        data: is_valid_json(document.querySelector('#content').value) ? JSON.parse(document.querySelector('#content').value) : {},
 
         /* Tolls */
         tools: {
@@ -251,6 +253,20 @@
     });
     quill.root.innerHTML = document.querySelector('#content').value;
 
+    /* Initiate codemirror */
+    let codemirror_instance = CodeMirror.fromTextArea(document.querySelector('#content'), {
+        lineNumbers: true,
+        lineWrapping: true,
+        mode: 'htmlmixed',
+        theme: <?= \Altum\ThemeStyle::get() == 'light' ? json_encode('default') : json_encode('material') ?>,
+        indentUnit: 4,
+        tabSize: 4,
+        indentWithTabs: true,
+        matchBrackets: true,
+        autoCloseBrackets: true,
+        styleActiveLine: true,
+    });
+
     /* Handle form submission with the editor */
     document.querySelector('#blog_post_update_form').addEventListener('submit', async event => {
         let editor = document.querySelector('input[name="editor"]:checked')?.value ?? 'blocks';
@@ -282,6 +298,7 @@
                 quill.enable(true);
                 document.querySelector('#editorjs').classList.add('d-none');
                 document.querySelector('#content').classList.add('d-none');
+                document.querySelector('.CodeMirror').classList.add('d-none');
                 break;
 
             case 'blocks':
@@ -289,6 +306,7 @@
                 quill.enable(false);
                 document.querySelector('#editorjs').classList.remove('d-none');
                 document.querySelector('#content').classList.add('d-none');
+                document.querySelector('.CodeMirror').classList.add('d-none');
                 break;
 
             case 'raw':
@@ -296,6 +314,7 @@
                 quill.enable(false);
                 document.querySelector('#editorjs').classList.add('d-none');
                 document.querySelector('#content').classList.remove('d-none');
+                document.querySelector('.CodeMirror').classList.remove('d-none');
                 break;
         }
 
@@ -313,3 +332,4 @@
     'has_dynamic_resource_name' => true,
     'path' => 'admin/blog-posts/delete/'
 ]), 'modals'); ?>
+

@@ -73,7 +73,7 @@ class Blog extends Controller {
             }
 
             /* Transform content if needed */
-            $blog_post->content = json_decode($blog_post->content) ? convert_editorjs_json_to_html($blog_post->content) : nl2br($blog_post->content);
+            $blog_post->content = json_decode($blog_post->content) ? convert_editorjs_json_to_html($blog_post->content) : output_blog_post_content($blog_post->content);
 
             /* Get the blog post category */
             $blog_posts_category = \Altum\Cache::cache_function_result('blog_posts_category?hash=' . md5($blog_post->blog_posts_category_id ?? ''), 'blog_posts_categories', function() use ($blog_post) {
@@ -167,7 +167,7 @@ class Blog extends Controller {
 
                 while($row = $blog_posts_result->fetch_object()) {
                     /* Transform content if needed */
-                    $row->content = json_decode($row->content) ? convert_editorjs_json_to_html($row->content) : nl2br($row->content);
+                    $row->content = json_decode($row->content) ? convert_editorjs_json_to_html($row->content) : output_blog_post_content($row->content);
 
                     $blog_posts[] = $row;
                 }
@@ -240,7 +240,7 @@ class Blog extends Controller {
 
                 while($row = $blog_posts_result->fetch_object()) {
                     /* Transform content if needed */
-                    $row->content = json_decode($row->content) ? convert_editorjs_json_to_html($row->content) : nl2br($row->content);
+                    $row->content = json_decode($row->content) ? convert_editorjs_json_to_html($row->content) : output_blog_post_content($row->content);
 
                     $blog_posts[] = $row;
                 }
@@ -293,7 +293,7 @@ class Blog extends Controller {
         /* Check for any errors */
         $required_fields = ['blog_post_id', 'rating'];
         foreach($required_fields as $field) {
-            if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+            if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                 Response::json(l('global.error_message.empty_fields'), 'error');
             }
         }

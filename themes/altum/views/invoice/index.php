@@ -4,7 +4,7 @@
     <div class="col-lg-10">
         <div class="d-print-none d-flex justify-content-between mb-5">
             <div></div>
-            <button type="button" class="btn btn-primary" onclick="window.print()"><i class="fas fa-fw fa-sm fa-print mr-1"></i> <?= l('invoice.print') ?></button>
+            <button type="button" class="btn btn-primary" onclick="window.print();return false;"><i class="fas fa-fw fa-sm fa-print mr-1"></i> <?= l('invoice.print') ?></button>
         </div>
 
         <div class="card bg-gray-50 border-0">

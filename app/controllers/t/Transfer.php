@@ -36,6 +36,11 @@ class Transfer extends Controller {
 
     public function index() {
 
+        /* Make sure there are no extra URL additions */
+        if(isset($this->params[1])) {
+            redirect('not-found');
+        }
+
         /* Set the transfer resource from the router */
         $this->transfer = \Altum\Router::$data['transfer'];
 
@@ -67,7 +72,7 @@ class Transfer extends Controller {
                 $this->transfer->settings->password
                 && isset($_COOKIE['transfer_password_' . $this->transfer->transfer_id])
                 && $_COOKIE['transfer_password_' . $this->transfer->transfer_id] == $this->transfer->settings->password
-                && isset($_SESSION['transfer_password_' . $this->transfer->transfer_id])
+                && session_has('transfer_password_' . $this->transfer->transfer_id)
             );
 
         if($this->transfer->user_id) {
@@ -129,7 +134,7 @@ class Transfer extends Controller {
                 setcookie('transfer_password_' . $this->transfer->transfer_id, $this->transfer->settings->password, time()+60*60*24*30);
 
                 /* Set a session */
-                $_SESSION['transfer_password_' . $this->transfer->transfer_id] = $_POST['password'];
+                session_set('transfer_password_' . $this->transfer->transfer_id, $_POST['password']);
 
                 header('Location: ' . $this->transfer->full_url);
 
@@ -155,6 +160,9 @@ class Transfer extends Controller {
 
                 /* Set no time limit for a download as it could take longer than the usual time limit of the server */
                 set_time_limit(0);
+
+                /* Do not use sessions anymore to not lockout the user from doing anything else on the site */
+                session_write_close();
 
                 $this->process_notification_handlers();
 
@@ -185,9 +193,9 @@ class Transfer extends Controller {
                         $file_source = @fopen(UPLOADS_PATH . 'files/' . $file->name, 'rb');
 
                         if($file->is_encrypted) {
-                            decrypt_and_output($file_source, $_SESSION['transfer_password_' . $this->transfer->transfer_id]);
+                            decrypt_and_output($file_source, session_get('transfer_password_' . $this->transfer->transfer_id));
                         } else {
-                            while($buffer = fread($file_source, 5000 * 16)) {
+                            while($buffer = fread($file_source, 1024 * 1024)) {
                                 echo $buffer;
                             }
                         }
@@ -212,32 +220,43 @@ class Transfer extends Controller {
                         }
 
                         /* External files */
-                        $file_source = @fopen('s3://' .  settings()->offload->storage_name . '/' . UPLOADS_URL_PATH . Uploads::get_path('files') . $file->name, 'rb');
+                        if($file->is_encrypted && !settings()->transfers->is_direct_offload_upload) {
+                            $file_source = @fopen('s3://' .  settings()->offload->storage_name . '/' . UPLOADS_URL_PATH . Uploads::get_path('files') . $file->name, 'rb');
 
-                        if($file->is_encrypted) {
-                            /* Download to a temp file */
-                            $temp_file = tmpfile();
-                            while($buffer = fread($file_source, 5000 * 16)) {
-                                fwrite($temp_file, $buffer);
-                            }
-                            rewind($temp_file);
+                            /* Read, decrypt and output */
+                            decrypt_and_output($file_source, session_get('transfer_password_' . $this->transfer->transfer_id));
 
-                            /* Decrypt the temp file & output */
-                            decrypt_and_output($temp_file, $_SESSION['transfer_password_' . $this->transfer->transfer_id]);
+                            fclose($file_source);
+                            die();
 
-                            /* Close the file stream */
-                            fclose($temp_file);
                         } else {
-                            while($buffer = fread($file_source, 5000 * 16)) {
-                                echo $buffer;
-                            }
+                            $file_key = UPLOADS_URL_PATH . Uploads::get_path('files') . $file->name;
+
+                            /* Prepare safe filename versions */
+                            $original_filename = $file->original_name;
+
+                            /* ASCII fallback (no emoji / special chars) */
+                            $ascii_filename = preg_replace('/[^\x20-\x7E]/', '', $original_filename);
+                            $ascii_filename = str_replace([' ', '"', "'"], ['_', '', ''], $ascii_filename);
+
+                            /* UTF-8 encoded version for filename* */
+                            $utf8_filename = rawurlencode($original_filename);
+
+                            /* create a GET presigned url that forces attachment filename */
+                            $command = $s3->getCommand('GetObject', [
+                                'Bucket' => settings()->offload->storage_name,
+                                'Key' => $file_key,
+                                'ResponseContentDisposition' => 'attachment; filename="' . $ascii_filename . '"; filename*=UTF-8\'\'' . $utf8_filename
+                            ]);
+
+                            $request = $s3->createPresignedRequest($command, '+15 minutes');
+
+                            header('Location: ' . $request->getUri(), true, 302);
+                            die();
+
                         }
 
-                        /* Close the file stream */
-                        fclose($file_source);
                     }
-
-                    die();
                 }
 
                 /* Otherwise, zip them all up */
@@ -245,7 +264,9 @@ class Transfer extends Controller {
                     /* Create zipstream object */
                     $zip = new \ZipStream\ZipStream(
                         sendHttpHeaders: true,
-                        outputName: get_slug($this->transfer->name) . '.zip'
+                        outputName: get_slug($this->transfer->name) . '.zip',
+                        flushOutput: true,
+                        enableZip64: true,
                     );
 
                     /* Output file data to be downloaded */
@@ -263,16 +284,14 @@ class Transfer extends Controller {
                                 /* Local files */
                                 $file_source = @fopen(UPLOADS_PATH . 'files/' . $file->name, 'rb');
 
-                                /* Decrypt into a temp file */
-                                $temp_file = tmpfile();
-                                decrypt_and_output($file_source, $_SESSION['transfer_password_' . $this->transfer->transfer_id], $temp_file);
-                                rewind($temp_file);
+                                /* Decrypt to temp */
+                                $plain_stream = decrypt_to_temp($file_source, session_get('transfer_password_' . $this->transfer->transfer_id));
 
                                 /* Add temp file to the zip */
-                                $zip->addFileFromStream($file->original_name, $temp_file);
+                                $zip->addFileFromStream($file->original_name, $plain_stream);
 
                                 /* Close the file stream */
-                                fclose($temp_file);
+                                fclose($plain_stream);
                             } else {
                                 $zip->addFileFromPath($file->original_name, UPLOADS_PATH . 'files/' . $file->name);
                             }
@@ -296,32 +315,17 @@ class Transfer extends Controller {
                             /* Local files */
                             $file_source = @fopen('s3://' .  settings()->offload->storage_name . '/' . UPLOADS_URL_PATH . Uploads::get_path('files') . $file->name, 'rb');
 
-                            /* Download to a temp file */
-                            $temp_file = tmpfile();
-                            while($buffer = fread($file_source, 5000 * 16)) {
-                                fwrite($temp_file, $buffer);
-                            }
-                            rewind($temp_file);
-
                             if($file->is_encrypted) {
-                                /* Save unencrypted file to a new temp file */
-                                $new_temp_file = tmpfile();
 
-                                /* Decrypt the temp file */
-                                decrypt_and_output($temp_file, $_SESSION['transfer_password_' . $this->transfer->transfer_id], $new_temp_file);
+                                $plain_stream = decrypt_to_temp($file_source, session_get('transfer_password_' . $this->transfer->transfer_id) ?? '');
+                                $zip->addFileFromStream($file->original_name, $plain_stream);
+                                fclose($plain_stream);
 
-                                /* Add decrypted file to zip */
-                                rewind($new_temp_file);
-                                $zip->addFileFromStream($file->original_name, $new_temp_file);
-
-                                /* Close the file stream */
-                                fclose($new_temp_file);
                             } else {
-                                $zip->addFileFromStream($file->original_name, $temp_file);
+                                $zip->addFileFromStream($file->original_name, $file_source);
                             }
 
                             /* Close the file stream */
-                            fclose($temp_file);
                             fclose($file_source);
                         }
 
@@ -331,6 +335,8 @@ class Transfer extends Controller {
                     $zip->finish();
                     die();
                 }
+
+                die();
             }
         }
 
@@ -411,6 +417,21 @@ class Transfer extends Controller {
             $notification_data['url']
         );
 
+        /* Detect extra details about the user */
+        $whichbrowser = get_whichbrowser();
+
+        /* Detect extra details about the user */
+        $browser_name = $whichbrowser->browser->name ?? null;
+        $os_name = $whichbrowser->os->name ?? null;
+        $device_type = get_this_device_type();
+
+        /* Detect the location */
+        try {
+            $maxmind = (get_maxmind_reader_city())->get(get_ip());
+        } catch(\Exception $exception) { /* :) */ }
+        $country_code = isset($maxmind) && isset($maxmind['country']) ? $maxmind['country']['iso_code'] : null;
+        $city_name = isset($maxmind) && isset($maxmind['city']) ? $maxmind['city']['names']['en'] : null;
+
         /* Prepare the email template used by the email handler */
         $email_template = get_email_template(
             [
@@ -421,6 +442,11 @@ class Transfer extends Controller {
                 '{{NAME}}'          => $this->transfer_user->name,
                 '{{TRANSFER_LINK}}' => $notification_data['url'],
                 '{{TRANSFER_NAME}}' => $this->transfer->name,
+                '{{COUNTRY_NAME}}'  => $country_code ? get_country_from_country_code($country_code) : l('global.unknown'),
+                '{{CITY_NAME}}'     => $city_name ?? l('global.unknown'),
+                '{{DEVICE_TYPE}}'   => l('global.device.' . $device_type),
+                '{{OS_NAME}}'       => $os_name,
+                '{{BROWSER_NAME}}'  => $browser_name,
             ],
             l('global.emails.transfer_download.body', $this->transfer_user->language)
         );
@@ -504,7 +530,7 @@ class Transfer extends Controller {
         }
 
         /* Detect extra details about the user */
-        $whichbrowser = new \WhichBrowser\Parser($_SERVER['HTTP_USER_AGENT']);
+        $whichbrowser = get_whichbrowser();
 
         /* Do not track bots */
         if($whichbrowser->device->type == 'bot') {
@@ -599,7 +625,7 @@ class Transfer extends Controller {
         }
 
         /* Detect extra details about the user */
-        $whichbrowser = new \WhichBrowser\Parser($_SERVER['HTTP_USER_AGENT']);
+        $whichbrowser = get_whichbrowser();
 
         /* Do not track bots */
         if($whichbrowser->device->type == 'bot') {

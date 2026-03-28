@@ -23,12 +23,15 @@ use Altum\Uploads;
 defined('ALTUMCODE') || die();
 
 class Cron extends Controller {
-
-    public function index() {
-        die();
-    }
+    public $processing_time = null;
 
     private function initiate() {
+        /* Benchmark */
+        $this->processing_time = microtime(true);
+
+        /* Make sure no cache is being used on the endpoint */
+        header('Cache-Control: no-cache');
+
         /* Initiation */
         set_time_limit(0);
 
@@ -60,9 +63,10 @@ class Cron extends Controller {
 
     private function update_cron_execution_datetimes($key) {
         $date = get_date();
+        $processing_time = (microtime(true) - $this->processing_time);
 
         /* Database query */
-        database()->query("UPDATE `settings` SET `value` = JSON_SET(`value`, '$.{$key}', '{$date}') WHERE `key` = 'cron'");
+        database()->query("UPDATE `settings` SET `value` = JSON_SET(`value`, '$.{$key}', '{$date}', '$.{$key}_processing', {$processing_time}) WHERE `key` = 'cron'");
     }
 
     public function reset() {
@@ -79,28 +83,31 @@ class Cron extends Controller {
 
         $this->users_plan_expiry_reminder();
 
-        $this->update_cron_execution_datetimes('reset_datetime');
+        $this->statistics_cleanup();
 
         /* Make sure the reset date month is different than the current one to avoid double resetting */
         $reset_date = settings()->cron->reset_date ? (new \DateTime(settings()->cron->reset_date))->format('m') : null;
         $current_date = (new \DateTime())->format('m');
 
         if($reset_date != $current_date) {
+            /* Benchmark */
+            $this->processing_time = microtime(true);
+
             $this->logs_cleanup();
 
             $this->users_logs_cleanup();
 
             $this->internal_notifications_cleanup();
 
-            $this->statistics_cleanup();
-
-            $this->update_cron_execution_datetimes('reset_date');
-
             /* Clear the cache */
             cache()->deleteItem('settings');
+
+            $this->update_cron_execution_datetimes('reset_date');
         }
 
         $this->close();
+
+        $this->update_cron_execution_datetimes('reset_datetime');
     }
 
     private function users_plan_expiry_checker() {
@@ -156,7 +163,7 @@ class Cron extends Controller {
             send_mail($user->email, $email_template->subject, $email_template->body, ['anti_phishing_code' => $user->anti_phishing_code, 'language' => $user->language]);
 
             /* Clear the cache */
-            cache()->deleteItemsByTag('user_id=' .  \Altum\Authentication::$user_id);
+            cache()->deleteItemsByTag('user_id=' .  $user->user_id);
 
             if(DEBUG) {
                 echo sprintf('users_plan_expiry_checker() -> Plan expired for user_id %s - reverting account to free plan', $user->user_id);
@@ -313,13 +320,13 @@ class Cron extends Controller {
 
     private function internal_notifications_cleanup() {
         /* Delete old users notifications */
-        $ninety_days_ago_datetime = (new \DateTime())->modify('-30 days')->format('Y-m-d H:i:s');
-        db()->where('datetime', $ninety_days_ago_datetime, '<')->delete('internal_notifications');
+        $days_ago_datetime = (new \DateTime())->modify('-30 days')->format('Y-m-d H:i:s');
+        db()->where('datetime', $days_ago_datetime, '<')->delete('internal_notifications');
     }
 
     private function statistics_cleanup() {
 
-        /* Only clean users that have not been cleaned for 1 day */
+        /* Only clean users that have not been cleaned recently */
         $now_datetime = get_date();
 
         /* Clean the track notifications table based on the users plan */
@@ -418,14 +425,11 @@ class Cron extends Controller {
 
         $this->initiate();
 
-        /* Update cron job last run date */
-        $this->update_cron_execution_datetimes('transfers_cleanup_datetime');
-
         /* Get file uploads that haven't been fully uploaded or not associated with any transfer */
         $past_date = (new \DateTime())->modify('-12 hours')->format('Y-m-d H:i:s');
 
         $result = database()->query("
-            SELECT `file_id`, `name` 
+            SELECT `file_id`, `name`, `offload_id`
             FROM `files` 
             WHERE 
                 `transfer_id` IS NULL
@@ -436,7 +440,7 @@ class Cron extends Controller {
         while($file = $result->fetch_object()) {
 
             /* Delete the stored file */
-            Uploads::delete_uploaded_file($file->name, 'files');
+            Uploads::delete_uploaded_file_and_potential_residue($file->name, 'files', $file->offload_id);
 
             /* Delete the resource */
             db()->where('file_id', $file->file_id)->delete('files');
@@ -461,12 +465,14 @@ class Cron extends Controller {
         }
 
         $this->close();
+
+        /* mark cron execution */
+        $this->update_cron_execution_datetimes('transfers_cleanup_datetime');
     }
 
     public function broadcasts() {
 
         $this->initiate();
-        $this->update_cron_execution_datetimes('broadcasts_datetime');
 
         /* We'll send up to 40 emails per run */
         $max_batch_size = 40;
@@ -483,14 +489,23 @@ class Cron extends Controller {
         $broadcast->settings = json_decode($broadcast->settings ?? '[]');
 
         /* Find which users are left to process */
-        $remaining_user_ids = array_diff($broadcast->users_ids, $broadcast->sent_users_ids);
+        $remaining_user_ids = array_values(array_diff($broadcast->users_ids, $broadcast->sent_users_ids));
 
-        /* If no one is left, mark broadcast as "sent" */
+        /* If no one is left, mark broadcast as "sent" and exit */
         if(empty($remaining_user_ids)) {
+
+            $sent_emails_count = count($broadcast->sent_users_ids);
+
             db()->where('broadcast_id', $broadcast->broadcast_id)->update('broadcasts', [
-                'status' => 'sent'
+                'sent_emails'              => $sent_emails_count,
+                'sent_users_ids'           => json_encode($broadcast->sent_users_ids),
+                'status'                   => 'sent',
+                'last_sent_email_datetime' => get_date(),
             ]);
+
             $this->close();
+            $this->update_cron_execution_datetimes('broadcasts_datetime');
+
             return;
         }
 
@@ -514,123 +529,151 @@ class Cron extends Controller {
                 'browser_language'
             ]);
 
-        /* Initialize PHPMailer once for this batch */
-        $mail = new \PHPMailer\PHPMailer\PHPMailer();
-        $mail->CharSet = 'UTF-8';
-        $mail->isSMTP();
-        $mail->isHTML(true);
+        $users_ids = array_column($users, 'user_id');
 
-        /* SMTP connection settings */
-        $mail->SMTPAuth = settings()->smtp->auth;
-        $mail->Host = settings()->smtp->host;
-        $mail->Port = settings()->smtp->port;
-        $mail->Username = settings()->smtp->username;
-        $mail->Password = settings()->smtp->password;
+        /* Non existing users in this batch */
+        $missing_user_ids = array_diff($user_ids_for_this_run, $users_ids);
 
-        if(settings()->smtp->encryption != '0') {
-            $mail->SMTPSecure = settings()->smtp->encryption;
-        }
+        /* Mark non existing users as processed (sent) */
+        $broadcast->sent_users_ids = array_merge($broadcast->sent_users_ids, $missing_user_ids);
 
-        /* Keep the SMTP connection alive */
-        $mail->SMTPKeepAlive = true;
+        /* Send emails only for existing users */
+        if(!empty($users)) {
 
-        /* Set From / Reply-to */
-        $mail->setFrom(settings()->smtp->from, settings()->smtp->from_name);
-        if(!empty(settings()->smtp->reply_to) && !empty(settings()->smtp->reply_to_name)) {
-            $mail->addReplyTo(settings()->smtp->reply_to, settings()->smtp->reply_to_name);
-        } else {
-            $mail->addReplyTo(settings()->smtp->from, settings()->smtp->from_name);
-        }
+            /* Initialize PHPMailer once for this batch */
+            $mail = new \PHPMailer\PHPMailer\PHPMailer();
+            $mail->CharSet = 'UTF-8';
+            $mail->isSMTP();
+            $mail->isHTML(true);
 
-        /* Optional CC/BCC */
-        if(settings()->smtp->cc) {
-            foreach (explode(',', settings()->smtp->cc) as $cc_email) {
-                $mail->addCC(trim($cc_email));
+            /* SMTP connection settings */
+            $mail->SMTPAuth = settings()->smtp->auth;
+            $mail->Host = settings()->smtp->host;
+            $mail->Port = settings()->smtp->port;
+            $mail->Username = settings()->smtp->username;
+            $mail->Password = settings()->smtp->password;
+
+            if(settings()->smtp->encryption != '0') {
+                $mail->SMTPSecure = settings()->smtp->encryption;
             }
-        }
-        if(settings()->smtp->bcc) {
-            foreach (explode(',', settings()->smtp->bcc) as $bcc_email) {
-                $mail->addBCC(trim($bcc_email));
+
+            /* Keep the SMTP connection alive */
+            $mail->SMTPKeepAlive = true;
+
+            /* Set From / Reply-to */
+            $mail->setFrom(settings()->smtp->from, settings()->smtp->from_name);
+            if(!empty(settings()->smtp->reply_to) && !empty(settings()->smtp->reply_to_name)) {
+                $mail->addReplyTo(settings()->smtp->reply_to, settings()->smtp->reply_to_name);
+            } else {
+                $mail->addReplyTo(settings()->smtp->from, settings()->smtp->from_name);
             }
-        }
 
-        $newly_sent_user_ids = [];
+            /* Optional CC/BCC */
+            if(settings()->smtp->cc) {
+                foreach (explode(',', settings()->smtp->cc) as $cc_email) {
+                    $mail->addCC(trim($cc_email));
+                }
+            }
+            if(settings()->smtp->bcc) {
+                foreach (explode(',', settings()->smtp->bcc) as $bcc_email) {
+                    $mail->addBCC(trim($bcc_email));
+                }
+            }
 
-        /* Loop through users and send */
-        foreach ($users as $user) {
+            /* Loop through users and send */
+            foreach($users as $user) {
 
-            /* Prepare placeholders and the final template */
-            $vars = [
-                '{{USER:NAME}}'              => $user->name,
-                '{{USER:EMAIL}}'             => $user->email,
-                '{{USER:CONTINENT_NAME}}'    => get_continent_from_continent_code($user->continent_code),
-                '{{USER:COUNTRY_NAME}}'      => get_country_from_country_code($user->country),
-                '{{USER:CITY_NAME}}'         => $user->city_name,
-                '{{USER:DEVICE_TYPE}}'       => l('global.device.' . $user->device_type),
-                '{{USER:OS_NAME}}'           => $user->os_name,
-                '{{USER:BROWSER_NAME}}'      => $user->browser_name,
-                '{{USER:BROWSER_LANGUAGE}}'  => get_language_from_locale($user->browser_language),
-            ];
+                /* Prepare placeholders and the final template */
+                $vars = [
+                    '{{USER:NAME}}'             => $user->name,
+                    '{{USER:EMAIL}}'            => $user->email,
+                    '{{USER:CONTINENT_NAME}}'   => get_continent_from_continent_code($user->continent_code),
+                    '{{USER:COUNTRY_NAME}}'     => get_country_from_country_code($user->country),
+                    '{{USER:CITY_NAME}}'        => $user->city_name,
+                    '{{USER:DEVICE_TYPE}}'      => l('global.device.' . $user->device_type),
+                    '{{USER:OS_NAME}}'          => $user->os_name,
+                    '{{USER:BROWSER_NAME}}'     => $user->browser_name,
+                    '{{USER:BROWSER_LANGUAGE}}' => get_language_from_locale($user->browser_language),
+                ];
 
-            $email_template = get_email_template(
-                $vars,
-                htmlspecialchars_decode($broadcast->subject),
-                $vars,
-                convert_editorjs_json_to_html($broadcast->content)
-            );
-
-            /* Optional: tracking pixel & link rewriting */
-            if(settings()->main->broadcasts_statistics_is_enabled) {
-                $tracking_id = base64_encode('broadcast_id=' . $broadcast->broadcast_id . '&user_id=' . $user->user_id);
-                $email_template->body .= '<img src="' . SITE_URL . 'broadcast?id=' . $tracking_id . '" style="display: none;" />';
-                $email_template->body = preg_replace(
-                    '/<a href=\"(.+)\"/',
-                    '<a href="' . SITE_URL . 'broadcast?id=' . $tracking_id . '&url=$1"',
-                    $email_template->body
+                $email_template = get_email_template(
+                    $vars,
+                    htmlspecialchars_decode($broadcast->subject),
+                    $vars,
+                    convert_editorjs_json_to_html($broadcast->content)
                 );
+
+                /* Optional: tracking pixel & link rewriting */
+                if(settings()->main->broadcasts_statistics_is_enabled) {
+                    $tracking_id = base64_encode('broadcast_id=' . $broadcast->broadcast_id . '&user_id=' . $user->user_id);
+                    $email_template->body .= '<img src="' . SITE_URL . 'broadcast?id=' . $tracking_id . '" style="display: none;" />';
+                    $email_template->body = preg_replace(
+                        '/<a href=\"(.+)\"/',
+                        '<a href="' . SITE_URL . 'broadcast?id=' . $tracking_id . '&url=$1"',
+                        $email_template->body
+                    );
+                }
+
+                /* Clear addresses from previous iteration */
+                $mail->clearAddresses();
+                $mail->clearCCs();
+                $mail->clearBCCs();
+
+                /* Add new email address */
+                $mail->addAddress($user->email);
+
+                /* Process the email title, template and body */
+                extract(process_send_mail_template(
+                    $email_template->subject,
+                    $email_template->body,
+                    [
+                        'is_broadcast'       => true,
+                        'is_system_email'    => $broadcast->settings->is_system_email,
+                        'anti_phishing_code' => $user->anti_phishing_code,
+                        'language'           => $user->language
+                    ]
+                ));
+
+                /* Set subject/body, then send */
+                $mail->Subject = $title;
+                $mail->Body = $email_template;
+                $mail->AltBody = strip_tags($mail->Body);
+
+                /* SEND (count as sent even if it fails) */
+                $mail->send();
+
+                /* Track who we just processed (sent or attempted) */
+                $broadcast->sent_users_ids[] = $user->user_id;
+
+                Logger::users($user->user_id, 'broadcast.' . $broadcast->broadcast_id . '.sent');
             }
 
-            /* Clear addresses from previous iteration */
-            $mail->clearAddresses();
-
-            /* Add new email address */
-            $mail->addAddress($user->email);
-
-            /* Process the email title, template and body */
-            extract(process_send_mail_template($email_template->subject, $email_template->body, ['is_broadcast' => true, 'is_system_email' => $broadcast->settings->is_system_email, 'anti_phishing_code' => $user->anti_phishing_code, 'language' => $user->language]));
-
-            /* Set subject/body, then send */
-            $mail->Subject = $title;
-            $mail->Body = $email_template;
-            $mail->AltBody = strip_tags($mail->Body);
-
-            /* SEND */
-            $mail->send();
-
-            /* Track who we just emailed */
-            $broadcast->sent_users_ids[] = $user->user_id;
-            $newly_sent_user_ids[] = $user->user_id;
-
-            Logger::users($user->user_id, 'broadcast.' . $broadcast->broadcast_id . '.sent');
+            /* Close this SMTP connection for the batch */
+            $mail->smtpClose();
         }
 
-        /* Close this SMTP connection for the batch */
-        $mail->smtpClose();
+        /* Total "sent" (processed) */
+        $sent_emails_count = count($broadcast->sent_users_ids);
+
+        /* Check if all users (existing or not) have been processed */
+        $all_users_processed = empty(array_diff($broadcast->users_ids, $broadcast->sent_users_ids));
 
         /* Update broadcast once for the entire batch */
         db()->where('broadcast_id', $broadcast->broadcast_id)->update('broadcasts', [
-            'sent_emails'             => db()->inc(count($newly_sent_user_ids)),
-            'sent_users_ids'          => json_encode($broadcast->sent_users_ids),
-            'status'                  => count($broadcast->users_ids) == count($broadcast->sent_users_ids) ? 'sent' : 'processing',
-            'last_sent_email_datetime'=> get_date(),
+            'sent_emails'              => $sent_emails_count,
+            'sent_users_ids'           => json_encode($broadcast->sent_users_ids),
+            'status'                   => $all_users_processed ? 'sent' : 'processing',
+            'last_sent_email_datetime' => get_date(),
         ]);
 
         /* Debugging */
         if(DEBUG) {
-            echo '<br />' . "broadcast_id - {$broadcast->broadcast_id} | sent emails to users ids (total - " . count($newly_sent_user_ids) . "): " . implode(',', $newly_sent_user_ids) . '<br />';
+            echo '<br />' . 'broadcasts() - broadcast_id - ' . $broadcast->broadcast_id;
         }
 
         $this->close();
+
+        $this->update_cron_execution_datetimes('broadcasts_datetime');
     }
 
     public function push_notifications() {
@@ -638,12 +681,12 @@ class Cron extends Controller {
 
             $this->initiate();
 
-            /* Update cron job last run date */
-            $this->update_cron_execution_datetimes('push_notifications_datetime');
-
             require_once \Altum\Plugin::get('push-notifications')->path . 'controllers/Cron.php';
 
             $this->close();
+
+            /* mark cron execution */
+            $this->update_cron_execution_datetimes('push_notifications_datetime');
         }
     }
 

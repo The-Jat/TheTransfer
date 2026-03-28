@@ -118,7 +118,7 @@ class ApiTeamMembers extends Controller {
         /* Check for any errors */
         $required_fields = ['team_id', 'user_email'];
         foreach($required_fields as $field) {
-            if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+            if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                 $this->response_error(l('global.error_message.empty_fields'), 401);
                 break 1;
             }
@@ -204,6 +204,13 @@ class ApiTeamMembers extends Controller {
 
         if(!$team = db()->where('team_id', $team_member->team_id)->where('user_id', $this->api_user->user_id)->getOne('teams')) {
             $this->return_404();
+        }
+
+        /* Check for the plan limit */
+        $total_rows = db()->where('team_id', $team_member->team_id)->getValue('teams_members', 'count(`team_member_id`)');
+
+        if($this->api_user->plan_settings->teams_members_limit != -1 && $total_rows > $this->api_user->plan_settings->teams_members_limit) {
+            $this->response_error(sprintf(settings()->payment->is_enabled ? l('global.info_message.plan_feature_limit_removal_with_upgrade') : l('global.info_message.plan_feature_limit_removal'), $total_rows - $this->user->plan_settings->teams_members_limit, mb_strtolower(l('team_members.title')), l('global.info_message.plan_upgrade')), 401);
         }
 
         $teams_access = require APP_PATH . 'includes/teams_access.php';

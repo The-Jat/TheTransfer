@@ -4,14 +4,14 @@
     <div class="mb-3 mb-lg-0">
         <div class="mb-2"><?= sprintf(l('global.footer.copyright'), date('Y'), settings()->main->title) ?></div>
 
-        <div>Powered by <img src="<?= ASSETS_FULL_URL . 'images/altumcode.png' ?>" class="icon-favicon" alt="AltumCode logo" /> <a href="https://altumcode.com/" target="_blank">AltumCode</a>.</div>
+        <div>Powered by <img src="<?= ASSETS_FULL_URL . 'images/altumcode.svg' ?>" class="icon-favicon" alt="AltumCode logo" /> <a href="https://altumcode.com/" target="_blank">AltumCode</a>.</div>
     </div>
 
-    <div class="d-flex flex-column flex-lg-row">
+    <div class="d-flex flex-row flex-truncate">
         <?php if(count(\Altum\Language::$active_languages) > 1): ?>
-            <div class="dropdown mb-2 ml-lg-3">
+            <div class="dropdown mr-3 ml-lg-3 mr-lg-0">
                 <button type="button" class="btn btn-link text-decoration-none p-0" id="language_switch" data-tooltip data-tooltip-hide-on-click title="<?= l('global.choose_language') ?>" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-fw fa-sm fa-language mr-1"></i> <?= \Altum\Language::$name ?>
+                    <i class="fas fa-fw fa-sm fa-language"></i>
                 </button>
 
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="language_switch">
@@ -55,9 +55,9 @@
         <?php endif ?>
 
         <?php if(count((array) settings()->payment->currencies ?? []) > 1): ?>
-            <div class="dropdown mb-2 ml-lg-3">
+            <div class="dropdown mr-3 ml-lg-3 mr-lg-0">
                 <button type="button" class="btn btn-link text-decoration-none p-0" id="currency_switch" data-tooltip data-tooltip-hide-on-click title="<?= l('global.choose_currency') ?>" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-fw fa-sm fa-coins mr-1"></i> <?= currency() ?>
+                    <i class="fas fa-fw fa-sm fa-coins"></i>
                 </button>
 
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="currency_switch">
@@ -89,7 +89,7 @@
             <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>
         <?php endif ?>
 
-        <?php if(is_logged_in() && (user()->type == 1 && settings()->main->admin_spotlight_is_enabled) || (settings()->main->user_spotlight_is_enabled && user()->type == 0)): ?>
+        <?php if(is_logged_in() && ((user()->type == 1 && settings()->main->admin_spotlight_is_enabled) || (settings()->main->user_spotlight_is_enabled && user()->type == 0))): ?>
             <div class="ml-lg-3">
                 <button type="button" class="btn btn-link text-decoration-none p-0" data-toggle="tooltip" title="<?= l('global.spotlight.tooltip') ?>" aria-label="<?= l('global.spotlight.tooltip') ?>" onclick="spotlight_display()" data-tooltip-hide-on-click>
                     <i class="fas fa-fw fa-sm fa-search"></i>

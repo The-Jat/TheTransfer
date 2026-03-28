@@ -2,14 +2,14 @@
 
 <div class="container">
     <?php if(settings()->main->breadcrumbs_is_enabled): ?>
-<nav aria-label="breadcrumb">
-        <ol class="custom-breadcrumbs small">
-            <li><a href="<?= url() ?>"><?= l('index.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
-            <li><a href="<?= url('api-documentation') ?>"><?= l('api_documentation.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
-            <li class="active" aria-current="page"><?= l('projects.title') ?></li>
-        </ol>
-    </nav>
-<?php endif ?>
+        <nav aria-label="breadcrumb">
+            <ol class="custom-breadcrumbs small">
+                <li><a href="<?= url() ?>"><?= l('index.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
+                <li><a href="<?= url('api-documentation') ?>"><?= l('api_documentation.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
+                <li class="active" aria-current="page"><?= l('projects.title') ?></li>
+            </ol>
+        </nav>
+    <?php endif ?>
 
     <h1 class="h4 mb-4"><?= l('projects.title') ?></h1>
 
@@ -78,7 +78,7 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
+                        <pre data-shiki="json">
 {
     "data": [
         {
@@ -86,7 +86,7 @@
             "name": "Development",
             "color": "#0e23cc",
             "last_datetime": null,
-            "datetime": "<?= get_date() ?>"
+            "datetime": "<?= get_date() ?>",
         },
     ],
     "meta": {
@@ -96,18 +96,18 @@
         "total_pages": 1
     },
     "links": {
-        "first": "<?= SITE_URL ?>api/projects?&page=1",
-        "last": "<?= SITE_URL ?>api/projects?&page=1",
+        "first": "<?= SITE_URL ?>api/projects?page=1",
+        "last": "<?= SITE_URL ?>api/projects?page=1",
         "next": null,
         "prev": null,
-        "self": "<?= SITE_URL ?>api/projects?&page=1"
+        "self": "<?= SITE_URL ?>api/projects?page=1"
     }
-}
-                        </div>
+}</pre>
                     </div>
                 </div>
             </div>
         </div>
+
 
         <div class="card">
             <div class="card-header bg-white p-3 position-relative">
@@ -143,21 +143,21 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
+                        <pre data-shiki="json">
 {
     "data": {
         "id": 1,
         "name": "Development",
         "color": "#0e23cc",
         "last_datetime": null,
-        "datetime": "<?= get_date() ?>"
+        "datetime": "<?= get_date() ?>",
     }
-}
-                        </div>
+}</pre>
                     </div>
                 </div>
             </div>
         </div>
+
 
         <div class="card">
             <div class="card-header bg-white p-3 position-relative">
@@ -226,18 +226,18 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
+                        <pre data-shiki="json">
 {
     "data": {
         "id": 1
     }
-}
-                        </div>
+}</pre>
                     </div>
-
                 </div>
+
             </div>
         </div>
+
 
         <div class="card">
             <div class="card-header bg-white p-3 position-relative">
@@ -306,18 +306,19 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
+                        <pre data-shiki="json">
 {
-  "data": {
-    "id": 1
-  }
+    "data": {
+        "id": 1
+    }
 }
-                        </div>
+</pre>
                     </div>
-
                 </div>
+
             </div>
         </div>
+
 
         <div class="card">
             <div class="card-header bg-white p-3 position-relative">
@@ -353,6 +354,7 @@
 
                 </div>
             </div>
+
         </div>
     </div>
 </div>

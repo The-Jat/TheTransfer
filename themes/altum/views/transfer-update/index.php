@@ -1,6 +1,5 @@
 <?php defined('ALTUMCODE') || die() ?>
 
-
 <div class="container">
     <?= \Altum\Alerts::output_alerts() ?>
 
@@ -71,7 +70,7 @@
                         <label for="domain_id"><?= l('transfer.domain_id') ?></label>
                         <select id="domain_id" name="domain_id" class="custom-select">
                             <?php if(settings()->transfers->main_domain_is_enabled || \Altum\Authentication::is_admin()): ?>
-                                <option value="" <?= $data->transfer->domain_id ? null : 'selected="selected"' ?>><?= remove_url_protocol_from_url(SITE_URL) ?></option>
+                                <option value=" " <?= $data->transfer->domain_id ? null : 'selected="selected"' ?>><?= remove_url_protocol_from_url(SITE_URL) ?></option>
                             <?php endif ?>
 
                             <?php foreach($data->domains as $row): ?>
@@ -212,7 +211,7 @@
                     <div class="tab-pane fade" id="pills-pixels" role="tabpanel" aria-labelledby="pixels-tab">
                         <div <?= $this->user->plan_settings->pixels_limit != 0 ? null : get_plan_feature_disabled_info() ?>>
                             <div class="form-group <?= $this->user->plan_settings->pixels_limit != 0 ? null : 'container-disabled' ?>">
-                                <div class="d-flex flex-column flex-xl-row justify-content-between">
+                                <div class="d-flex flex-wrap flex-row justify-content-between">
                                     <label><?= l('transfer.pixels') ?></label>
                                     <a href="<?= url('pixel-create') ?>" target="_blank" class="small mb-2"><i class="fas fa-fw fa-sm fa-plus mr-1"></i> <?= l('pixels.create') ?></a>
                                 </div>
@@ -240,7 +239,7 @@
                     <div class="tab-pane fade" id="pills-notification-handlers" role="tabpanel" aria-labelledby="notification-handlers-tab">
                         <div <?= $this->user->plan_id != 'guest' ? null : get_plan_feature_disabled_info() ?>>
                             <div class="form-group <?= $this->user->plan_settings != 'guest' ? null : 'container-disabled' ?>">
-                                <div class="d-flex flex-column flex-xl-row justify-content-between">
+                                <div class="d-flex flex-wrap flex-row justify-content-between">
                                     <label><?= l('transfer.notification_handlers') ?></label>
                                     <a href="<?= url('notification-handler-create') ?>" target="_blank" class="small mb-2"><i class="fas fa-fw fa-sm fa-plus mr-1"></i> <?= l('notification_handlers.create') ?></a>
                                 </div>
@@ -267,12 +266,12 @@
                         <?php if(settings()->transfers->projects_is_enabled): ?>
                         <div <?= $this->user->plan_settings->projects_limit != 0 ? null : get_plan_feature_disabled_info() ?>>
                             <div class="form-group <?= $this->user->plan_settings->projects_limit != 0 ? null : 'container-disabled' ?>">
-                                <div class="d-flex flex-column flex-xl-row justify-content-between">
+                                <div class="d-flex flex-wrap flex-row justify-content-between">
                                     <label for="project_id"><?= l('projects.project_id') ?></label>
                                     <a href="<?= url('project-create') ?>" target="_blank" class="small mb-2"><i class="fas fa-fw fa-sm fa-plus mr-1"></i> <?= l('projects.create') ?></a>
                                 </div>
                                 <select id="project_id" name="project_id" class="custom-select">
-                                    <option value=""><?= l('global.none') ?></option>
+                                    <option value=" "><?= l('global.none') ?></option>
                                     <?php foreach($data->projects as $project_id => $project): ?>
                                         <option value="<?= $project_id ?>" <?= $data->transfer->project_id == $project_id ? 'selected="selected"' : null ?>><?= $project->name ?></option>
                                     <?php endforeach ?>
@@ -331,8 +330,8 @@
 
 <script>
     'use strict';
-
-    let active_notification_handlers_per_resource_limit = <?= (int) $this->user->plan_settings->active_notification_handlers_per_resource_limit ?>;
+    
+let active_notification_handlers_per_resource_limit = <?= (int) $this->user->plan_settings->active_notification_handlers_per_resource_limit ?>;
 
     if(active_notification_handlers_per_resource_limit != -1) {
         let process_notification_handlers = () => {

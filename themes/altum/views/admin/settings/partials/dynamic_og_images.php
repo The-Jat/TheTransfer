@@ -169,3 +169,30 @@
         box-shadow: 0 10px 10px rgba(0,0,0,0.1);
     }
 </style>
+
+<?php ob_start() ?>
+<script>
+    'use strict';
+    
+const is_enabled = document.getElementById('is_enabled');
+    const api_key = document.getElementById('api_key');
+    const imagerypro_api_key = document.getElementById('imagerypro_api_key');
+
+    /* function to toggle required attributes */
+    const toggle_required_fields = () => {
+        if (is_enabled.checked) {
+            api_key.setAttribute('required', 'required');
+            imagerypro_api_key.setAttribute('required', 'required');
+        } else {
+            api_key.removeAttribute('required');
+            imagerypro_api_key.removeAttribute('required');
+        }
+    };
+
+    /* run on page load */
+    toggle_required_fields();
+
+    /* run on checkbox toggle */
+    is_enabled.addEventListener('change', toggle_required_fields);
+</script>
+<?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>

@@ -58,8 +58,8 @@ class Transfers extends Controller {
         }
 
         /* Export handler */
-        process_export_csv($transfers, 'include', ['transfer_id', 'domain_id', 'project_id', 'user_id', 'pixels_ids', 'name', 'url', 'total_files', 'total_size', 'pageviews', 'downloads_limit', 'downloads', 'expiration_datetime', 'datetime', 'last_datetime'], sprintf(l('transfers.title')));
-        process_export_json($transfers, 'include', ['transfer_id', 'domain_id', 'project_id', 'user_id', 'pixels_ids', 'name', 'url', 'settings', 'total_files', 'total_size', 'pageviews', 'downloads_limit', 'downloads', 'expiration_datetime', 'datetime', 'last_datetime'], sprintf(l('transfers.title')));
+        process_export_csv_new($transfers, ['transfer_id', 'domain_id', 'project_id', 'user_id', 'pixels_ids', 'name', 'url', 'settings', 'total_files', 'total_size', 'pageviews', 'downloads_limit', 'downloads', 'expiration_datetime', 'datetime', 'last_datetime'], ['settings'], sprintf(l('transfers.title')));
+        process_export_json($transfers, ['transfer_id', 'domain_id', 'project_id', 'user_id', 'pixels_ids', 'name', 'url', 'settings', 'total_files', 'total_size', 'pageviews', 'downloads_limit', 'downloads', 'expiration_datetime', 'datetime', 'last_datetime'], sprintf(l('transfers.title')));
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/pagination', (array) $this))->run(['paginator' => $paginator]);
@@ -68,7 +68,7 @@ class Transfers extends Controller {
 
         /* Get statistics */
         if(count($transfers) && !$filters->has_applied_filters) {
-            $start_date_query = (new \DateTime())->modify('-' . (settings()->main->chat_days ?? 30) . ' day')->format('Y-m-d');
+            $start_date_query = (new \DateTime())->modify('-' . (settings()->main->chart_days ?? 30) . ' day')->format('Y-m-d');
             $end_date_query = (new \DateTime('tomorrow'))->modify('+1 day')->format('Y-m-d');
 
             $convert_tz_sql = get_convert_tz_sql('`datetime`', $this->user->timezone);
@@ -153,12 +153,14 @@ class Transfers extends Controller {
 
             set_time_limit(0);
 
+            session_write_close();
+
             switch($_POST['type']) {
                 case 'delete':
 
                     /* Team checks */
                     if(\Altum\Teams::is_delegated() && !\Altum\Teams::has_access('delete.projects')) {
-                        Alerts::add_info(l('global.info_message.team_no_access'));
+                        Alerts::add_error(l('global.info_message.team_no_access'));
                         redirect('transfers');
                     }
 
@@ -170,6 +172,8 @@ class Transfers extends Controller {
 
                     break;
             }
+
+            session_start();
 
             /* Set a nice success message */
             Alerts::add_success(l('bulk_delete_modal.success_message'));
@@ -183,7 +187,7 @@ class Transfers extends Controller {
 
         /* Team checks */
         if(\Altum\Teams::is_delegated() && !\Altum\Teams::has_access('delete.transfers')) {
-            Alerts::add_info(l('global.info_message.team_no_access'));
+            Alerts::add_error(l('global.info_message.team_no_access'));
             redirect('transfers');
         }
 

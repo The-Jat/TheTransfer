@@ -98,7 +98,7 @@
         <small class="form-text text-muted"><?= l('admin_settings.smtp.company_details_help') ?></small>
     </div>
 
-    <button class="btn btn-block btn-gray-200 my-4" type="button" data-toggle="collapse" data-target="#theme_container" aria-expanded="false" aria-controls="theme_container">
+    <button class="btn btn-block btn-gray-200 font-size-little-small font-weight-450 my-4" type="button" data-toggle="collapse" data-target="#theme_container" aria-expanded="false" aria-controls="theme_container">
         <i class="fas fa-fw fa-paintbrush fa-sm mr-1"></i> <?= l('admin_settings.smtp.theme') ?>
     </button>
 
@@ -130,8 +130,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    /* SMTP */
+    
+/* SMTP */
     let auth_handler = () => {
         if(document.querySelector('input[name="auth"]').checked) {
             document.querySelector('input[name="username"]').removeAttribute('readonly');

@@ -1,6 +1,5 @@
 <?php defined('ALTUMCODE') || die() ?>
 
-
 <div class="container">
     <?= \Altum\Alerts::output_alerts() ?>
 
@@ -118,8 +117,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    /* Billing type handler */
+    
+/* Billing type handler */
     let billing_type = () => {
         let type = document.querySelector('select[name="billing_type"]').value;
 

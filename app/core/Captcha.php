@@ -71,7 +71,7 @@ class Captcha {
 
         else {
 
-            return ($_POST['captcha'] == $_SESSION['captcha']);
+            return ($_POST['captcha'] == session_get('captcha'));
 
         }
     }
@@ -161,7 +161,7 @@ class Captcha {
         for($i = 1; $i <= $this->text_length; $i++) $text .= mt_rand(1, 9) . ' ';
 
         /* Store the generated text in Sessions */
-        $_SESSION['captcha'] = str_replace(' ', '', $text);
+        session_set('captcha', str_replace(' ', '', $text));
 
         /* Create the image */
         $image = imagecreate($this->image_width, $this->image_height);

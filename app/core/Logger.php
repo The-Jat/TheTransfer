@@ -36,7 +36,7 @@ class Logger {
         $device_type = get_this_device_type();
 
         /* Detect extra details about the user */
-        $whichbrowser = new \WhichBrowser\Parser($_SERVER['HTTP_USER_AGENT']);
+        $whichbrowser = get_whichbrowser();
 
         /* Detect extra details about the user */
         $os_name = $whichbrowser->os->name ?? null;

@@ -24,6 +24,10 @@ class AdminAffiliatesWithdrawals extends Controller {
 
     public function index() {
 
+        if(!in_array(settings()->license->type, ['Extended License', 'extended']) || !\Altum\Plugin::is_active('affiliate')) {
+            redirect('admin');
+        }
+
         /* Prepare the filtering system */
         $filters = (new \Altum\Filters(['is_paid', 'user_id'], [], ['affiliate_withdrawal_id', 'amount', 'datetime']));
         $filters->set_default_order_by('affiliate_withdrawal_id', $this->user->preferences->default_order_type ?? settings()->main->default_order_type);
@@ -54,8 +58,8 @@ class AdminAffiliatesWithdrawals extends Controller {
         }
 
         /* Export handler */
-        process_export_json($affiliates_withdrawals, 'include', ['id', 'user_id', 'amount', 'note', 'is_paid', 'datetime']);
-        process_export_csv($affiliates_withdrawals, 'include', ['id', 'user_id', 'amount', 'note', 'is_paid', 'datetime']);
+        process_export_json($affiliates_withdrawals, ['id', 'user_id', 'amount', 'note', 'is_paid', 'datetime']);
+        process_export_csv($affiliates_withdrawals, ['id', 'user_id', 'amount', 'note', 'is_paid', 'datetime']);
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/admin_pagination', (array) $this))->run(['paginator' => $paginator]);
@@ -75,6 +79,10 @@ class AdminAffiliatesWithdrawals extends Controller {
 
 
     public function delete() {
+
+        if(!in_array(settings()->license->type, ['Extended License', 'extended']) || !\Altum\Plugin::is_active('affiliate')) {
+            redirect('admin');
+        }
 
         $affiliate_withdrawal_id = (isset($this->params[0])) ? (int) $this->params[0] : null;
 
@@ -98,6 +106,10 @@ class AdminAffiliatesWithdrawals extends Controller {
     }
 
     public function approve() {
+
+        if(!in_array(settings()->license->type, ['Extended License', 'extended']) || !\Altum\Plugin::is_active('affiliate')) {
+            redirect('admin');
+        }
 
         $affiliate_withdrawal_id = (isset($this->params[0])) ? (int) $this->params[0] : null;
 

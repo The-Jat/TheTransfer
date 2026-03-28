@@ -24,6 +24,10 @@ class AdminCodes extends Controller {
 
     public function index() {
 
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('admin');
+        }
+
         /* Prepare the filtering system */
         $filters = (new \Altum\Filters(['type'], ['name', 'code'], ['code_id', 'name', 'days', 'quantity', 'datetime', 'code', 'redeemed']));
         $filters->set_default_order_by('code_id', $this->user->preferences->default_order_type ?? settings()->main->default_order_type);
@@ -52,8 +56,8 @@ class AdminCodes extends Controller {
         }
 
         /* Export handler */
-        process_export_json($codes, 'include', ['code_id', 'name', 'type', 'days', 'code', 'discount', 'quantity', 'redeemed', 'datetime']);
-        process_export_csv($codes, 'include', ['code_id', 'name', 'type', 'days', 'code', 'discount', 'quantity', 'redeemed', 'datetime']);
+        process_export_json($codes, ['code_id', 'name', 'type', 'days', 'code', 'discount', 'quantity', 'redeemed', 'datetime']);
+        process_export_csv($codes, ['code_id', 'name', 'type', 'days', 'code', 'discount', 'quantity', 'redeemed', 'datetime']);
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/admin_pagination', (array) $this))->run(['paginator' => $paginator]);
@@ -73,6 +77,10 @@ class AdminCodes extends Controller {
     }
 
     public function bulk() {
+
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('admin');
+        }
 
         /* Check for any errors */
         if(empty($_POST)) {
@@ -97,6 +105,8 @@ class AdminCodes extends Controller {
 
             set_time_limit(0);
 
+            session_write_close();
+
             switch($_POST['type']) {
                 case 'delete':
 
@@ -105,6 +115,8 @@ class AdminCodes extends Controller {
                     }
                     break;
             }
+
+            session_start();
 
             /* Set a nice success message */
             Alerts::add_success(l('bulk_delete_modal.success_message'));
@@ -115,6 +127,10 @@ class AdminCodes extends Controller {
     }
 
     public function delete() {
+
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('admin');
+        }
 
         $code_id = isset($this->params[0]) ? (int) $this->params[0] : null;
 

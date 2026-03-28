@@ -45,19 +45,6 @@ session_set_cookie_params([
     'secure' => str_starts_with(SITE_URL, 'https://'),
 ]);
 
-/* Only start a session handler if we need to */
-$should_start_session = !isset($_GET['altum'])
-    || (
-        !str_starts_with($_GET['altum'], 'cron')
-        && !str_starts_with($_GET['altum'], 'sitemap')
-        && !str_starts_with($_GET['altum'], 'webhook-')
-        && !str_starts_with($_GET['altum'], 'api/')
-    );
-
-if($should_start_session) {
-    session_start();
-}
-
 /* Autoloader */
 spl_autoload_register (function ($class) {
     $namespace_prefix = 'Altum';
@@ -95,6 +82,7 @@ require_once APP_PATH . 'helpers/encryption.php';
 require_once APP_PATH . 'helpers/email.php';
 require_once APP_PATH . 'helpers/others.php';
 require_once APP_PATH . 'helpers/core.php';
+require_once APP_PATH . 'helpers/sessions.php';
 
 /* Autoload for vendor */
 require_once ROOT_PATH . 'vendor/autoload.php';

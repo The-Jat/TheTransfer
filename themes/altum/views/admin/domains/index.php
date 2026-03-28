@@ -1,11 +1,24 @@
 <?php defined('ALTUMCODE') || die() ?>
 
+<?php if(!settings()->transfers->domains_is_enabled): ?>
+    <div class="alert alert-info">
+        <i class="fas fa-fw fa-info-circle mr-1"></i>
+        <?= sprintf(l('global.info_message.admin_feature_disabled'), url('admin/settings/transfers')) ?>
+    </div>
+<?php endif ?>
+
 <div class="d-flex flex-column flex-md-row justify-content-between mb-4">
-    <h1 class="h3 mb-3 mb-md-0"><i class="fas fa-fw fa-xs fa-globe text-primary-900 mr-2"></i> <?= l('admin_domains.header') ?></h1>
+    <h1 class="h3 mb-3 mb-md-0 text-truncate"><i class="fas fa-fw fa-xs fa-globe text-primary-900 mr-2"></i> <?= l('admin_domains.header') ?></h1>
 
     <div class="d-flex position-relative d-print-none">
         <div>
-            <a href="<?= url('admin/domain-create') ?>" class="btn btn-primary"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_domain_create.menu') ?></a>
+            <a href="<?= url('admin/domain-create') ?>" class="btn btn-primary text-nowrap"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_domain_create.menu') ?></a>
+        </div>
+
+        <div class="ml-3">
+            <a href="<?= url('admin/statistics/domains') ?>" class="btn btn-gray-300" data-tooltip title="<?= l('global.statistics') ?>">
+                <i class="fas fa-fw fa-sm fa-chart-bar"></i>
+            </a>
         </div>
 
         <div class="ml-3">
@@ -15,13 +28,13 @@
                 </button>
 
                 <div class="dropdown-menu dropdown-menu-right d-print-none">
-                    <a href="<?= url('admin/domains?' . $data->filters->get_get() . '&export=csv') ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->csv ? null : 'disabled' ?>">
+                    <a href="<?= url('admin/domains?' . $data->filters->get_get() . '&export=csv') ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->csv ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->csv ? null : get_plan_feature_disabled_info() ?>>
                         <i class="fas fa-fw fa-sm fa-file-csv mr-2"></i> <?= sprintf(l('global.export_to'), 'CSV') ?>
                     </a>
-                    <a href="<?= url('admin/domains?' . $data->filters->get_get() . '&export=json') ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->json ? null : 'disabled' ?>">
+                    <a href="<?= url('admin/domains?' . $data->filters->get_get() . '&export=json') ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->json ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->json ? null : get_plan_feature_disabled_info() ?>>
                         <i class="fas fa-fw fa-sm fa-file-code mr-2"></i> <?= sprintf(l('global.export_to'), 'JSON') ?>
                     </a>
-                    <a href="#" onclick="window.print();return false;" class="dropdown-item <?= $this->user->plan_settings->export->pdf ? null : 'disabled' ?>">
+                    <a href="#" class="dropdown-item <?= $this->user->plan_settings->export->pdf ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->pdf ? $this->user->plan_settings->export->pdf ? 'onclick="event.preventDefault(); window.print();"' : 'disabled pointer-events-all' : get_plan_feature_disabled_info() ?>>
                         <i class="fas fa-fw fa-sm fa-file-pdf mr-2"></i> <?= sprintf(l('global.export_to'), 'PDF') ?>
                     </a>
                 </div>
@@ -30,7 +43,7 @@
 
         <div class="ml-3">
             <div class="dropdown">
-                <button type="button" class="btn <?= $data->filters->has_applied_filters ? 'btn-secondary' : 'btn-gray-300' ?> filters-button dropdown-toggle-simple" data-toggle="dropdown" data-boundary="viewport" data-tooltip title="<?= l('global.filters.header') ?>" data-tooltip-hide-on-click>
+                <button type="button" class="btn <?= $data->filters->has_applied_filters ? 'btn-secondary' : 'btn-gray-300' ?> filters-button dropdown-toggle-simple" data-toggle="dropdown" data-boundary="viewport" data-tooltip data-html="true" title="<?= l('global.filters.tooltip') ?>" data-tooltip-hide-on-click>
                     <i class="fas fa-fw fa-sm fa-filter"></i>
                 </button>
 
@@ -142,7 +155,7 @@
                     </div>
                 </th>
                 <th><?= l('global.user') ?></th>
-                <th><?= l('admin_domains.table.host') ?></th>
+                <th><?= l('global.host') ?></th>
                 <th><?= l('global.type') ?></th>
                 <th><?= l('global.status') ?></th>
                 <th></th>
@@ -179,7 +192,7 @@
                     <td class="text-nowrap">
                         <img referrerpolicy="no-referrer" src="<?= get_favicon_url_from_domain($row->host) ?>" class="img-fluid icon-favicon mr-1" loading="lazy" />
                         <a href="<?= url('admin/domain-update/' . $row->domain_id) ?>"><?= $row->host ?></a>
-                        <a href="<?= $row->scheme . $row->host ?>" rel="noreferrer"><i class="fas fa-fw fa-xs fa-external-link-alt text-muted ml-1"></i></a>
+                        <a href="<?= $row->scheme . $row->host ?>" target="_blank" rel="noreferrer"><i class="fas fa-fw fa-xs fa-external-link-alt text-muted ml-1"></i></a>
                     </td>
 
                     <td class="text-nowrap">
@@ -213,7 +226,7 @@
                             <i class="fas fa-fw fa-calendar text-muted"></i>
                         </span>
 
-                        <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.last_datetime_tooltip'), ($row->last_datetime ? '<br />' . \Altum\Date::get($row->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($row->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->last_datetime) . ')</small>' : '<br />-')) ?>">
+                        <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.last_datetime_tooltip'), ($row->last_datetime ? '<br />' . \Altum\Date::get($row->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($row->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->last_datetime) . ')</small>' : '<br />' . l('global.na'))) ?>">
                             <i class="fas fa-fw fa-history text-muted"></i>
                         </span>
                     </td>

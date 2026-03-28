@@ -50,9 +50,9 @@ class Pages extends Controller {
 
             /* Get the pages for this category */
             $pages_result_query = "
-                SELECT `url`, `title`, `description`, `total_views`, `type`, `language` 
+                SELECT `url`, `title`, `description`, `total_views`, `type`, `language`, `plans_ids` 
                 FROM `pages` 
-                WHERE `pages_category_id` = {$pages_category->pages_category_id} AND (`language` = '{$language}' OR `language` IS NULL) AND `is_published` = 1 
+                WHERE `pages_category_id` = {$pages_category->pages_category_id} AND (`language` = '{$language}' OR `language` IS NULL) AND `is_published` = 1
                 ORDER BY `total_views` DESC
             ";
 
@@ -63,11 +63,22 @@ class Pages extends Controller {
                 $pages = [];
 
                 while($row = $pages_result->fetch_object()) {
+                    $row->plans_ids = json_decode($row->plans_ids ?? '');
                     $pages[] = $row;
                 }
 
                 return $pages;
             });
+
+            foreach($pages as $key => $page) {
+                if(!empty($page->plans_ids)) {
+                    if(!is_logged_in()) unset($pages[$key]);
+
+                    if(!in_array(user()->plan_id, $page->plans_ids)) {
+                        unset($pages[$key]);
+                    }
+                }
+            }
 
             /* Prepare the view */
             $data = [
@@ -91,7 +102,7 @@ class Pages extends Controller {
             /* Pages index */
 
             /* Get the popular pages */
-            $popular_pages_result_query = "SELECT `url`, `title`, `description`, `total_views`, `type`, `language` FROM `pages` WHERE (`language` = '{$language}' OR `language` IS NULL) AND `is_published` = 1 ORDER BY `total_views` DESC LIMIT 6";
+            $popular_pages_result_query = "SELECT `url`, `title`, `description`, `total_views`, `type`, `language`, `plans_ids` FROM `pages` WHERE (`language` = '{$language}' OR `language` IS NULL) AND `is_published` = 1 ORDER BY `total_views` DESC LIMIT 6";
 
             $popular_pages = settings()->content->pages_popular_widget_is_enabled ? \Altum\Cache::cache_function_result('pages?hash=' . md5($popular_pages_result_query), 'pages', function() use ($popular_pages_result_query) {
 
@@ -101,12 +112,22 @@ class Pages extends Controller {
                 $popular_pages = [];
 
                 while($row = $pages_result->fetch_object()) {
+                    $row->plans_ids = json_decode($row->plans_ids ?? '');
                     $popular_pages[] = $row;
                 }
 
                 return $popular_pages;
             }) : [];
 
+            foreach($popular_pages as $key => $page) {
+                if(!empty($page->plans_ids)) {
+                    if(!is_logged_in()) unset($popular_pages[$key]);
+
+                    if(!in_array(user()->plan_id, $page->plans_ids)) {
+                        unset($popular_pages[$key]);
+                    }
+                }
+            }
 
             /* Get all the pages categories */
             $pages_categories_result_query = "

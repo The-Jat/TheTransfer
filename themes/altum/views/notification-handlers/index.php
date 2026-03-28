@@ -3,6 +3,14 @@
 <div class="container">
     <?= \Altum\Alerts::output_alerts() ?>
 
+    <?php foreach($data->total_notification_handlers as $type => $total): ?>
+        <?php if($this->user->plan_settings->{'notification_handlers_' . $type . '_limit'} != -1 && $total > $this->user->plan_settings->{'notification_handlers_' . $type . '_limit'}): ?>
+            <div class="alert alert-danger">
+                <i class="fas fa-fw fa-times-circle text-danger mr-2"></i> <?= sprintf(settings()->payment->is_enabled ? l('global.info_message.plan_feature_limit_removal_with_upgrade') : l('global.info_message.plan_feature_limit_removal'), '<strong>' . $total - $this->user->plan_settings->{'notification_handlers_' . $type . '_limit'}, mb_strtolower(l('notification_handlers.title')) . ' (' . l('notification_handlers.type_' . $type) . ')</strong>', '<a href="' . url('plan') . '" class="font-weight-bold text-reset">' . l('global.info_message.plan_upgrade') . '</a>') ?>
+            </div>
+        <?php endif ?>
+    <?php endforeach ?>
+
     <div class="row mb-4">
         <div class="col-12 col-lg d-flex align-items-center mb-3 mb-lg-0 text-truncate">
             <h1 class="h4 m-0 text-truncate"><i class="fas fa-fw fa-xs fa-bell mr-1"></i> <?= l('notification_handlers.header') ?></h1>
@@ -28,13 +36,13 @@
                     </button>
 
                     <div class="dropdown-menu dropdown-menu-right d-print-none">
-                        <a href="<?= url('notification-handlers?' . $data->filters->get_get() . '&export=csv')  ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->csv ? null : 'disabled' ?>">
+                        <a href="<?= url('notification-handlers?' . $data->filters->get_get() . '&export=csv')  ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->csv ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->csv ? null : get_plan_feature_disabled_info() ?>>
                             <i class="fas fa-fw fa-sm fa-file-csv mr-2"></i> <?= sprintf(l('global.export_to'), 'CSV') ?>
                         </a>
-                        <a href="<?= url('notification-handlers?' . $data->filters->get_get() . '&export=json') ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->json ? null : 'disabled' ?>">
+                        <a href="<?= url('notification-handlers?' . $data->filters->get_get() . '&export=json') ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->json ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->json ? null : get_plan_feature_disabled_info() ?>>
                             <i class="fas fa-fw fa-sm fa-file-code mr-2"></i> <?= sprintf(l('global.export_to'), 'JSON') ?>
                         </a>
-                        <a href="#" onclick="window.print();return false;" class="dropdown-item <?= $this->user->plan_settings->export->pdf ? null : 'disabled' ?>">
+                        <a href="#" class="dropdown-item <?= $this->user->plan_settings->export->pdf ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->pdf ? $this->user->plan_settings->export->pdf ? 'onclick="event.preventDefault(); window.print();"' : 'disabled pointer-events-all' : get_plan_feature_disabled_info() ?>>
                             <i class="fas fa-fw fa-sm fa-file-pdf mr-2"></i> <?= sprintf(l('global.export_to'), 'PDF') ?>
                         </a>
                     </div>
@@ -43,7 +51,7 @@
 
             <div>
                 <div class="dropdown">
-                    <button type="button" class="btn <?= $data->filters->has_applied_filters ? 'btn-dark' : 'btn-light' ?> filters-button dropdown-toggle-simple <?= count($data->notification_handlers) || $data->filters->has_applied_filters ? null : 'disabled' ?>" data-toggle="dropdown" data-boundary="viewport" data-tooltip title="<?= l('global.filters.header') ?>" data-tooltip-hide-on-click>
+                    <button type="button" class="btn <?= $data->filters->has_applied_filters ? 'btn-dark' : 'btn-light' ?> filters-button dropdown-toggle-simple <?= count($data->notification_handlers) || $data->filters->has_applied_filters ? null : 'disabled' ?>" data-toggle="dropdown" data-boundary="viewport" data-tooltip data-html="true" title="<?= l('global.filters.tooltip') ?>" data-tooltip-hide-on-click>
                         <i class="fas fa-fw fa-sm fa-filter"></i>
                     </button>
 
@@ -145,7 +153,7 @@
         </div>
     </div>
 
-    <?php if(count($data->notification_handlers)): ?>
+    <?php if (!empty($data->notification_handlers)): ?>
         <form id="table" action="<?= SITE_URL . 'notification-handlers/bulk' ?>" method="post" role="form">
             <input type="hidden" name="token" value="<?= \Altum\Csrf::get() ?>" />
             <input type="hidden" name="type" value="" data-bulk-type />
@@ -186,28 +194,28 @@
                             </td>
 
                             <td class="text-truncate text-muted">
-                            <span class="badge badge-light">
-                                <?php $available_notification_handlers = require APP_PATH . 'includes/available_notification_handlers.php' ?>
-                                <i class="<?= $available_notification_handlers[$row->type]['icon'] ?> fa-fw fa-sm mr-1"></i> <?= l('notification_handlers.type_' . $row->type) ?>
-                            </span>
+                                <span class="badge badge-light">
+                                    <?php $available_notification_handlers = require APP_PATH . 'includes/available_notification_handlers.php' ?>
+                                    <i class="<?= $available_notification_handlers[$row->type]['icon'] ?> fa-fw fa-sm mr-1"></i> <?= l('notification_handlers.type_' . $row->type) ?>
+                                </span>
                             </td>
 
                             <td class="text-nowrap">
                                 <?php if($row->is_enabled): ?>
-                                    <span class="badge badge-success"><i class="fas fa-fw fa-check"></i> <?= l('global.active') ?></span>
+                                    <span class="badge badge-success"><i class="fas fa-fw fa-sm fa-check mr-1"></i> <?= l('global.active') ?></span>
                                 <?php else: ?>
-                                    <span class="badge badge-warning"><i class="fas fa-fw fa-eye-slash"></i> <?= l('global.disabled') ?></span>
+                                    <span class="badge badge-warning"><i class="fas fa-fw fa-sm fa-eye-slash mr-1"></i> <?= l('global.disabled') ?></span>
                                 <?php endif ?>
                             </td>
 
                             <td class="text-truncate text-muted">
-                            <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.datetime_tooltip'), '<br />' . \Altum\Date::get($row->datetime, 2) . '<br /><small>' . \Altum\Date::get($row->datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->datetime) . ')</small>') ?>">
-                                <i class="fas fa-fw fa-calendar text-muted"></i>
-                            </span>
+                                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.datetime_tooltip'), '<br />' . \Altum\Date::get($row->datetime, 2) . '<br /><small>' . \Altum\Date::get($row->datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->datetime) . ')</small>') ?>">
+                                    <i class="fas fa-fw fa-calendar text-muted"></i>
+                                </span>
 
-                                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.last_datetime_tooltip'), ($row->last_datetime ? '<br />' . \Altum\Date::get($row->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($row->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->last_datetime) . ')</small>' : '<br />-')) ?>">
-                                <i class="fas fa-fw fa-history text-muted"></i>
-                            </span>
+                                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.last_datetime_tooltip'), ($row->last_datetime ? '<br />' . \Altum\Date::get($row->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($row->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->last_datetime) . ')</small>' : '<br />' . l('global.na'))) ?>">
+                                    <i class="fas fa-fw fa-history text-muted"></i>
+                                </span>
                             </td>
 
                             <td>
@@ -227,9 +235,9 @@
     <?php else: ?>
 
         <?= include_view(THEME_PATH . 'views/partials/no_data.php', [
-            'filters_get' => $data->filters->get ?? [],
-            'name' => 'notification_handlers',
-            'has_secondary_text' => true,
+                'filters_get' => $data->filters->get ?? [],
+                'name' => 'notification_handlers',
+                'has_secondary_text' => true,
         ]); ?>
 
     <?php endif ?>

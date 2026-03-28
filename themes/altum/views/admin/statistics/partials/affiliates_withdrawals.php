@@ -27,8 +27,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    let total_affiliates_withdrawals_color = css.getPropertyValue('--gray-500');
+    
+let total_affiliates_withdrawals_color = css.getPropertyValue('--gray-500');
     let amount_color = css.getPropertyValue('--primary');
 
     /* Display chart */

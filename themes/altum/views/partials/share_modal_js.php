@@ -15,7 +15,7 @@
                     </button>
                 </div>
 
-                <div data-qr></div>
+                <div class="mb-3" data-qr></div>
 
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                     <?= include_view(THEME_PATH . 'views/partials/share_buttons.php', ['url' => '%s', 'class' => 'btn btn-gray-100', 'print_is_enabled' => false]) ?>
@@ -54,8 +54,8 @@
 
 <script>
     'use strict';
-
-    /* On modal show load new data */
+    
+/* On modal show load new data */
     $('#share_modal').on('show.bs.modal', event => {
         let url = $(event.relatedTarget).data('url');
         let qr = event.currentTarget.querySelector('[data-qr]');

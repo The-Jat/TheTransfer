@@ -150,7 +150,7 @@ class CustomHooks {
             $prefixes = array_merge($prefixes, ['domains.', 'domain_create.', 'domain_update.', 'domain_delete_modal.']);
         }
 
-        if(!settings()->links->pixels_is_enabled) {
+        if(!settings()->transfers->pixels_is_enabled) {
             $prefixes = array_merge($prefixes, ['pixels.', 'pixel_create.', 'pixel_update.']);
         }
 

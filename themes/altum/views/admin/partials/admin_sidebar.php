@@ -86,14 +86,6 @@
             </li>
             <?php endif ?>
 
-            <?php if(\Altum\Plugin::is_active('dynamic-og-images')): ?>
-                <li class="<?= in_array(\Altum\Router::$controller, ['AdminDynamicOgImages']) ? 'active' : null ?>">
-                    <a class="nav-link text-truncate" href="<?= url('admin/dynamic-og-images') ?>">
-                        <i class="fas fa-fw fa-sm fa-x-ray mr-2"></i> <?= l('admin_dynamic_og_images.menu') ?>
-                    </a>
-                </li>
-            <?php endif ?>
-
             <li class="<?= \Altum\Router::$controller == 'AdminPlugins' ? 'active' : null ?>">
                 <a class="nav-link text-truncate" href="<?= url('admin/plugins') ?>">
                     <i class="fas fa-fw fa-sm fa-puzzle-piece mr-2"></i> <?= l('admin_plugins.menu') ?>
@@ -169,7 +161,7 @@
                     </a>
                 </li>
 
-                <li class="<?= \Altum\Router::$controller == 'AdminPayments' ? 'active' : null ?>">
+                <li class="<?= in_array(\Altum\Router::$controller, ['AdminPayments', 'AdminPaymentCreate']) ? 'active' : null ?>">
                     <a class="nav-link text-truncate" href="<?= url('admin/payments') ?>">
                         <i class="fas fa-fw fa-sm fa-credit-card mr-2"></i> <?= l('admin_payments.menu') ?>
                     </a>
@@ -202,11 +194,6 @@
                 </li>
             <?php endif ?>
 
-            <li class="<?= in_array(\Altum\Router::$controller, ['AdminUsersLogs']) ? 'active' : null ?>">
-                <a class="nav-link text-truncate" href="<?= url('admin/users-logs') ?>">
-                    <i class="fas fa-fw fa-sm fa-scroll mr-2"></i> <?= l('admin_users_logs.menu') ?>
-                </a>
-            </li>
 
             <li class="<?= in_array(\Altum\Router::$controller, ['AdminTransfers']) ? 'active' : null ?>">
                 <a class="nav-link text-truncate" href="<?= url('admin/transfers') ?>">
@@ -243,6 +230,32 @@
                     <i class="fas fa-fw fa-sm fa-bell mr-2"></i> <?= l('admin_notification_handlers.menu') ?>
                 </a>
             </li>
+        
+            <div class="divider-wrapper">
+                <div class="divider"></div>
+            </div>
+
+            <li class="<?= in_array(\Altum\Router::$controller, ['AdminUsersLogs']) ? 'active' : null ?>">
+                <a class="nav-link text-truncate" href="<?= url('admin/users-logs') ?>">
+                    <i class="fas fa-fw fa-sm fa-scroll mr-2"></i> <?= l('admin_users_logs.menu') ?>
+                </a>
+            </li>
+
+            <?php if(\Altum\Plugin::is_active('image-optimizer')): ?>
+                <li class="<?= in_array(\Altum\Router::$controller, ['AdminImageOptimizer']) ? 'active' : null ?>">
+                    <a class="nav-link text-truncate" href="<?= url('admin/image-optimizer') ?>">
+                        <i class="fas fa-fw fa-sm fa-image mr-2"></i> <?= l('admin_image_optimizer.menu') ?>
+                    </a>
+                </li>
+            <?php endif ?>
+
+            <?php if(\Altum\Plugin::is_active('dynamic-og-images')): ?>
+                <li class="<?= in_array(\Altum\Router::$controller, ['AdminDynamicOgImages']) ? 'active' : null ?>">
+                    <a class="nav-link text-truncate" href="<?= url('admin/dynamic-og-images') ?>">
+                        <i class="fas fa-fw fa-sm fa-x-ray mr-2"></i> <?= l('admin_dynamic_og_images.menu') ?>
+                    </a>
+                </li>
+            <?php endif ?>
         </ul>
 
         <hr />
@@ -294,6 +307,8 @@
 
 <?php ob_start() ?>
 <script>
+    'use strict';
+    
     document.querySelector('ul[class="admin-sidebar-links"] li.active') && document.querySelector('ul[class="admin-sidebar-links"] li.active').scrollIntoView({ behavior: 'smooth', block: 'center' });
 </script>
 <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>

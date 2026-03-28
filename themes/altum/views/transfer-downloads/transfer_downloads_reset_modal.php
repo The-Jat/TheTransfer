@@ -36,8 +36,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    /* On modal show load new data */
+    
+/* On modal show load new data */
     $('#transfer_downloads_reset_modal').on('show.bs.modal', event => {
         let transfer_id = $(event.relatedTarget).data('transfer-id');
         let start_date = $(event.relatedTarget).data('start-date');

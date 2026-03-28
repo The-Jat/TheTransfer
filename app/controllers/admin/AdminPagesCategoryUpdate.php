@@ -32,7 +32,7 @@ class AdminPagesCategoryUpdate extends Controller {
         }
 
         if(!empty($_POST)) {
-            /* Filter some the variables */
+            /* Filter some of the variables */
             $_POST['url'] = input_clean(get_slug($_POST['url']), 256);
             $_POST['title'] = input_clean($_POST['title'], 256);
             $_POST['description'] = input_clean($_POST['description'], 256);
@@ -45,7 +45,7 @@ class AdminPagesCategoryUpdate extends Controller {
             /* Check for any errors */
             $required_fields = ['title', 'url'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }

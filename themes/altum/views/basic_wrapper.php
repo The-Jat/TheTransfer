@@ -9,6 +9,15 @@
 
         <?php if(\Altum\Plugin::is_active('pwa') && settings()->pwa->is_enabled): ?>
             <meta name="theme-color" content="<?= settings()->pwa->theme_color ?>"/>
+
+            <?php if(settings()->pwa->is_fullscreen ?? true): ?>
+                <meta name="apple-mobile-web-app-capable" content="yes">
+                <meta name="mobile-web-app-capable" content="yes">
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+            <?php endif ?>
+
+			<?= pwa_generate_dynamic_splash_screen_links() ?>
+
             <link rel="manifest" href="<?= SITE_URL . UPLOADS_URL_PATH . \Altum\Uploads::get_path('pwa') . 'manifest.json' ?>" />
         <?php endif ?>
 
@@ -60,7 +69,7 @@
             <?= settings()->custom->body_content ?>
         <?php endif ?>
 
-        <?php //ALTUMCODE:DEMO if(DEMO) echo include_view(THEME_PATH . 'views/partials/ac_banner.php', ['demo_url' => 'https://66transfer.com/demo/', 'product_name' => PRODUCT_NAME, 'product_url' => PRODUCT_URL]) ?>
+        <?php //ALTUMCODE:DEMO if(DEMO) echo include_view(THEME_PATH . 'views/partials/ac_banner.php', ['demo_url' => 'https://66transfer.com/demo/', 'product_name' => PRODUCT_NAME, 'product_url' => PRODUCT_URL, 'product_buy_url' => PRODUCT_BUY_URL]) ?>
 
         <?php require THEME_PATH . 'views/partials/announcements.php' ?>
         <?php require THEME_PATH . 'views/partials/cookie_consent.php' ?>

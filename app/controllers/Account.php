@@ -27,19 +27,19 @@ class Account extends Controller {
         \Altum\Authentication::guard();
 
         /* Prepare the TwoFA codes just in case we need them */
-        $twofa = new \RobThree\Auth\TwoFactorAuth(settings()->main->title, 6, 30);
+        $twofa = new \RobThree\Auth\TwoFactorAuth(new \RobThree\Auth\Providers\Qr\BaconQrCodeProvider(format: 'svg'), settings()->main->title, 6, 30);
         $twofa_secret = $twofa->createSecret();
         $twofa_image = $twofa->getQRCodeImageAsDataUri($this->user->email . ' - ' . $this->user->name, $twofa_secret, 400);
 
         if(!empty($_POST)) {
 
             /* Clean some posted variables */
-            $this->user->avatar = \Altum\Uploads::process_upload($this->user->avatar, 'users', 'avatar', 'avatar_remove', null);
+            $this->user->avatar = \Altum\Uploads::process_upload($this->user->avatar, 'users', 'avatar', 'avatar_remove', settings()->main->avatar_size_limit);
             $_POST['email'] = input_clean_email($_POST['email'] ?? '');
-            $_POST['name'] = input_clean($_POST['name'], 64);
+            $_POST['name'] = input_clean_name($_POST['name'], 64);
             $_POST['timezone'] = in_array($_POST['timezone'], \DateTimeZone::listIdentifiers()) ? query_clean($_POST['timezone']) : settings()->main->default_timezone;
             $_POST['anti_phishing_code'] = input_clean($_POST['anti_phishing_code'], 8);
-            $_POST['twofa_is_enabled'] = (bool) $_POST['twofa_is_enabled'];
+            $_POST['twofa_is_enabled'] = (bool) isset($_POST['twofa_is_enabled']);
             $_POST['twofa_token'] = input_clean(str_replace(' ', '', $_POST['twofa_token'] ?? ''));
             $_POST['is_newsletter_subscribed'] = (int) isset($_POST['is_newsletter_subscribed']);
             $twofa_secret = $_POST['twofa_is_enabled'] ? $this->user->twofa_secret : null;
@@ -82,11 +82,33 @@ class Account extends Controller {
             if(!\Altum\Csrf::check()) {
                 Alerts::add_error(l('global.error_message.invalid_csrf_token'));
             }
+
             if(filter_var($_POST['email'], FILTER_VALIDATE_EMAIL) == false) {
                 Alerts::add_field_error('email', l('global.error_message.invalid_email'));
             }
+
             if(db()->where('email', $_POST['email'])->has('users') && $_POST['email'] !== $this->user->email) {
                 Alerts::add_field_error('email', l('register.error_message.email_exists'));
+            }
+
+            if(!settings()->users->email_aliases_is_enabled && str_contains($_POST['email'], '+')) {
+                Alerts::add_field_error('email', l('register.error_message.email_aliases_not_allowed'));
+            }
+
+            /* Make sure the domain is not blacklisted */
+            $email_domain = get_domain_from_email($_POST['email']);
+            if(settings()->users->blacklisted_domains && in_array($email_domain, settings()->users->blacklisted_domains)) {
+                Alerts::add_field_error('email', l('register.error_message.blacklisted_domain'));
+            }
+
+            /* Email shield plugin */
+            if(
+                \Altum\Plugin::is_active('email-shield')
+                && settings()->email_shield->is_enabled
+                && !in_array($email_domain, settings()->email_shield->whitelisted_domains ?? [])
+                && !\Altum\Plugin\EmailShield::validate($email_domain)
+            ) {
+                Alerts::add_field_error('email', l('register.error_message.blacklisted_domain'));
             }
 
             if(db()->where('referral_key', $_POST['referral_key'])->has('users') && $_POST['referral_key'] !== $this->user->referral_key) {
@@ -110,7 +132,7 @@ class Account extends Controller {
             }
 
             if($_POST['twofa_is_enabled'] && $_POST['twofa_token']) {
-                $twofa_check = $twofa->verifyCode($_SESSION['twofa_potential_secret'], $_POST['twofa_token']);
+                $twofa_check = $twofa->verifyCode(session_get('twofa_potential_secret'), $_POST['twofa_token']);
 
                 if(!$twofa_check) {
                     Alerts::add_field_error('twofa_token', l('account.error_message.twofa_check'));
@@ -120,7 +142,7 @@ class Account extends Controller {
                     $twofa_image = $twofa->getQRCodeImageAsDataUri($this->user->email . ' - ' . $this->user->name, $twofa_secret, 400);
 
                 } else {
-                    $twofa_secret = $_SESSION['twofa_potential_secret'];
+                    $twofa_secret = session_get('twofa_potential_secret');
                 }
 
             }
@@ -165,7 +187,7 @@ class Account extends Controller {
                 if($_POST['email'] != $this->user->email) {
 
                     if(settings()->users->email_confirmation) {
-                        $email_activation_code = md5($_POST['email'] . microtime());
+                        $email_activation_code = md5(uniqid('', true) . random_bytes(16));
 
                         /* Prepare the email */
                         $email_template = get_email_template(
@@ -266,7 +288,7 @@ class Account extends Controller {
         }
 
         /* Store the potential secret */
-        $_SESSION['twofa_potential_secret'] = $twofa_secret;
+        session_set('twofa_potential_secret', $twofa_secret);
 
         /* Get the account header menu */
         $menu = new \Altum\View('partials/account_header_menu', (array) $this);

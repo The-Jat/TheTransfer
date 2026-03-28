@@ -170,7 +170,7 @@ class ApiDomains extends Controller {
         /* Check for any errors */
         $required_fields = ['host'];
         foreach($required_fields as $field) {
-            if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+            if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                 $this->response_error(l('global.error_message.empty_fields'), 401);
                 break 1;
             }
@@ -258,10 +258,17 @@ class ApiDomains extends Controller {
 
     }
 
-    private function patch() {
+        private function patch() {
+
+        /* Check for the plan limit */
+        $total_rows = db()->where('user_id', $this->api_user->user_id)->getValue('domains', 'count(`domain_id`)');
+
+        if($this->api_user->plan_settings->domains_limit != -1 && $total_rows > $this->api_user->plan_settings->domains_limit) {
+            $this->response_error(sprintf(settings()->payment->is_enabled ? l('global.info_message.plan_feature_limit_removal_with_upgrade') : l('global.info_message.plan_feature_limit_removal'), $total_rows - $this->user->plan_settings->domains_limit, mb_strtolower(l('domains.title')), l('global.info_message.plan_upgrade')), 401);
+        }
 
         $domain_id = isset($this->params[0]) ? (int) $this->params[0] : null;
-
+        
         /* Try to get details about the resource id */
         $domain = db()->where('domain_id', $domain_id)->where('user_id', $this->api_user->user_id)->getOne('domains');
 

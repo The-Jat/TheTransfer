@@ -50,3 +50,32 @@ $('select:not([multiple="multiple"]):not([class="input-group-text"]):not([class=
         });
     }
 });
+
+document.querySelectorAll('form input, form select, form textarea').forEach(field => {
+    field.addEventListener('invalid', () => {
+        const invalid_field = field;
+
+        /* find the nearest collapsed parent */
+        const collapse_container = invalid_field.closest('.collapse');
+
+        if (!collapse_container) {
+            return;
+        }
+
+        /* if collapse already open, scroll immediately */
+        if ($(collapse_container).hasClass('show')) {
+            invalid_field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => invalid_field.focus(), 100);
+            return;
+        }
+
+        /* wait for the collapse animation to finish */
+        $(collapse_container).one('shown.bs.collapse', () => {
+            invalid_field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => invalid_field.focus(), 100);
+        });
+
+        /* trigger the open animation */
+        $(collapse_container).collapse('show');
+    });
+});

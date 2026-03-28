@@ -17,6 +17,7 @@
 namespace Altum\Controllers;
 
 use Altum\Alerts;
+use Altum\Logger;
 use Altum\Models\Plan;
 use Altum\Models\User;
 
@@ -54,8 +55,8 @@ class AdminUsers extends Controller {
         }
 
         /* Export handler */
-        process_export_json($users, 'include', ['user_id', 'email', 'name', 'billing', 'plan_id', 'plan_settings', 'plan_expiration_date', 'plan_trial_done', 'status', 'source', 'language', 'timezone', 'continent_code', 'country', 'city_name', 'datetime', 'next_cleanup_datetime', 'last_activity', 'total_logins']);
-        process_export_csv($users, 'include', ['user_id', 'email', 'name', 'plan_id', 'plan_expiration_date', 'plan_trial_done', 'status', 'source', 'language', 'timezone', 'continent_code', 'country', 'city_name', 'datetime', 'next_cleanup_datetime', 'last_activity', 'total_logins']);
+        process_export_json($users, ['user_id', 'email', 'name', 'billing', 'plan_id', 'plan_settings', 'plan_expiration_date', 'plan_trial_done', 'status', 'source', 'language', 'timezone', 'continent_code', 'country', 'city_name', 'datetime', 'next_cleanup_datetime', 'last_activity', 'total_logins']);
+        process_export_csv($users, ['user_id', 'email', 'name', 'plan_id', 'plan_expiration_date', 'plan_trial_done', 'status', 'source', 'language', 'timezone', 'continent_code', 'country', 'city_name', 'datetime', 'next_cleanup_datetime', 'last_activity', 'total_logins']);
 
         /* Requested plan details */
         $plans = (new \Altum\Models\Plan())->get_plans();
@@ -112,14 +113,14 @@ class AdminUsers extends Controller {
 
             /* Login as the new user */
             session_start();
-            $_SESSION['user_id'] = $user->user_id;
-            $_SESSION['user_password_hash'] = md5($user->password);
+            session_set('user_id', $user->user_id);
+            session_set('user_password_hash', md5($user->password));
 
             /* Tell the script that we're actually logged in as an admin in the background */
-            $_SESSION['admin_user_id'] = $this->user->user_id;
+            session_set('admin_user_id', $this->user->user_id);
 
             /* Set a nice success message */
-            Alerts::add_success(sprintf(l('admin_user_login_modal.success_message'), $user->name));
+            Alerts::add_success(sprintf(l('admin_user_login_modal.success_message'), '<strong>' . $user->name . '</strong>'));
 
             redirect('dashboard');
 
@@ -153,6 +154,8 @@ class AdminUsers extends Controller {
 
             set_time_limit(0);
 
+            session_write_close();
+
             switch($_POST['type']) {
                 case 'delete':
 
@@ -164,11 +167,57 @@ class AdminUsers extends Controller {
 
                         (new User())->delete((int) $user_id);
                     }
+
+                    session_start();
+
+                    /* Set a nice success message */
+                    Alerts::add_success(l('bulk_delete_modal.success_message'));
+
+                    break;
+
+                case 'resend_activation':
+
+                    $total = 0;
+
+                    foreach($_POST['selected'] as $user_id) {
+                        $user = db()->where('user_id', $user_id)->getOne('users', ['user_id', 'status', 'name', 'email', 'language']);
+
+                        if($user && !$user->status) {
+                            /* Generate new email code */
+                            $email_code = md5(uniqid('', true) . random_bytes(16));
+
+                            /* Update the current activation email */
+                            db()->where('user_id', $user->user_id)->update('users', ['email_activation_code' => $email_code]);
+
+                            /* Prepare the email */
+                            $email_template = get_email_template(
+                                [
+                                    '{{NAME}}' => $user->name,
+                                ],
+                                l('global.emails.user_activation.subject', $user->language),
+                                [
+                                    '{{ACTIVATION_LINK}}' => url('activate-user?email=' . md5($user->email) . '&email_activation_code=' . $email_code . '&type=user_activation'),
+                                    '{{NAME}}' => $user->name,
+                                ],
+                                l('global.emails.user_activation.body', $user->language)
+                            );
+
+                            /* Send the email */
+                            send_mail($user->email, $email_template->subject, $email_template->body);
+
+                            Logger::users($user->user_id, 'resend_activation.request_sent');
+
+                            $total++;
+                        }
+                    }
+
+                    session_start();
+
+                    /* Set a nice success message */
+                    Alerts::add_success(sprintf(l('admin_users_bulk_resend_activation_modal.success_message'), nr($total)));
+
                     break;
             }
-
-            /* Set a nice success message */
-            Alerts::add_success(l('bulk_delete_modal.success_message'));
 
         }
 

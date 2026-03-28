@@ -127,7 +127,7 @@
 
             <div class="row mb-4">
                 <div class="col-12 col-lg-6 mb-3 mb-lg-0">
-                    <button type="button" onclick="window.print()" class="btn btn-block btn-outline-secondary d-print-none <?= $this->user->plan_settings->export->pdf ? null : 'disabled' ?>">
+                    <button type="button" onclick="window.print();return false;" class="btn btn-block btn-outline-secondary d-print-none <?= $this->user->plan_settings->export->pdf ? null : 'disabled' ?>">
                         <i class="fas fa-fw fa-sm fa-file-pdf mr-1"></i> <?= l('transfer_qr.print') ?>
                     </button>
                 </div>

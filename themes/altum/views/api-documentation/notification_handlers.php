@@ -78,40 +78,40 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
-                            {
-                            "data": [
-                            {
-                            "id": 1,
-                            "type": "email",
-                            "name": "Work email",
-                            "settings": {
-                            "email": "hey@example.com"
-                            },
-                            "is_enabled": true,
-                            "last_datetime": null,
-                            "datetime": "<?= get_date() ?>"
-                            }
-                            ],
-                            "meta": {
-                            "page": 1,
-                            "results_per_page": 25,
-                            "total": 1,
-                            "total_pages": 1
-                            },
-                            "links": {
-                            "first": "<?= SITE_URL ?>api/notification-handlers?&page=1",
-                            "last": "<?= SITE_URL ?>api/notification-handlers?&page=1",
-                            "next": null,
-                            "prev": null,
-                            "self": "<?= SITE_URL ?>api/notification-handlers?&page=1"
-                            }
-                            }
+                        <pre data-shiki="json">
+{
+    "data": [
+        {
+            "id": 1,
+            "type": "email",
+            "name": "Work email",
+            "settings": {
+                "email": "hey@example.com"
+            },
+            "is_enabled": true,
+            "last_datetime": null,
+            "datetime": "<?= get_date() ?>",
+        }
+    ],
+    "meta": {
+        "page": 1,
+        "results_per_page": 25,
+        "total": 1,
+        "total_pages": 1
+    },
+    "links": {
+        "first": "<?= SITE_URL ?>api/notification-handlers?page=1",
+        "last": "<?= SITE_URL ?>api/notification-handlers?page=1",
+        "next": null,
+        "prev": null,
+        "self": "<?= SITE_URL ?>api/notification-handlers?page=1"
+    }
+}</pre>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+
 
         <div class="card">
             <div class="card-header bg-white p-3 position-relative">
@@ -147,7 +147,7 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
+                        <pre data-shiki="json">
 {
     "data": {
         "id": 1,
@@ -158,14 +158,14 @@
         },
         "is_enabled": true,
         "last_datetime": null,
-        "datetime": "<?= get_date() ?>"
+        "datetime": "<?= get_date() ?>",
     }
-}
+}</pre>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+
 
         <div class="card">
             <div class="card-header bg-white p-3 position-relative">
@@ -214,6 +214,8 @@
                                 </td>
                                 <td><?= sprintf(l('api_documentation.allowed_values'), '<code>' . implode('</code> , <code>',  array_keys(require APP_PATH . 'includes/notification_handlers.php')) . '</code>') ?></td>
                             </tr>
+
+                            <?php if(settings()->notification_handlers->email_is_enabled): ?>
                             <tr>
                                 <td>email</td>
                                 <td>
@@ -222,6 +224,9 @@
                                 </td>
                                 <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = email</span>') ?> <?= l('notification_handlers.email') ?></td>
                             </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->webhook_is_enabled): ?>
                             <tr>
                                 <td>webhook</td>
                                 <td>
@@ -230,6 +235,9 @@
                                 </td>
                                 <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = webhook</span>') ?> <?= l('notification_handlers.webhook') ?></td>
                             </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->slack_is_enabled): ?>
                             <tr>
                                 <td>slack</td>
                                 <td>
@@ -238,6 +246,9 @@
                                 </td>
                                 <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = slack</span>') ?> <?= l('notification_handlers.slack') ?></td>
                             </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->discord_is_enabled): ?>
                             <tr>
                                 <td>discord</td>
                                 <td>
@@ -246,6 +257,9 @@
                                 </td>
                                 <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = discord</span>') ?> <?= l('notification_handlers.discord') ?></td>
                             </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->telegram_is_enabled): ?>
                             <tr>
                                 <td>telegram</td>
                                 <td>
@@ -254,6 +268,7 @@
                                 </td>
                                 <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = telegram</span>') ?> <?= l('notification_handlers.telegram') ?></td>
                             </tr>
+
                             <tr>
                                 <td>telegram_chat_id</td>
                                 <td>
@@ -262,6 +277,31 @@
                                 </td>
                                 <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = telegram</span>') ?> <?= l('notification_handlers.telegram_chat_id') ?></td>
                             </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->microsoft_teams_is_enabled): ?>
+                                <tr>
+                                    <td>microsoft_teams</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = microsoft_teams</span>') ?> <?= l('notification_handlers.microsoft_teams') ?></td>
+                                </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->google_chat_is_enabled): ?>
+                                <tr>
+                                    <td>google_chat</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = google_chat</span>') ?> <?= l('notification_handlers.google_chat') ?></td>
+                                </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->x_is_enabled): ?>
                             <tr>
                                 <td>x_consumer_key</td>
                                 <td>
@@ -294,6 +334,19 @@
                                 </td>
                                 <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = x</span>') ?> <?= l('notification_handlers.telegram') ?></td>
                             </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->push_subscriber_id_is_enabled): ?>
+                                <tr>
+                                    <td>push_subscriber_id</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = push_subscriber_id</span>') ?> <?= l('notification_handlers.push_subscriber_id') ?></td>
+                                </tr>
+                            <?php endif ?>
+
                             <?php if(settings()->notification_handlers->twilio_is_enabled): ?>
                                 <tr>
                                     <td>twilio</td>
@@ -304,6 +357,7 @@
                                     <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = twilio</span>') ?> <?= l('notification_handlers.twilio') ?></td>
                                 </tr>
                             <?php endif ?>
+
                             <?php if(settings()->notification_handlers->twilio_call_is_enabled): ?>
                                 <tr>
                                     <td>twilio_call</td>
@@ -314,6 +368,7 @@
                                     <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = twilio_call</span>') ?> <?= l('notification_handlers.twilio') ?></td>
                                 </tr>
                             <?php endif ?>
+
                             <?php if(settings()->notification_handlers->whatsapp_is_enabled): ?>
                                 <tr>
                                     <td>whatsapp</td>
@@ -345,18 +400,18 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
+                        <pre data-shiki="json">
 {
     "data": {
         "id": 1
     }
-}
+}</pre>
                         </div>
                     </div>
 
                 </div>
             </div>
-        </div>
+
 
         <div class="card">
             <div class="card-header bg-white p-3 position-relative">
@@ -405,86 +460,138 @@
                                 </td>
                                 <td><?= sprintf(l('api_documentation.allowed_values'), '<code>' . implode('</code> , <code>',  array_keys(require APP_PATH . 'includes/notification_handlers.php')) . '</code>') ?></td>
                             </tr>
-                            <tr>
-                                <td>email</td>
-                                <td>
-                                    <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
-                                    <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
-                                </td>
-                                <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = email</span>') ?> <?= l('notification_handlers.email') ?></td>
-                            </tr>
-                            <tr>
-                                <td>webhook</td>
-                                <td>
-                                    <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
-                                    <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
-                                </td>
-                                <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = webhook</span>') ?> <?= l('notification_handlers.webhook') ?></td>
-                            </tr>
-                            <tr>
-                                <td>slack</td>
-                                <td>
-                                    <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
-                                    <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
-                                </td>
-                                <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = slack</span>') ?> <?= l('notification_handlers.slack') ?></td>
-                            </tr>
-                            <tr>
-                                <td>discord</td>
-                                <td>
-                                    <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
-                                    <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
-                                </td>
-                                <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = discord</span>') ?> <?= l('notification_handlers.discord') ?></td>
-                            </tr>
-                            <tr>
-                                <td>telegram</td>
-                                <td>
-                                    <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
-                                    <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
-                                </td>
-                                <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = telegram</span>') ?> <?= l('notification_handlers.telegram') ?></td>
-                            </tr>
-                            <tr>
-                                <td>telegram_chat_id</td>
-                                <td>
-                                    <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
-                                    <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
-                                </td>
-                                <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = telegram</span>') ?> <?= l('notification_handlers.telegram_chat_id') ?></td>
-                            </tr>
-                            <tr>
-                                <td>x_consumer_key</td>
-                                <td>
-                                    <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
-                                    <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
-                                </td>
-                                <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = x</span>') ?> <?= l('notification_handlers.telegram') ?></td>
-                            </tr>
-                            <tr>
-                                <td>x_consumer_secret</td>
-                                <td>
-                                    <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
-                                    <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
-                                </td>
-                                <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = x</span>') ?> <?= l('notification_handlers.telegram') ?></td>
-                            </tr>
-                            <tr>
-                                <td>x_access_token</td>
-                                <td>
-                                    <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
-                                    <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
-                                </td>
-                                <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = x</span>') ?> <?= l('notification_handlers.telegram') ?></td>
-                            </tr>
-                            <tr>
-                                <td>x_access_token_secret</td>
-                                <td>
-                                    <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
-                                    <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
-                                </td>
-                                <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = x</span>') ?> <?= l('notification_handlers.telegram') ?></td>
-                            </tr>
+                            <?php if(settings()->notification_handlers->email_is_enabled): ?>
+                                <tr>
+                                    <td>email</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = email</span>') ?> <?= l('notification_handlers.email') ?></td>
+                                </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->webhook_is_enabled): ?>
+                                <tr>
+                                    <td>webhook</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = webhook</span>') ?> <?= l('notification_handlers.webhook') ?></td>
+                                </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->slack_is_enabled): ?>
+                                <tr>
+                                    <td>slack</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = slack</span>') ?> <?= l('notification_handlers.slack') ?></td>
+                                </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->discord_is_enabled): ?>
+                                <tr>
+                                    <td>discord</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = discord</span>') ?> <?= l('notification_handlers.discord') ?></td>
+                                </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->telegram_is_enabled): ?>
+                                <tr>
+                                    <td>telegram</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = telegram</span>') ?> <?= l('notification_handlers.telegram') ?></td>
+                                </tr>
+
+                                <tr>
+                                    <td>telegram_chat_id</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = telegram</span>') ?> <?= l('notification_handlers.telegram_chat_id') ?></td>
+                                </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->microsoft_teams_is_enabled): ?>
+                                <tr>
+                                    <td>microsoft_teams</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = microsoft_teams</span>') ?> <?= l('notification_handlers.microsoft_teams') ?></td>
+                                </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->google_chat_is_enabled): ?>
+                                <tr>
+                                    <td>google_chat</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = google_chat</span>') ?> <?= l('notification_handlers.google_chat') ?></td>
+                                </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->x_is_enabled): ?>
+                                <tr>
+                                    <td>x_consumer_key</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = x</span>') ?> <?= l('notification_handlers.telegram') ?></td>
+                                </tr>
+                                <tr>
+                                    <td>x_consumer_secret</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = x</span>') ?> <?= l('notification_handlers.telegram') ?></td>
+                                </tr>
+                                <tr>
+                                    <td>x_access_token</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = x</span>') ?> <?= l('notification_handlers.telegram') ?></td>
+                                </tr>
+                                <tr>
+                                    <td>x_access_token_secret</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = x</span>') ?> <?= l('notification_handlers.telegram') ?></td>
+                                </tr>
+                            <?php endif ?>
+
+                            <?php if(settings()->notification_handlers->push_subscriber_id_is_enabled): ?>
+                                <tr>
+                                    <td>push_subscriber_id</td>
+                                    <td>
+                                        <span class="badge badge-info"><i class="fas fa-fw fa-sm fa-circle-notch mr-1"></i> <?= l('api_documentation.optional') ?></span>
+                                        <span class="badge badge-secondary"><i class="fas fa-fw fa-sm fa-signature mr-1"></i> <?= l('api_documentation.string') ?></span>
+                                    </td>
+                                    <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = push_subscriber_id</span>') ?> <?= l('notification_handlers.push_subscriber_id') ?></td>
+                                </tr>
+                            <?php endif ?>
+
                             <?php if(settings()->notification_handlers->twilio_is_enabled): ?>
                                 <tr>
                                     <td>twilio</td>
@@ -495,6 +602,7 @@
                                     <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = twilio</span>') ?> <?= l('notification_handlers.twilio') ?></td>
                                 </tr>
                             <?php endif ?>
+
                             <?php if(settings()->notification_handlers->twilio_call_is_enabled): ?>
                                 <tr>
                                     <td>twilio_call</td>
@@ -505,6 +613,7 @@
                                     <td><?= sprintf(l('api_documentation.available_when'), '<span class="badge badge-light">type = twilio_call</span>') ?> <?= l('notification_handlers.twilio') ?></td>
                                 </tr>
                             <?php endif ?>
+
                             <?php if(settings()->notification_handlers->whatsapp_is_enabled): ?>
                                 <tr>
                                     <td>whatsapp</td>
@@ -543,18 +652,18 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
+                        <pre data-shiki="json">
 {
     "data": {
         "id": 1
     }
-}
+}</pre>
                         </div>
                     </div>
 
                 </div>
             </div>
-        </div>
+
 
         <div class="card">
             <div class="card-header bg-white p-3 position-relative">
@@ -590,7 +699,7 @@
 
                 </div>
             </div>
-        </div>
+
     </div>
 </div>
 

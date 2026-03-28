@@ -88,6 +88,7 @@ class AccountPreferences extends Controller {
 
             $_POST['transfers_auto_file_upload'] = isset($_POST['transfers_auto_file_upload']);
             $_POST['transfers_auto_transfer_create'] = isset($_POST['transfers_auto_transfer_create']);
+            $_POST['transfers_auto_copy_link'] = isset($_POST['transfers_auto_copy_link']);
 
             /* Tracking */
             $_POST['excluded_ips'] = array_filter(array_map('trim', explode(',', input_clean($_POST['excluded_ips'], 500))));
@@ -125,6 +126,7 @@ class AccountPreferences extends Controller {
                     'transfers_default_download_notification_handlers_ids' => $_POST['transfers_default_download_notification_handlers_ids'],
                     'transfers_auto_file_upload' => $_POST['transfers_auto_file_upload'],
                     'transfers_auto_transfer_create' => $_POST['transfers_auto_transfer_create'],
+                    'transfers_auto_copy_link' => $_POST['transfers_auto_copy_link'],
 
                     'excluded_ips' => $_POST['excluded_ips'],
                 ]);

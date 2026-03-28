@@ -39,8 +39,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    let color = css.getPropertyValue('--primary');
+    
+let color = css.getPropertyValue('--primary');
     let color_gradient = null;
 
     /* Display chart */

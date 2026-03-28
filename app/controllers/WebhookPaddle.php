@@ -24,8 +24,12 @@ class WebhookPaddle extends Controller {
 
     public function index() {
 
-        if(empty($_POST)) {
-            die();
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('not-found');
+        }
+
+        if((strtoupper($_SERVER['REQUEST_METHOD']) != 'POST')) {
+            redirect('not-found');
         }
 
         $public_key = openssl_get_publickey(settings()->paddle->public_key);

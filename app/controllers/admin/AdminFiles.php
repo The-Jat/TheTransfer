@@ -55,8 +55,8 @@ class AdminFiles extends Controller {
         }
 
         /* Export handler */
-        process_export_csv($files, 'include', ['file_id', 'transfer_id', 'user_id', 'name', 'original_name', 'size', 'is_encrypted', 'datetime'], sprintf(l('files.title')));
-        process_export_json($files, 'include', ['file_id', 'transfer_id', 'user_id', 'name', 'original_name', 'size', 'is_encrypted', 'datetime'], sprintf(l('files.title')));
+        process_export_csv($files, ['file_id', 'transfer_id', 'user_id', 'name', 'original_name', 'size', 'is_encrypted', 'datetime'], sprintf(l('files.title')));
+        process_export_json($files, ['file_id', 'transfer_id', 'user_id', 'name', 'original_name', 'size', 'is_encrypted', 'datetime'], sprintf(l('files.title')));
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/admin_pagination', (array) $this))->run(['paginator' => $paginator]);
@@ -99,15 +99,17 @@ class AdminFiles extends Controller {
 
             set_time_limit(0);
 
+            session_write_close();
+
             switch($_POST['type']) {
                 case 'delete':
 
                     foreach($_POST['selected'] as $file_id) {
 
-                        $file = db()->where('file_id', $file_id)->getOne('files', ['file_id', 'name']);
+                        $file = db()->where('file_id', $file_id)->getOne('files', ['file_id', 'name', 'offload_id']);
 
                         /* Delete uploaded file */
-                        Uploads::delete_uploaded_file($file->name, 'files');
+                        Uploads::delete_uploaded_file_and_potential_residue($file->name, 'files', $file->offload_id);
 
                         /* Delete the resource */
                         db()->where('file_id', $file->file_id)->delete('files');
@@ -116,6 +118,8 @@ class AdminFiles extends Controller {
 
                     break;
             }
+
+            session_start();
 
             /* Set a nice success message */
             Alerts::add_success(l('bulk_delete_modal.success_message'));
@@ -135,14 +139,14 @@ class AdminFiles extends Controller {
             Alerts::add_error(l('global.error_message.invalid_csrf_token'));
         }
 
-        if(!$file = db()->where('file_id', $file_id)->getOne('files', ['file_id', 'user_id', 'original_name'])) {
+        if(!$file = db()->where('file_id', $file_id)->getOne('files', ['file_id', 'user_id', 'original_name', 'offload_id'])) {
             redirect('admin/files');
         }
 
         if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
             /* Delete uploaded file */
-            Uploads::delete_uploaded_file($file->name, 'files');
+            Uploads::delete_uploaded_file_and_potential_residue($file->name, 'files', $file->offload_id);
 
             /* Delete the resource */
             db()->where('file_id', $file->file_id)->delete('files');

@@ -9,8 +9,8 @@
 
 <script>
     'use strict';
-
-    /* expose cropper initializer globally */
+    
+/* expose cropper initializer globally */
     let initialize_image_cropper = () => {
         let cropper = null;
         let current_input = null;
@@ -37,7 +37,11 @@
 
                   <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-dismiss="modal"><?= l('global.no_crop') ?></button>
-                    <button type="button" class="btn btn-primary" id="crop_image_submit"><?= l('global.crop_selection') ?></button>
+
+                    <button type="button" class="btn btn-primary" id="crop_image_submit">
+                        <?= l('global.crop_selection') ?>
+                        <span id="image_cropper_size" class="small"></span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -53,24 +57,49 @@
         crop_button.replaceWith(crop_button.cloneNode(true));
         const new_crop_button = document.getElementById('crop_image_submit');
 
+        const crop_size_box = document.getElementById('image_cropper_size');
+
+        /* handle crop button */
         /* handle crop button */
         new_crop_button.addEventListener('click', () => {
             if(!cropper || !current_input) return;
 
-            cropper.getCroppedCanvas().toBlob((blob) => {
-                const file = new File([blob], current_input.files[0].name, {
-                    type: current_input.files[0].type,
+            /* get original file and detect svg */
+            const original_file = current_input.files[0];
+            const is_svg = original_file && (original_file.type === 'image/svg+xml' || /\.svg$/i.test(original_file.name));
+
+            /* force png export for svg, keep original mime for others */
+            const export_mime_type = is_svg ? 'image/png' : original_file.type;
+
+            /* render cropped canvas with good smoothing */
+            const cropped_canvas = cropper.getCroppedCanvas({
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+                /* keep transparency for png */
+                fillColor: 'transparent'
+            });
+
+            cropped_canvas.toBlob((blob) => {
+                if(!blob) return;
+
+                /* fix filename when source was svg */
+                const new_file_name = is_svg
+                    ? original_file.name.replace(/\.svg$/i, '.png')
+                    : original_file.name;
+
+                const new_file = new File([blob], new_file_name, {
+                    type: export_mime_type,
                     lastModified: Date.now()
                 });
 
                 const data_transfer = new DataTransfer();
-                data_transfer.items.add(file);
+                data_transfer.items.add(new_file);
                 current_input.files = data_transfer.files;
 
                 current_input.dispatchEvent(new Event('change'));
 
                 $(cropper_modal).modal('hide');
-            }, current_input.files[0].type);
+            }, export_mime_type);
         });
 
         /* attach change event to all crop inputs */
@@ -79,12 +108,12 @@
             /* avoid attaching multiple times */
             input.removeEventListener('change', input._cropper_handler);
 
-            input._cropper_handler = (event) => {
+            input._cropper_handler = event => {
                 const file = event.target.files[0];
                 if(!file || !file.type.startsWith('image/')) return;
 
                 const reader = new FileReader();
-                reader.onload = (event) => {
+                reader.onload = event => {
                     preview_image.src = event.target.result;
 
                     $(cropper_modal).modal('show');
@@ -97,6 +126,13 @@
                             aspectRatio: aspect_ratio,
                             viewMode: 2,
                             restore: false,
+                            crop: () => {
+                                /* get cropped box data */
+                                const crop_data = cropper.getData(true);
+
+                                /* update size in modal */
+                                crop_size_box.innerText = '(' + Math.round(crop_data.width) + '×' + Math.round(crop_data.height) + ' px)';
+                            }
                         });
 
                     }).on('hidden.bs.modal', () => {
@@ -105,6 +141,7 @@
                             cropper = null;
                         }
                         current_input = null;
+                        crop_size_box.innerText = '';
                         $(cropper_modal).off('shown.bs.modal hidden.bs.modal');
                     });
 

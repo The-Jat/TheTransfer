@@ -1,6 +1,5 @@
 <?php defined('ALTUMCODE') || die() ?>
 
-
 <div class="container">
     <?= \Altum\Alerts::output_alerts() ?>
 
@@ -42,7 +41,7 @@
                         <div class="col-12 col-lg-5 offset-lg-1 mb-4 mb-lg-0" id="upload_previews_settings">
 
                             <div class="form-group mb-3">
-                                <div class="row btn-group-toggle" data-toggle="buttons">
+                                <div class="row btn-group-toggle m-n2" data-toggle="buttons">
                                     <div class="col">
                                         <label class="btn btn-sm btn-light btn-block active">
                                             <input type="radio" name="type" value="link" class="custom-control-input" <?= ($this->user->preferences->transfers_default_type ?? 'link') == 'link' ? 'checked="checked"' : null ?> required="required" />
@@ -87,7 +86,7 @@
                                     <div class="col-sm-8">
                                         <select id="domain_id" name="domain_id" class="custom-select custom-select-sm">
                                             <?php if(settings()->transfers->main_domain_is_enabled || \Altum\Authentication::is_admin()): ?>
-                                                <option value=""><?= remove_url_protocol_from_url(SITE_URL) ?></option>
+                                                <option value=" "><?= remove_url_protocol_from_url(SITE_URL) ?></option>
                                             <?php endif ?>
 
                                             <?php foreach($data->domains as $row): ?>
@@ -203,7 +202,7 @@
                                 </div>
 
                                 <div class="tab-pane fade" id="pills-protection" role="tabpanel" aria-labelledby="protection-tab">
-                                    <div <?= $this->user->plan_settings->password_protection_is_enabled ? null : get_plan_feature_disabled_info() ?>>
+                                    <div <?= $this->user->plan_settings->password_protection_is_enabled ? null : get_plan_feature_disabled_info() ?> >
                                         <div class="form-group <?= $this->user->plan_settings->password_protection_is_enabled ? null : 'container-disabled' ?>" data-password-toggle-view data-password-toggle-view-show="<?= l('global.show') ?>" data-password-toggle-view-hide="<?= l('global.hide') ?>">
                                             <label for="password"><?= l('global.password') ?></label>
                                             <input type="password" id="password" name="password" class="form-control form-control-sm" autocomplete="new-password" />
@@ -213,8 +212,8 @@
                                         </div>
                                     </div>
 
-                                    <div <?= $this->user->plan_settings->file_encryption_is_enabled ? null : get_plan_feature_disabled_info() ?>>
-                                        <div class="form-group custom-control custom-switch <?= $this->user->plan_settings->file_encryption_is_enabled ? null : 'container-disabled' ?>">
+                                    <div <?= $this->user->plan_settings->file_encryption_is_enabled ? null : get_plan_feature_disabled_info() ?> <?= $this->user->plan_settings->file_encryption_is_enabled && $this->user->preferences->transfers_auto_file_upload ? 'data-toggle="tooltip" title="' . l('transfer.file_encryption_auto_file_upload') . '"' : null ?>>
+                                        <div class="form-group custom-control custom-switch <?= $this->user->plan_settings->file_encryption_is_enabled ? null : 'container-disabled' ?> <?= $this->user->preferences->transfers_auto_file_upload ? 'container-disabled' : null ?>">
                                             <input id="file_encryption_is_enabled" name="file_encryption_is_enabled" type="checkbox" class="custom-control-input" disabled="disabled" <?= $this->user->plan_settings->file_encryption_is_enabled ? null : 'data-plan-feature-no-access' ?>>
                                             <label class="custom-control-label" for="file_encryption_is_enabled"><?= l('transfer.file_encryption') ?></label>
                                             <small class="form-text text-muted"><?= l('transfer.file_encryption_help') ?></small>
@@ -238,7 +237,7 @@
                                     <div class="tab-pane fade" id="pills-pixels" role="tabpanel" aria-labelledby="pixels-tab">
                                         <div <?= $this->user->plan_settings->pixels_limit != 0 ? null : get_plan_feature_disabled_info() ?>>
                                             <div class="form-group <?= $this->user->plan_settings->pixels_limit != 0 ? null : 'container-disabled' ?>">
-                                                <div class="d-flex flex-column flex-xl-row justify-content-between">
+                                                <div class="d-flex flex-wrap flex-row justify-content-between">
                                                     <label><?= l('transfer.pixels') ?></label>
                                                     <a href="<?= url('pixel-create') ?>" target="_blank" class="small mb-2"><i class="fas fa-fw fa-sm fa-plus mr-1"></i> <?= l('pixels.create') ?></a>
                                                 </div>
@@ -267,12 +266,12 @@
                                     <?php if(settings()->transfers->projects_is_enabled): ?>
                                     <div <?= $this->user->plan_settings->projects_limit != 0 ? null : get_plan_feature_disabled_info() ?>>
                                         <div class="form-group <?= $this->user->plan_settings->projects_limit != 0 ? null : 'container-disabled' ?>">
-                                            <div class="d-flex flex-column flex-xl-row justify-content-between">
+                                            <div class="d-flex flex-wrap flex-row justify-content-between">
                                                 <label for="project_id"><?= l('projects.project_id') ?></label>
                                                 <a href="<?= url('project-create') ?>" target="_blank" class="small mb-2"><i class="fas fa-fw fa-sm fa-plus mr-1"></i> <?= l('projects.create') ?></a>
                                             </div>
                                             <select id="project_id" name="project_id" class="custom-select custom-select-sm">
-                                                <option value=""><?= l('global.none') ?></option>
+                                                <option value=" "><?= l('global.none') ?></option>
                                                 <?php foreach($data->projects as $project_id => $project): ?>
                                                     <option value="<?= $project_id ?>" <?= $project_id == $this->user->preferences->transfers_default_project_id ? 'selected="selected"' : null ?>><?= $project->name ?></option>
                                                 <?php endforeach ?>
@@ -316,7 +315,7 @@
                                 <div class="tab-pane fade" id="pills-notification-handlers" role="tabpanel" aria-labelledby="notification-handlers-tab">
                                     <div <?= $this->user->plan_id != 'guest' ? null : get_plan_feature_disabled_info() ?>>
                                         <div class="form-group <?= $this->user->plan_settings != 'guest' ? null : 'container-disabled' ?>">
-                                            <div class="d-flex flex-column flex-xl-row justify-content-between">
+                                            <div class="d-flex flex-wrap flex-row justify-content-between">
                                                 <label><?= l('transfer.notification_handlers') ?></label>
                                                 <a href="<?= url('notification-handler-create') ?>" target="_blank" class="small mb-2"><i class="fas fa-fw fa-sm fa-plus mr-1"></i> <?= l('notification_handlers.create') ?></a>
                                             </div>
@@ -469,11 +468,11 @@
             </div>
 
             <div class="ml-3">
-                <a href="<?= url('transfers') ?>" class="btn btn-sm btn-primary-100" data-toggle="tooltip" title="<?= l('global.view_all') ?>"><i class="fas fa-fw fa-pager fa-sm"></i></a>
+                <a href="<?= url('transfers') ?>" class="btn btn-sm btn-primary-100" data-toggle="tooltip" title="<?= l('global.view_all') ?>"><i class="fas fa-fw fa-paper-plane fa-sm"></i></a>
             </div>
         </div>
 
-        <?php if(count($data->transfers)): ?>
+        <?php if (!empty($data->transfers)): ?>
             <div class="table-responsive table-custom-container">
                 <table class="table table-custom">
                     <thead>
@@ -537,7 +536,7 @@
                                         <i class="fas fa-fw fa-calendar text-muted"></i>
                                     </span>
 
-                                    <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.last_datetime_tooltip'), ($row->last_datetime ? '<br />' . \Altum\Date::get($row->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($row->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->last_datetime) . ')</small>' : '<br />-')) ?>">
+                                    <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.last_datetime_tooltip'), ($row->last_datetime ? '<br />' . \Altum\Date::get($row->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($row->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->last_datetime) . ')</small>' : '<br />' . l('global.na'))) ?>">
                                         <i class="fas fa-fw fa-history text-muted"></i>
                                     </span>
 
@@ -565,6 +564,20 @@
 
                             <td>
                                 <div class="d-flex justify-content-end">
+                                    <button
+                                            id="url_copy"
+                                            type="button"
+                                            class="btn btn-link text-secondary"
+                                            data-toggle="tooltip"
+                                            title="<?= l('global.clipboard_copy') ?>"
+                                            aria-label="<?= l('global.clipboard_copy') ?>"
+                                            data-copy="<?= l('global.clipboard_copy') ?>"
+                                            data-copied="<?= l('global.clipboard_copied') ?>"
+                                            data-clipboard-text="<?= $row->full_url ?>"
+                                    >
+                                        <i class="fas fa-fw fa-sm fa-copy"></i>
+                                    </button>
+
                                     <?= include_view(THEME_PATH . 'views/transfers/transfer_dropdown_button.php', ['id' => $row->transfer_id, 'resource_name' => $row->name]) ?>
                                 </div>
                             </td>
@@ -592,8 +605,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    let active_notification_handlers_per_resource_limit = <?= (int) $this->user->plan_settings->active_notification_handlers_per_resource_limit ?>;
+    
+let active_notification_handlers_per_resource_limit = <?= (int) $this->user->plan_settings->active_notification_handlers_per_resource_limit ?>;
 
     if(active_notification_handlers_per_resource_limit != -1) {
         let process_notification_handlers = () => {
@@ -612,3 +625,5 @@
     }
 </script>
 <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>
+
+<?php include_view(THEME_PATH . 'views/partials/clipboard_js.php') ?>

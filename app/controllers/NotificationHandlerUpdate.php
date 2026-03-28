@@ -28,7 +28,7 @@ class NotificationHandlerUpdate extends Controller {
 
         /* Team checks */
         if(\Altum\Teams::is_delegated() && !\Altum\Teams::has_access('update.notification_handlers')) {
-            Alerts::add_info(l('global.info_message.team_no_access'));
+            Alerts::add_error(l('global.info_message.team_no_access'));
             redirect('notification-handlers');
         }
 
@@ -39,9 +39,15 @@ class NotificationHandlerUpdate extends Controller {
         }
         $notification_handler->settings = json_decode($notification_handler->settings ?? '');
 
+        /* Check for the plan limit */
+        $total_rows = database()->query("SELECT COUNT(*) AS `total` FROM `notification_handlers` WHERE `user_id` = {$this->user->user_id} AND `type` = '{$notification_handler->type}'")->fetch_object()->total ?? 0;
+        if($this->user->plan_settings->{'notification_handlers_' . $notification_handler->type . '_limit'} != -1 && $total_rows > $this->user->plan_settings->{'notification_handlers_' . $notification_handler->type . '_limit'}) {
+            redirect('notification-handlers');
+        }
+
         if(!empty($_POST)) {
             $_POST['type'] = array_key_exists($_POST['type'], require APP_PATH . 'includes/notification_handlers.php') ? input_clean($_POST['type']) : null;
-            $_POST['name'] = input_clean($_POST['name']);
+            $_POST['name'] = input_clean($_POST['name'], 128);
             $_POST['is_enabled'] = (int) isset($_POST['is_enabled']);
 
             //ALTUMCODE:DEMO if(DEMO) if($this->user->user_id == 1) Alerts::add_error('Please create an account on the demo to test out this function.');
@@ -49,7 +55,7 @@ class NotificationHandlerUpdate extends Controller {
             /* Check for any errors */
             $required_fields = ['type', 'name'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }
@@ -88,7 +94,7 @@ class NotificationHandlerUpdate extends Controller {
                 }
 
                 /* Test integration */
-                if(isset($_POST['test']) && ($_SESSION['notification_handler_test_' . $_POST['type']] ?? 0) < 10) {
+                if(isset($_POST['test']) && (session_get('notification_handler_test_' . $_POST['type']) ?? 0) < 10) {
 
                     /* Send a test notification */
                     switch($_POST['type']) {
@@ -161,7 +167,7 @@ class NotificationHandlerUpdate extends Controller {
                                 Alerts::add_error(l('notification_handlers.error_message_test') . '<br />' . e($exception->getMessage()));
                             }
 
-                            if($response->code != 200) {
+                            if($response->code != 204) {
                                 Alerts::add_error(l('notification_handlers.error_message_test') . '<br />' . '<strong>' . $response->code . ':</strong> ' .  e($response->raw_body));
                             }
 
@@ -285,7 +291,7 @@ class NotificationHandlerUpdate extends Controller {
 
                             try {
                                 $response = \Unirest\Request::post(
-                                    'https://graph.facebook.com/v18.0/' . settings()->notification_handlers->whatsapp_number_id . '/messages',
+                                    'https://graph.facebook.com/v23.0/' . settings()->notification_handlers->whatsapp_number_id . '/messages',
                                     [
                                         'Authorization' => 'Bearer ' . settings()->notification_handlers->whatsapp_access_token,
                                         'Content-Type' => 'application/json'
@@ -299,16 +305,6 @@ class NotificationHandlerUpdate extends Controller {
                                             'language' => [
                                                 'code' => \Altum\Language::$default_code
                                             ],
-                                            'components' => [[
-                                                'type' => 'body',
-                                                'parameters' => [
-                                                    [
-                                                        'type' => 'text',
-                                                        'text' => l('notification_handlers.test_title')
-                                                    ]
-                                                ]
-                                            ]]
-
                                         ]
                                     ])
                                 );
@@ -371,7 +367,7 @@ class NotificationHandlerUpdate extends Controller {
                     }
 
                     /* Increment */
-                    $_SESSION['notification_handler_test_' . $_POST['type']] = ($_SESSION['notification_handler_test_' . $_POST['type']] ?? 0) + 1;
+                    session_set('notification_handler_test_' . $_POST['type'], (session_get('notification_handler_test_' . $_POST['type']) ?? 0) + 1);
 
                     if(!Alerts::has_errors()) {
                         Alerts::add_success(l('notification_handlers.success_message_test'));

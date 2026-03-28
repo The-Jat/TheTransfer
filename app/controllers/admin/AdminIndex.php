@@ -47,6 +47,7 @@ class AdminIndex extends Controller {
         $data = [
             'plans' => $plans,
             'internal_notifications' => $internal_notifications ?? [],
+            'payment_processors' => require APP_PATH . 'includes/payment_processors.php',
         ];
 
         $view = new \Altum\View('admin/index/index', (array) $this);
@@ -56,6 +57,9 @@ class AdminIndex extends Controller {
     }
 
     public function get_stats_ajax() {
+
+        session_write_close();
+        
         if(!empty($_POST)) {
             redirect();
         }

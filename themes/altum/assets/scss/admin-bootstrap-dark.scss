@@ -208,6 +208,11 @@ code {
 /* Tooltip fix */
 .tooltip { top: 0; }
 
+/* Stretched link fix - otherwise leaks on top of dropdown menu */
+.stretched-link::after {
+    z-index: 0 !important;
+}
+
 /* Custom switches */
 .custom-control-label::before {
     border: 0;
@@ -216,6 +221,45 @@ code {
 .custom-control-input[disabled]~.custom-control-label::before, .custom-control-input:disabled~.custom-control-label::before {
     background: #{$gray-300};
 }
+
+/* Badges */
+.badge {
+    padding: 0.45em 0.9em;
+}
+[data-theme-style="dark"] .badge-primary {
+    background: var(--primary-800);
+    color: var(--primary-100);
+}
+[data-theme-style="dark"] .badge-secondary {
+    background-color: hsl(208, 7%, 35%);
+    color: hsl(208, 7%, 85%);
+}
+[data-theme-style="dark"] .badge-success {
+    background-color: hsla(134, 50%, 30%, 1);
+    color: hsla(134, 50%, 85%, 1);
+}
+[data-theme-style="dark"] .badge-danger {
+    background-color: hsla(354, 70%, 35%, 1);
+    color: hsla(354, 70%, 85%, 1);
+}
+[data-theme-style="dark"] .badge-warning {
+    background-color: hsla(50, 10%, 20%, 1);
+    color: hsla(45, 100%, 85%, 1);
+}
+[data-theme-style="dark"] .badge-info {
+    background-color: hsla(188, 60%, 30%, 1);
+    color: hsla(188, 78%, 85%, 1);
+}
+[data-theme-style="dark"] .badge-light {
+    background-color: hsla(210, 15%, 20%, 1);
+    color: hsl(210, 17%, 95%);
+}
+[data-theme-style="dark"] .badge-dark {
+    background-color: hsla(210, 10%, 90%, 1);
+    color: hsla(210, 10%, 20%, 1);
+}
+
+// DARK //
 
 /* Extra variables */
 :root {

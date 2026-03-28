@@ -4,14 +4,14 @@
 
 <div class="container">
     <?php if(settings()->main->breadcrumbs_is_enabled): ?>
-<nav aria-label="breadcrumb">
-        <ol class="custom-breadcrumbs small">
-            <li><a href="<?= url() ?>"><?= l('index.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
-            <li><a href="<?= url('api-documentation') ?>"><?= l('api_documentation.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
-            <li class="active" aria-current="page"><?= l('api_documentation.team_members') ?></li>
-        </ol>
-    </nav>
-<?php endif ?>
+        <nav aria-label="breadcrumb">
+            <ol class="custom-breadcrumbs small">
+                <li><a href="<?= url() ?>"><?= l('index.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
+                <li><a href="<?= url('api-documentation') ?>"><?= l('api_documentation.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
+                <li class="active" aria-current="page"><?= l('api_documentation.team_members') ?></li>
+            </ol>
+        </nav>
+    <?php endif ?>
 
     <h1 class="h4 mb-4"><?= l('api_documentation.team_members') ?></h1>
 
@@ -50,30 +50,31 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
+                        <pre data-shiki="json">
 {
     "data": [
-    {
-        "id": 1,
-        "team_id": 1,
-        "user_email": "hello@example.com",
-        "access": {
-            "read": true,
-            "create": true,
-            "update": true,
-            "delete": false
-        },
-        "status": 1,
-        "datetime": "<?= get_date() ?>",
-        "last_datetime": null
+        {
+            "id": 1,
+            "team_id": 1,
+            "user_email": "hello@example.com",
+            "access": {
+                "read": true,
+                "create": true,
+                "update": true,
+                "delete": false
+            },
+            "status": 1,
+            "datetime": "<?= get_date() ?>",
+            "last_datetime": null
         }
     ]
 }
-                        </div>
+</pre>
                     </div>
                 </div>
             </div>
         </div>
+
 
         <div class="card">
             <div class="card-header bg-white p-3 position-relative">
@@ -155,18 +156,18 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
+                        <pre data-shiki="json">
 {
     "data": {
         "id": 1
     }
-}
-                        </div>
+}</pre>
                     </div>
-
                 </div>
+
             </div>
         </div>
+
 
         <div class="card">
             <div class="card-header bg-white p-3 position-relative">
@@ -232,18 +233,18 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
+                        <pre data-shiki="json">
 {
     "data": {
         "id": 1
     }
-}
-                        </div>
+}</pre>
                     </div>
-
                 </div>
+
             </div>
         </div>
+
 
         <div class="card">
             <div class="card-header bg-white p-3 position-relative">
@@ -279,8 +280,8 @@
 
                 </div>
             </div>
+
         </div>
     </div>
-</div>
 
-<?php require THEME_PATH . 'views/partials/shiki_highlighter.php' ?>
+    <?php require THEME_PATH . 'views/partials/shiki_highlighter.php' ?>

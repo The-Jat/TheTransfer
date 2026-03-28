@@ -54,8 +54,8 @@ class AdminPushSubscribers extends Controller {
         }
 
         /* Export handler */
-        process_export_json($push_subscribers, 'include', ['push_subscriber_id', 'user_id', 'subscriber_id', 'endpoint', 'keys', 'ip', 'city_name', 'country_code', 'continent_code', 'os_name', 'browser_name', 'browser_language', 'device_type', 'datetime']);
-        process_export_csv($push_subscribers, 'include', ['push_subscriber_id', 'user_id', 'subscriber_id', 'endpoint', 'ip', 'city_name', 'country_code', 'continent_code', 'os_name', 'browser_name', 'browser_language', 'device_type', 'datetime']);
+        process_export_json($push_subscribers, ['push_subscriber_id', 'user_id', 'subscriber_id', 'endpoint', 'keys', 'ip', 'city_name', 'country_code', 'continent_code', 'os_name', 'browser_name', 'browser_language', 'device_type', 'datetime']);
+        process_export_csv($push_subscribers, ['push_subscriber_id', 'user_id', 'subscriber_id', 'endpoint', 'ip', 'city_name', 'country_code', 'continent_code', 'os_name', 'browser_name', 'browser_language', 'device_type', 'datetime']);
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/admin_pagination', (array) $this))->run(['paginator' => $paginator]);
@@ -99,6 +99,8 @@ class AdminPushSubscribers extends Controller {
 
             set_time_limit(0);
 
+            session_write_close();
+
             switch($_POST['type']) {
                 case 'delete':
 
@@ -107,6 +109,8 @@ class AdminPushSubscribers extends Controller {
                     }
                     break;
             }
+
+            session_start();
 
             /* Set a nice success message */
             Alerts::add_success(l('bulk_delete_modal.success_message'));

@@ -34,22 +34,17 @@ class AdminInternalNotificationCreate extends Controller {
         if(!empty($_POST)) {
             set_time_limit(0);
 
-            /* Filter some the variables */
+            /* Filter some of the variables */
             $_POST['title'] = input_clean($_POST['title'], 128);
             $_POST['description'] = input_clean($_POST['description'], 1024);
             $_POST['url'] = get_url($_POST['url'], 512);
             $_POST['icon'] = input_clean($_POST['icon'], 64);
 
+            /* Users ids */
             $_POST['users_ids'] = trim($_POST['users_ids'] ?? '');
-            if($_POST['users_ids']) {
-                $_POST['users_ids'] = explode(',', $_POST['users_ids'] ?? '');
-                if(count($_POST['users_ids'])) {
-                    $_POST['users_ids'] = array_map(function ($user_id) {
-                        return (int) $user_id;
-                    }, $_POST['users_ids']);
-                    $_POST['users_ids'] = array_unique($_POST['users_ids']);
-                }
-            }
+            $_POST['users_ids'] = array_filter(array_map('intval', explode(',', $_POST['users_ids'])));
+            $_POST['users_ids'] = array_values(array_unique($_POST['users_ids']));
+            $_POST['users_ids'] = $_POST['users_ids'] ?: [0];
 
             //ALTUMCODE:DEMO if(DEMO) Alerts::add_error('This command is blocked on the demo.');
 
@@ -59,7 +54,7 @@ class AdminInternalNotificationCreate extends Controller {
 
             $required_fields = ['title', 'description'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }
@@ -250,12 +245,12 @@ class AdminInternalNotificationCreate extends Controller {
         }
 
         $values = [
-            'title' => $_GET['title'] ?? $_POST['title'] ?? null,
-            'description' => $_GET['description'] ?? $_POST['description'] ?? null,
-            'url' => $_GET['url'] ?? $_POST['url'] ?? null,
-            'icon' => $_GET['icon'] ?? $_POST['icon'] ?? 'fas fa-bolt',
-            'segment' => $_GET['segment'] ?? $_POST['segment'] ?? 'all',
-            'users_ids' => $_GET['users_ids'] ?? $_POST['users_ids'] ?? null,
+            'title' => $_POST['title'] ?? $_GET['title'] ?? null,
+            'description' => $_POST['description'] ?? $_GET['description'] ?? null,
+            'url' => $_POST['url'] ?? $_GET['url'] ?? null,
+            'icon' => $_POST['icon'] ?? $_GET['icon'] ?? 'fas fa-bolt',
+            'segment' => $_POST['segment'] ?? $_GET['segment'] ?? 'all',
+            'users_ids' => implode(',', $_POST['users_ids'] ?? []),
             'filters_is_newsletter_subscribed' => $_POST['filters_is_newsletter_subscribed'] ?? [],
             'filters_plans' => $_POST['filters_plans'] ?? [],
             'filters_status' => $_POST['filters_status'] ?? [],
@@ -263,7 +258,7 @@ class AdminInternalNotificationCreate extends Controller {
             'filters_device_type' => $_POST['filters_device_type'] ?? [],
             'filters_continents' => $_POST['filters_continents'] ?? [],
             'filters_countries' => $_POST['filters_countries'] ?? [],
-            'filters_cities' => implode(',', is_array($_POST['filters_cities']) ? $_POST['filters_cities'] : []),
+            'filters_cities' => isset($_POST['filters_cities']) && implode(',', is_array($_POST['filters_cities']) ? $_POST['filters_cities'] : []),
             'filters_browser_languages' => $_POST['filters_browser_languages'] ?? [],
             'filters_languages' => $_POST['filters_languages'] ?? [],
             'filters_operating_systems' => $_POST['filters_operating_systems'] ?? [],

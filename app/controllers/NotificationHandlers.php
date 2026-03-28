@@ -28,7 +28,7 @@ class NotificationHandlers extends Controller {
 
         /* Prepare the filtering system */
         $filters = (new \Altum\Filters(['type'], ['name'], ['notification_handler_id', 'datetime', 'last_datetime', 'name']));
-        $filters->set_default_order_by($this->user->preferences->notification_handlers_default_order_by, $this->user->preferences->default_order_type ?? settings()->main->default_order_type);
+        $filters->set_default_order_by('notification_handler_id', $this->user->preferences->default_order_type ?? settings()->main->default_order_type);
         $filters->set_default_results_per_page($this->user->preferences->default_results_per_page ?? settings()->main->default_results_per_page);
 
         /* Prepare the paginator */
@@ -38,21 +38,31 @@ class NotificationHandlers extends Controller {
         /* Get the notification handlers list for the user */
         $notification_handlers = [];
         $notification_handlers_result = database()->query("SELECT * FROM `notification_handlers` WHERE `user_id` = {$this->user->user_id} {$filters->get_sql_where()} {$filters->get_sql_order_by()} {$paginator->get_sql_limit()}");
-        while($row = $notification_handlers_result->fetch_object()) $notification_handlers[] = $row;
+        while($row = $notification_handlers_result->fetch_object()) {
+            $row->settings = json_decode($row->settings ?? '');
+            $notification_handlers[] = $row;
+        }
 
         /* Export handler */
-        process_export_csv($notification_handlers, 'include', ['notification_handler_id', 'user_id', 'type', 'name', 'is_enabled', 'last_datetime', 'datetime'], sprintf(l('notification_handlers.title')));
-        process_export_json($notification_handlers, 'include', ['notification_handler_id', 'user_id', 'type', 'name', 'settings', 'is_enabled', 'last_datetime', 'datetime'], sprintf(l('notification_handlers.title')));
+        process_export_csv_new($notification_handlers, ['notification_handler_id', 'user_id', 'type', 'name', 'settings', 'is_enabled', 'last_datetime', 'datetime'], ['settings'], sprintf(l('notification_handlers.title')));
+        process_export_json($notification_handlers, ['notification_handler_id', 'user_id', 'type', 'name', 'settings', 'is_enabled', 'last_datetime', 'datetime'], sprintf(l('notification_handlers.title')));
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/pagination', (array) $this))->run(['paginator' => $paginator]);
 
+        /* Check for the plan limit */
+        $total_notification_handlers = [];
+        $total_notification_handlers_result = database()->query("SELECT COUNT(`type`) AS `total`, `type` FROM `notification_handlers` WHERE `user_id` = {$this->user->user_id} GROUP BY `type`");
+        while($row = $total_notification_handlers_result->fetch_object()) {
+            $total_notification_handlers[$row->type] = $row->total;
+        }
+
         /* Prepare the view */
         $data = [
             'notification_handlers' => $notification_handlers,
-            'total_notification_handlers' => $total_rows,
             'pagination' => $pagination,
             'filters' => $filters,
+            'total_notification_handlers' => $total_notification_handlers,
         ];
 
         $view = new \Altum\View('notification-handlers/index', (array) $this);
@@ -88,12 +98,14 @@ class NotificationHandlers extends Controller {
 
             set_time_limit(0);
 
+            session_write_close();
+
             switch($_POST['type']) {
                 case 'delete':
 
                     /* Team checks */
                     if(\Altum\Teams::is_delegated() && !\Altum\Teams::has_access('delete.notification_handlers')) {
-                        Alerts::add_info(l('global.info_message.team_no_access'));
+                        Alerts::add_error(l('global.info_message.team_no_access'));
                         redirect('notification-handlers');
 
                     }
@@ -106,6 +118,8 @@ class NotificationHandlers extends Controller {
 
                     break;
             }
+
+            session_start();
 
             /* Set a nice success message */
             Alerts::add_success(l('bulk_delete_modal.success_message'));
@@ -122,7 +136,7 @@ class NotificationHandlers extends Controller {
 
         /* Team checks */
         if(\Altum\Teams::is_delegated() && !\Altum\Teams::has_access('delete.notification_handlers')) {
-            Alerts::add_info(l('global.info_message.team_no_access'));
+            Alerts::add_error(l('global.info_message.team_no_access'));
             redirect('notification-handlers');
         }
 

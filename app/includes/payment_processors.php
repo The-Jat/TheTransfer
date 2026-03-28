@@ -77,6 +77,11 @@ return [
         'icon' => 'fas fa-star',
         'color' => '#a6b0b9',
     ],
+    'paddle_billing' => [
+        'payment_type' => ['one_time', 'recurring'],
+        'icon' => 'fas fa-star',
+        'color' => '#a6b0b9',
+    ],
     'mercadopago' => [
         'payment_type' => ['one_time'],
         'icon' => 'fas fa-handshake',
@@ -101,5 +106,25 @@ return [
         'payment_type' => ['one_time'],
         'icon' => 'fas fa-feather',
         'color' => '#0000ff',
+    ],
+	'klarna' => [
+		'payment_type' => ['one_time'],
+		'icon' => 'fas fa-shopping-basket',
+		'color' => '#ff78b3',
+	],
+    'plisio' => [
+        'payment_type' => ['one_time'],
+        'icon' => 'fas fa-coins',
+        'color' => '#466eeb',
+    ],
+    'plisio_whitelabel' => [
+        'payment_type' => ['one_time'],
+        'icon' => 'fas fa-coins',
+        'color' => '#466eeb',
+    ],
+    'revolut' => [
+        'payment_type' => ['one_time'],
+        'icon' => 'fas fa-credit-card',
+        'color' => '#193053',
     ],
 ];

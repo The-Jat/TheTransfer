@@ -2,14 +2,14 @@
 
 <div class="container">
     <?php if(settings()->main->breadcrumbs_is_enabled): ?>
-<nav aria-label="breadcrumb">
-        <ol class="custom-breadcrumbs small">
-            <li><a href="<?= url() ?>"><?= l('index.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
-            <li><a href="<?= url('api-documentation') ?>"><?= l('api_documentation.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
-            <li class="active" aria-current="page"><?= l('account_payments.title') ?></li>
-        </ol>
-    </nav>
-<?php endif ?>
+        <nav aria-label="breadcrumb">
+            <ol class="custom-breadcrumbs small">
+                <li><a href="<?= url() ?>"><?= l('index.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
+                <li><a href="<?= url('api-documentation') ?>"><?= l('api_documentation.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
+                <li class="active" aria-current="page"><?= l('account_payments.title') ?></li>
+            </ol>
+        </nav>
+    <?php endif ?>
 
     <h1 class="h4 mb-4"><?= l('account_payments.title') ?></h1>
 
@@ -78,7 +78,7 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
+                        <pre data-shiki="json">
 {
     "data": [
         {
@@ -92,7 +92,7 @@
             "total_amount": "4.99",
             "currency": "USD",
             "status": true,
-            "datetime": <?= get_date() ?>
+            "datetime": "<?= get_date() ?>",
         },
     ],
     "meta": {
@@ -102,18 +102,18 @@
         "total_pages": 1
     },
     "links": {
-        "first": "<?= SITE_URL ?>api/payments?&page=1",
-        "last": "<?= SITE_URL ?>api/payments?&page=1",
+        "first": "<?= SITE_URL ?>api/payments?page=1",
+        "last": "<?= SITE_URL ?>api/payments?page=1",
         "next": null,
         "prev": null,
-        "self": "<?= SITE_URL ?>api/payments?&page=1"
+        "self": "<?= SITE_URL ?>api/payments?page=1"
     }
-}
+}</pre>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+
 
         <div class="card">
             <div class="card-header bg-white p-3 position-relative">
@@ -149,7 +149,7 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
+                        <pre data-shiki="json">
 {
     "data": {
         "id": 1,
@@ -162,14 +162,14 @@
         "total_amount": "4.99",
         "currency": "USD",
         "status": true,
-        "datetime": <?= get_date() ?>
+        "datetime": "<?= get_date() ?>",
     }
-}
+}</pre>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+
     </div>
 </div>
 

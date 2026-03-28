@@ -1,11 +1,11 @@
 <?php defined('ALTUMCODE') || die() ?>
 
-<div>
-    <button class="btn btn-block btn-gray-200 mb-4" type="button" data-toggle="collapse" data-target="#blog_container" aria-expanded="false" aria-controls="blog_container">
+<div id="content">
+    <button class="btn btn-block btn-gray-200 font-size-little-small font-weight-450 mb-4" type="button" data-toggle="collapse" data-target="#blog_container" aria-expanded="false" aria-controls="blog_container">
         <i class="fas fa-fw fa-blog fa-sm mr-1"></i> <?= l('admin_settings.content.blog') ?>
     </button>
 
-    <div class="collapse" id="blog_container">
+    <div class="collapse" data-parent="#content" id="blog_container">
         <div class="form-group custom-control custom-switch">
             <input id="blog_is_enabled" name="blog_is_enabled" type="checkbox" class="custom-control-input" <?= settings()->content->blog_is_enabled ? 'checked="checked"' : null?>>
             <label class="custom-control-label" for="blog_is_enabled"><i class="fas fa-fw fa-sm fa-blog text-muted mr-1"></i> <?= l('admin_settings.content.blog_is_enabled') ?></label>
@@ -50,11 +50,11 @@
         </div>
     </div>
 
-    <button class="btn btn-block btn-gray-200 mb-4" type="button" data-toggle="collapse" data-target="#pages_container" aria-expanded="false" aria-controls="pages_container">
+    <button class="btn btn-block btn-gray-200 font-size-little-small font-weight-450 mb-4" type="button" data-toggle="collapse" data-target="#pages_container" aria-expanded="false" aria-controls="pages_container">
         <i class="fas fa-fw fa-info-circle fa-sm mr-1"></i> <?= l('admin_settings.content.pages') ?>
     </button>
 
-    <div class="collapse" id="pages_container">
+    <div class="collapse" data-parent="#content" id="pages_container">
         <div class="form-group custom-control custom-switch">
             <input id="pages_is_enabled" name="pages_is_enabled" type="checkbox" class="custom-control-input" <?= settings()->content->pages_is_enabled ? 'checked="checked"' : null?>>
             <label class="custom-control-label" for="pages_is_enabled"><i class="fas fa-fw fa-sm fa-info-circle text-muted mr-1"></i> <?= l('admin_settings.content.pages_is_enabled') ?></label>

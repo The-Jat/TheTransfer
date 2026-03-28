@@ -39,9 +39,22 @@ class AdminLanguageUpdate extends Controller {
 
         $language = Language::$languages[$language_name];
 
+        /* count placeholders: numbered -> unique indexes; unnumbered -> exact occurrences */
         function count_matched_translation_variables($string) {
-            $re = '/(%\d+\$s|%s)+/';
-            return preg_match_all($re, $string, $matches);
+            /* ensure string */
+            $safe_string = (string) ($string ?? '');
+
+            /* numbered placeholders like %1$s, %2$s... */
+            preg_match_all('/%(\d+)\$s/', $safe_string, $numbered_matches);
+            if (!empty($numbered_matches[1])) {
+                /* allow repeats of the same index -> count unique indexes only */
+                $unique_indexes = array_unique(array_map('intval', $numbered_matches[1]));
+                return count($unique_indexes);
+            }
+
+            /* unnumbered placeholders like %s (ignore %%s) */
+            preg_match_all('/(?<!%)%s/', $safe_string, $unnumbered_matches);
+            return count($unnumbered_matches[0] ?? []);
         }
 
         if(!empty($_POST)) {
@@ -127,7 +140,7 @@ ALTUM;
             /* Check for any errors */
             $required_fields = ['language_name', 'language_code'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }

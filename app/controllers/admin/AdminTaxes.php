@@ -24,6 +24,10 @@ class AdminTaxes extends Controller {
 
     public function index() {
 
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('admin');
+        }
+
         /* Prepare the filtering system */
         $filters = (new \Altum\Filters(['type', 'value_type', 'billing_type'], ['name', 'description'], ['tax_id', 'name', 'value', 'datetime']));
         $filters->set_default_order_by('tax_id', $this->user->preferences->default_order_type ?? settings()->main->default_order_type);
@@ -52,8 +56,8 @@ class AdminTaxes extends Controller {
         }
 
         /* Export handler */
-        process_export_json($taxes, 'include', ['tax_id', 'name', 'description', 'value', 'value_type', 'type', 'billing_type', 'countries', 'datetime']);
-        process_export_csv($taxes, 'include', ['tax_id', 'name', 'description', 'value', 'value_type', 'type', 'billing_type', 'countries', 'datetime']);
+        process_export_json($taxes, ['tax_id', 'name', 'description', 'value', 'value_type', 'type', 'billing_type', 'countries', 'datetime']);
+        process_export_csv($taxes, ['tax_id', 'name', 'description', 'value', 'value_type', 'type', 'billing_type', 'countries', 'datetime']);
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/admin_pagination', (array) $this))->run(['paginator' => $paginator]);
@@ -72,7 +76,62 @@ class AdminTaxes extends Controller {
 
     }
 
+    public function bulk() {
+
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('admin');
+        }
+
+        /* Check for any errors */
+        if(empty($_POST)) {
+            redirect('admin/taxes');
+        }
+
+        if(empty($_POST['selected'])) {
+            redirect('admin/taxes');
+        }
+
+        if(!isset($_POST['type'])) {
+            redirect('admin/taxes');
+        }
+
+        //ALTUMCODE:DEMO if(DEMO) Alerts::add_error('This command is blocked on the demo.');
+
+        if(!\Altum\Csrf::check()) {
+            Alerts::add_error(l('global.error_message.invalid_csrf_token'));
+        }
+
+        if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
+
+            set_time_limit(0);
+
+            session_write_close();
+
+            switch($_POST['type']) {
+                case 'delete':
+
+                    foreach($_POST['selected'] as $id) {
+                        db()->where('tax_id', $id)->delete('taxes');
+                    }
+
+                    break;
+            }
+
+            session_start();
+
+            /* Set a nice success message */
+            Alerts::add_success(l('bulk_delete_modal.success_message'));
+
+        }
+
+        redirect('admin/taxes');
+    }
+
     public function delete() {
+
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('admin');
+        }
 
         $tax_id = isset($this->params[0]) ? (int) $this->params[0] : null;
 

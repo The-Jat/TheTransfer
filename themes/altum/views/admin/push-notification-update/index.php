@@ -29,7 +29,7 @@
                 <label for="title"><i class="fas fa-fw fa-sm fa-signature text-muted mr-1"></i> <?= l('admin_push_notifications.main.title') ?></label>
                 <input type="text" id="title" name="title" value="<?= $data->push_notification->title ?>" class="form-control <?= \Altum\Alerts::has_field_errors('title') ? 'is-invalid' : null ?>" maxlength="64" required="required" <?= $data->push_notification->status == 'sent' ? 'readonly="readonly"' : null ?> />
                 <?= \Altum\Alerts::output_field_error('title') ?>
-                <small class="form-text text-muted"><?= sprintf(l('global.variables'), '<code>' . implode('</code> , <code>',  ['{{WEBSITE_TITLE}}', '{{SUBSCRIBER:CONTINENT_NAME}}', '{{SUBSCRIBER:COUNTRY_NAME}}', '{{SUBSCRIBER:CITY_NAME}}', '{{SUBSCRIBER:DEVICE_TYPE}}', '{{SUBSCRIBER:OS_NAME}}', '{{SUBSCRIBER:BROWSER_NAME}}', '{{SUBSCRIBER:BROWSER_LANGUAGE}}']) . '</code>') ?></small>
+                <small class="form-text text-muted"><?= sprintf(l('global.variables'), '<code data-copy>' . implode('</code> , <code data-copy>',  ['{{WEBSITE_TITLE}}', '{{SUBSCRIBER:CONTINENT_NAME}}', '{{SUBSCRIBER:COUNTRY_NAME}}', '{{SUBSCRIBER:CITY_NAME}}', '{{SUBSCRIBER:DEVICE_TYPE}}', '{{SUBSCRIBER:OS_NAME}}', '{{SUBSCRIBER:BROWSER_NAME}}', '{{SUBSCRIBER:BROWSER_LANGUAGE}}']) . '</code>') ?></small>
                 <small class="form-text text-muted"><?= l('global.spintax_help') ?></small>
             </div>
 
@@ -37,7 +37,7 @@
                 <label for="description"><i class="fas fa-fw fa-sm fa-paragraph text-muted mr-1"></i> <?= l('global.description') ?></label>
                 <input type="text" id="description" name="description" value="<?= $data->push_notification->description ?>" class="form-control <?= \Altum\Alerts::has_field_errors('description') ? 'is-invalid' : null ?>" maxlength="64" required="required" <?= $data->push_notification->status == 'sent' ? 'readonly="readonly"' : null ?> />
                 <?= \Altum\Alerts::output_field_error('description') ?>
-                <small class="form-text text-muted"><?= sprintf(l('global.variables'), '<code>' . implode('</code> , <code>',  ['{{WEBSITE_TITLE}}', '{{SUBSCRIBER:CONTINENT_NAME}}', '{{SUBSCRIBER:COUNTRY_NAME}}', '{{SUBSCRIBER:CITY_NAME}}', '{{SUBSCRIBER:DEVICE_TYPE}}', '{{SUBSCRIBER:OS_NAME}}', '{{SUBSCRIBER:BROWSER_NAME}}', '{{SUBSCRIBER:BROWSER_LANGUAGE}}']) . '</code>') ?></small>
+                <small class="form-text text-muted"><?= sprintf(l('global.variables'), '<code data-copy>' . implode('</code> , <code data-copy>',  ['{{WEBSITE_TITLE}}', '{{SUBSCRIBER:CONTINENT_NAME}}', '{{SUBSCRIBER:COUNTRY_NAME}}', '{{SUBSCRIBER:CITY_NAME}}', '{{SUBSCRIBER:DEVICE_TYPE}}', '{{SUBSCRIBER:OS_NAME}}', '{{SUBSCRIBER:BROWSER_NAME}}', '{{SUBSCRIBER:BROWSER_LANGUAGE}}']) . '</code>') ?></small>
                 <small class="form-text text-muted"><?= l('global.spintax_help') ?></small>
             </div>
 
@@ -134,8 +134,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    type_handler('[name="segment"]', 'data-segment');
+    
+type_handler('[name="segment"]', 'data-segment');
     document.querySelector('[name="segment"]') && document.querySelectorAll('[name="segment"]').forEach(element => element.addEventListener('change', () => { type_handler('[name="segment"]', 'data-segment'); }));
 </script>
 <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>
@@ -143,8 +143,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    document.querySelector('#segment').addEventListener('change', async event => {
+    
+document.querySelector('#segment').addEventListener('change', async event => {
         await get_segment_count();
     });
 
@@ -198,3 +198,5 @@
     get_segment_count();
 </script>
 <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>
+
+<?php include_view(THEME_PATH . 'views/partials/clipboard_js.php') ?>

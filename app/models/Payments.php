@@ -54,6 +54,29 @@ class Payments extends Model {
             }
         }
 
+        /* Check for potential trial plans */
+        if($payment_total == 0) {
+            /* Determine the expiration date of the plan */
+            $plan_expiration_date = (new \DateTime())->modify('+' . $plan->trial_days . ' days')->format('Y-m-d H:i:s');
+
+            /* Database query */
+            db()->where('user_id', $user->user_id)->update('users', [
+                'plan_id' => $plan->plan_id,
+                'plan_settings' => $plan->settings,
+                'plan_expiration_date' => $plan_expiration_date,
+                'plan_trial_done' => 1,
+                'payment_subscription_id' => $payment_subscription_id,
+                'payment_processor' => $payment_processor,
+                'payment_total_amount' => $base_amount - $discount_amount,
+                'payment_currency' => $payment_currency,
+            ]);
+
+            /* Clear the cache */
+            cache()->deleteItemsByTag('user_id=' . $user->user_id);
+
+            return;
+        }
+
         /* Codes */
         $code = (new Payments())->codes_payment_check($code, $user);
 
@@ -71,6 +94,14 @@ class Payments extends Model {
             } catch (\Exception $exception) {
                 /* :) */
             }
+        }
+
+        if(empty($payer_email)) {
+            $payer_email = $user->email;
+        }
+
+        if(empty($payer_name)) {
+            $payer_email = $user->name;
         }
 
         $payment_datetime = get_date();
@@ -149,17 +180,29 @@ class Payments extends Model {
 
             $email_template = get_email_template(
                 [
-                    '{{PROCESSOR}}' => $payment_processor,
+                    '{{PROCESSOR}}' => l('pay.custom_plan.' . $payment_processor),
                     '{{TOTAL_AMOUNT}}' => $payment_total,
                     '{{CURRENCY}}' => $payment_currency,
                 ],
                 l('global.emails.admin_new_payment_notification.subject'),
                 [
-                    '{{PROCESSOR}}' => $payment_processor,
+                    '{{PROCESSOR}}' => l('pay.custom_plan.' . $payment_processor),
                     '{{TOTAL_AMOUNT}}' => $payment_total,
                     '{{CURRENCY}}' => $payment_currency,
                     '{{NAME}}' => $user->email,
                     '{{EMAIL}}' => $user->email,
+                    '{{PLAN_NAME}}' => $plan->name,
+                    '{{PAYMENT_FREQUENCY}}' => l('plan.custom_plan.' . $payment_frequency),
+                    '{{PAYMENT_TYPE}}' => l('pay.custom_plan.' . $payment_type . '_type'),
+                    '{{PAYMENT_ID}}' => $payment_id,
+                    '{{EXTERNAL_PAYMENT_ID}}' => $external_payment_id,
+                    '{{PAYMENT_LINK}}' => url('admin/payments?id=' . $payment_id),
+                    '{{DATE}}' => get_date(),
+                    '{{DATE_TIMEZONE}}' => \Altum\Date::$default_timezone,
+                    '{{CODE}}' => $code ?: l('global.none'),
+                    '{{CODE_DETAILS}}' => $code ? '(-' . $discount_amount . ' ' . $payment_currency . ')' : '',
+                    '{{DISCOUNT_AMOUNT}}' => $discount_amount,
+                    '{{PAYMENT_STATUS}}' => l('account_payments.status_approved'),
                 ],
                 l('global.emails.admin_new_payment_notification.body')
             );

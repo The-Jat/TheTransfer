@@ -58,8 +58,8 @@ class AdminRedeemedCodes extends Controller {
         }
 
         /* Export handler */
-        process_export_json($redeemed_codes, 'include', ['user_id', 'code_id', 'datetime']);
-        process_export_csv($redeemed_codes, 'include', ['user_id', 'code_id', 'datetime']);
+        process_export_json($redeemed_codes, ['user_id', 'code_id', 'datetime']);
+        process_export_csv($redeemed_codes, ['user_id', 'code_id', 'datetime']);
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/admin_pagination', (array) $this))->run(['paginator' => $paginator]);
@@ -103,6 +103,8 @@ class AdminRedeemedCodes extends Controller {
 
             set_time_limit(0);
 
+            session_write_close();
+
             switch($_POST['type']) {
                 case 'delete':
 
@@ -112,6 +114,8 @@ class AdminRedeemedCodes extends Controller {
                     break;
             }
 
+            session_start();
+            
             /* Set a nice success message */
             Alerts::add_success(l('bulk_delete_modal.success_message'));
 

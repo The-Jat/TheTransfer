@@ -33,6 +33,8 @@
 
     <?php ob_start() ?>
     <script>
+    'use strict';
+    
         let ads_url = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
 
         let request_ads_to_display = callback => {

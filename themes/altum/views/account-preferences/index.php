@@ -18,15 +18,15 @@
     <div class="card">
         <div class="card-body">
 
-            <form action="" method="post" role="form" enctype="multipart/form-data">
+            <form id="account_preferences" action="" method="post" role="form" enctype="multipart/form-data">
                 <input type="hidden" name="token" value="<?= \Altum\Csrf::get() ?>" />
 
                 <?php if(settings()->main->white_labeling_is_enabled): ?>
-                    <button class="btn btn-block btn-gray-200 mb-4" type="button" data-toggle="collapse" data-target="#white_labeling_container" aria-expanded="false" aria-controls="white_labeling_container">
+                    <button class="btn btn-block btn-gray-200 font-size-little-small font-weight-450 mb-4" type="button" data-toggle="collapse" data-target="#white_labeling_container" aria-expanded="false" aria-controls="white_labeling_container">
                         <i class="fas fa-fw fa-cube fa-sm mr-1"></i> <?= l('account_preferences.white_labeling') ?>
                     </button>
 
-                    <div class="collapse" id="white_labeling_container">
+                    <div class="collapse" data-parent="#account_preferences" id="white_labeling_container">
                         <div <?= $this->user->plan_settings->white_labeling_is_enabled ? null : get_plan_feature_disabled_info() ?>>
                             <div class="<?= $this->user->plan_settings->white_labeling_is_enabled ? null : 'container-disabled' ?>">
                                 <div class="form-group">
@@ -58,11 +58,11 @@
                 <?php endif ?>
 
 
-                <button class="btn btn-block btn-gray-200 mb-4" type="button" data-toggle="collapse" data-target="#default_settings_container" aria-expanded="false" aria-controls="default_settings_container">
+                <button class="btn btn-block btn-gray-200 font-size-little-small font-weight-450 mb-4" type="button" data-toggle="collapse" data-target="#default_settings_container" aria-expanded="false" aria-controls="default_settings_container">
                     <i class="fas fa-fw fa-wrench fa-sm mr-1"></i> <?= l('account_preferences.default_settings') ?>
                 </button>
 
-                <div class="collapse" id="default_settings_container">
+                <div class="collapse" data-parent="#account_preferences" id="default_settings_container">
                     <div class="form-group">
                         <label for="default_results_per_page"><i class="fas fa-fw fa-sm fa-list-ol text-muted mr-1"></i> <?= l('account_preferences.default_results_per_page') ?></label>
                         <select id="default_results_per_page" name="default_results_per_page" class="custom-select <?= \Altum\Alerts::has_field_errors('default_results_per_page') ? 'is-invalid' : null ?>">
@@ -256,13 +256,19 @@
                         <label class="custom-control-label" for="transfers_auto_transfer_create"><?= l('account_preferences.transfers_auto_transfer_create') ?></label>
                         <?= \Altum\Alerts::output_field_error('transfers_auto_transfer_create') ?>
                     </div>
+
+                    <div class="form-group custom-control custom-switch">
+                        <input id="transfers_auto_copy_link" name="transfers_auto_copy_link" type="checkbox" class="custom-control-input" <?= $this->user->preferences->transfers_auto_copy_link ? 'checked="checked"' : null ?>>
+                        <label class="custom-control-label" for="transfers_auto_copy_link"><?= l('account_preferences.transfers_auto_copy_link') ?></label>
+                        <?= \Altum\Alerts::output_field_error('transfers_auto_copy_link') ?>
+                    </div>
                 </div>
 
-                <button class="btn btn-block btn-gray-200 mb-4" type="button" data-toggle="collapse" data-target="#tracking_settings_container" aria-expanded="false" aria-controls="tracking_settings_container">
+                <button class="btn btn-block btn-gray-200 font-size-little-small font-weight-450 mb-4" type="button" data-toggle="collapse" data-target="#tracking_settings_container" aria-expanded="false" aria-controls="tracking_settings_container">
                     <i class="fas fa-fw fa-eye fa-sm mr-1"></i> <?= l('account_preferences.tracking_settings') ?>
                 </button>
 
-                <div class="collapse" id="tracking_settings_container">
+                <div class="collapse" data-parent="#account_preferences" id="tracking_settings_container">
                     <div class="form-group" data-character-counter="textarea">
                         <label for="excluded_ips" class="d-flex justify-content-between align-items-center">
                             <span><i class="fas fa-fw fa-sm fa-eye-slash text-muted mr-1"></i> <?= l('account_preferences.excluded_ips') ?></span>

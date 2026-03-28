@@ -8,9 +8,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
     <?php if(\Altum\Plugin::is_active('pwa') && settings()->pwa->is_enabled): ?>
-        <meta name="theme-color" content="<?= settings()->pwa->theme_color ?>"/>
-        <link rel="manifest" href="<?= SITE_URL . UPLOADS_URL_PATH . \Altum\Uploads::get_path('pwa') . 'manifest.json' ?>" />
-    <?php endif ?>
+            <meta name="theme-color" content="<?= settings()->pwa->theme_color ?>"/>
+
+            <?php if(settings()->pwa->is_fullscreen ?? true): ?>
+                <meta name="apple-mobile-web-app-capable" content="yes">
+                <meta name="mobile-web-app-capable" content="yes">
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+            <?php endif ?>
+
+			<?= pwa_generate_dynamic_splash_screen_links() ?>
+
+            <link rel="manifest" href="<?= SITE_URL . UPLOADS_URL_PATH . \Altum\Uploads::get_path('pwa') . 'manifest.json' ?>" />
+        <?php endif ?>
 
     <link rel="alternate" href="<?= SITE_URL . \Altum\Router::$original_request ?>" hreflang="x-default" />
     <?php if(count(\Altum\Language::$active_languages) > 1): ?>
@@ -52,6 +61,7 @@
         <div class="p-3 p-lg-5 position-relative">
             <?= include_view(THEME_PATH . 'views/admin/partials/admin_version_updates_bar.php') ?>
             <?= include_view(THEME_PATH . 'views/admin/partials/admin_support_bar.php') ?>
+            <?= include_view(THEME_PATH . 'views/admin/partials/admin_smtp_setup.php') ?>
 
             <?= $this->views['content'] ?>
 

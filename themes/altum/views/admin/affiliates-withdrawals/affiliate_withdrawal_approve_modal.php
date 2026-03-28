@@ -28,11 +28,14 @@
 
 <?php ob_start() ?>
 <script>
+    'use strict';
+    
+    
     /* On modal show load new data */
     $('#affiliate_withdrawal_approve_modal').on('show.bs.modal', event => {
         let affiliate_withdrawal_id = $(event.relatedTarget).data('affiliate-withdrawal-id');
 
-        $(event.currentTarget).find('#affiliate_withdrawal_approve_modal_url').attr('href', `${url}admin/affiliates-withdrawals/approve/${affiliate_withdrawal_id}&global_token=${global_token}`);
+        $(event.currentTarget).find('#affiliate_withdrawal_approve_modal_url').attr('href', `${url}admin/affiliates-withdrawals/approve/${affiliate_withdrawal_id}?global_token=${global_token}`);
     });
 </script>
 <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>

@@ -23,7 +23,7 @@
 
 <?= \Altum\Alerts::output_alerts() ?>
 
-<?php //ALTUMCODE:DEMO if(DEMO) {$data->user->email = 'hidden@demo.com'; $data->user->name = $data->user->ip = 'hidden on demo';} ?>
+<?php //ALTUMCODE:DEMO if(DEMO) {$data->user->email = 'hidden@demo.com'; $data->user->name = $data->user->ip = $data->user->api_key = 'hidden on demo';} ?>
 
 <div class="row">
     <div class="col-xl-4 mb-4">
@@ -182,7 +182,7 @@
 
                 <div class="form-group">
                     <label for="last_activity" class="font-weight-bold"><i class="fas fa-fw fa-sm fa-history text-muted mr-1"></i> <?= l('admin_users.last_activity') ?></label>
-                    <input id="last_activity" type="text" class="form-control-plaintext" value="<?= $data->user->last_activity ? \Altum\Date::get($data->user->last_activity, 1) : '-' ?>" readonly />
+                    <input id="last_activity" type="text" class="form-control-plaintext" value="<?= $data->user->last_activity ? \Altum\Date::get($data->user->last_activity, 1) : l('global.na') ?>" readonly />
                 </div>
 
                 <div class="form-group">

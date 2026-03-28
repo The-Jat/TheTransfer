@@ -157,7 +157,7 @@
         </div>
     </div>
 
-    <?php if(count($data->affiliate_withdrawals)): ?>
+    <?php if (!empty($data->affiliate_withdrawals)): ?>
         <div class="mt-4">
             <div class="table-responsive table-custom-container">
                 <table class="table table-custom">
@@ -180,9 +180,9 @@
                             </td>
                             <td class="text-nowrap">
                                 <?php if($row->is_paid): ?>
-                                    <span class="badge badge-success"><i class="fas fa-fw fa-check"></i> <?= l('referrals.withdraw.is_paid_paid') ?></span>
+                                    <span class="badge badge-success"><i class="fas fa-fw fa-sm fa-check mr-1"></i> <?= l('referrals.withdraw.is_paid_paid') ?></span>
                                 <?php else: ?>
-                                    <span class="badge badge-warning"><i class="fas fa-fw fa-eye-slash"></i> <?= l('referrals.withdraw.is_paid_pending') ?></span>
+                                    <span class="badge badge-warning"><i class="fas fa-fw fa-sm fa-eye-slash mr-1"></i> <?= l('referrals.withdraw.is_paid_pending') ?></span>
                                 <?php endif ?>
                             </td>
                             <td class="text-nowrap text-muted">

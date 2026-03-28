@@ -36,6 +36,7 @@ class AdminLanguageCreate extends Controller {
             $_POST['language_name'] = input_clean(preg_replace('/\s{2,}/', ' ', trim($_POST['language_name']), 64));
             $_POST['language_code'] = mb_strtolower(input_clean(preg_replace("/\s+/", '', $_POST['language_code'], 16)));
             $_POST['language_flag'] = mb_substr(trim(input_clean($_POST['language_flag'])), 0, 4, 'UTF-8');
+
             $_POST['status'] = (int) isset($_POST['status']);
             $_POST['order'] = (int) $_POST['order'];
 
@@ -54,7 +55,7 @@ ALTUM;
             /* Check for any errors */
             $required_fields = ['language_name', 'language_code'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }
@@ -97,7 +98,15 @@ ALTUM;
                     $settings_languages[$lang['name']] = [
                         'status' => $lang['name'] == $_POST['language_name'] ? $_POST['status'] : (settings()->languages->{$lang['name']}->status ?? true),
                         'order' => $lang['name'] == $_POST['language_name'] ? $_POST['order'] : (settings()->languages->{$lang['name']}->order ?? 1),
-                        'language_flag' => $lang['name'] == $_POST['language_name'] ? $_POST['language_flag'] : (settings()->languages->{$lang['name']}->language_flag ?? 1),
+                        'language_flag' => $lang['name'] == $_POST['language_name'] ? $_POST['language_flag'] : (settings()->languages->{$lang['name']}->language_flag ?? ''),
+                    ];
+                }
+
+                if(!isset($settings_languages[$_POST['language_name']])) {
+                    $settings_languages[$_POST['language_name']] = [
+                        'status' => $_POST['status'],
+                        'order' => $_POST['order'],
+                        'language_flag' => $_POST['language_flag'],
                     ];
                 }
 

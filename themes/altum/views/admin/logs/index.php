@@ -1,7 +1,7 @@
 <?php defined('ALTUMCODE') || die() ?>
 
 <div class="d-flex flex-column flex-md-row justify-content-between mb-4">
-    <h1 class="h3 mb-3 mb-md-0"><i class="fas fa-fw fa-xs fa-clipboard-list text-primary-900 mr-2"></i> <?= l('admin_logs.header') ?></h1>
+    <h1 class="h3 mb-3 mb-md-0 text-truncate"><i class="fas fa-fw fa-xs fa-clipboard-list text-primary-900 mr-2"></i> <?= l('admin_logs.header') ?></h1>
 
     <div class="d-flex position-relative d-print-none">
         <div class="ml-3">

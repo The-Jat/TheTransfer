@@ -1,6 +1,5 @@
 <?php defined('ALTUMCODE') || die() ?>
 
-
 <div class="container">
     <?= \Altum\Alerts::output_alerts() ?>
 
@@ -57,6 +56,8 @@
             <i class="fas fa-fw fa-sm fa-external-link-alt text-muted mr-1"></i> <?= remove_url_protocol_from_url($data->transfer->full_url) ?>
         </a>
     </p>
+
+    <div id="transfers_auto_copy_link" class="notification-container"></div>
 
     <div class="row mt-3">
         <!-- Total Files -->
@@ -163,7 +164,7 @@
                     </div>
                 </div>
                 <div class="card-body text-truncate">
-                    <?= $data->transfer->datetime ? \Altum\Date::get_timeago($data->transfer->datetime) : '-' ?>
+                    <?= $data->transfer->datetime ? \Altum\Date::get_timeago($data->transfer->datetime) : l('global.na') ?>
                 </div>
             </div>
         </div>
@@ -172,7 +173,7 @@
         <div class="col-12 col-sm-6 col-xl-3 p-3 position-relative text-truncate"
              data-toggle="tooltip"
              data-html="true"
-             title="<?= sprintf(l('global.last_datetime_tooltip'), ($data->transfer->last_datetime ? '<br />' . \Altum\Date::get($data->transfer->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($data->transfer->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($data->transfer->last_datetime) . ')</small>' : '<br />-')) ?>">
+             title="<?= sprintf(l('global.last_datetime_tooltip'), ($data->transfer->last_datetime ? '<br />' . \Altum\Date::get($data->transfer->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($data->transfer->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($data->transfer->last_datetime) . ')</small>' : '<br />' . l('global.na'))) ?>">
             <div class="card d-flex flex-row h-100 overflow-hidden">
                 <div class="pl-3 d-flex flex-column justify-content-center">
                     <div class="p-2 rounded-2x index-widget-icon d-flex align-items-center justify-content-center bg-primary-50">
@@ -180,7 +181,7 @@
                     </div>
                 </div>
                 <div class="card-body text-truncate">
-                    <?= $data->transfer->last_datetime ? \Altum\Date::get_timeago($data->transfer->last_datetime) : '-' ?>
+                    <?= $data->transfer->last_datetime ? \Altum\Date::get_timeago($data->transfer->last_datetime) : l('global.na') ?>
                 </div>
             </div>
         </div>
@@ -195,7 +196,7 @@
             </div>
         </div>
 
-        <?php if(count($data->files)): ?>
+        <?php if (!empty($data->files)): ?>
             <div class="table-responsive table-custom-container">
                 <table class="table table-custom">
                     <thead>
@@ -233,10 +234,7 @@
                                         <i class="fas fa-fw fa-fingerprint text-muted"></i>
                                     </span>
 
-                                    <?php
-                                    $file_extension = explode('.', $row->name);
-                                    $file_extension = end($file_extension);
-                                    ?>
+                                    <?php $file_extension = mb_strtolower(pathinfo($row->name, PATHINFO_EXTENSION)); ?>
 
                                     <?php if(in_array($file_extension, explode(',', settings()->transfers->preview_file_extensions))): ?>
                                         <a href="<?= url('preview/' . bin2hex($row->file_uuid)) ?>" target="_blank" class="mr-2" data-toggle="tooltip" title="<?= l('transfers.file_preview') ?>">
@@ -278,7 +276,7 @@
                 </div>
             </div>
 
-            <?php if(count($data->statistics)): ?>
+            <?php if (!empty($data->statistics)): ?>
                 <div class="table-responsive table-custom-container">
                     <table class="table table-custom">
                         <thead>
@@ -378,7 +376,7 @@
                 </div>
             </div>
 
-            <?php if(count($data->downloads)): ?>
+            <?php if (!empty($data->downloads)): ?>
                 <div class="table-responsive table-custom-container">
                     <table class="table table-custom">
                         <thead>
@@ -470,15 +468,34 @@
         </div>
 
     </div>
+</div>
 
 
+<?php \Altum\Event::add_content(include_view(THEME_PATH . 'views/partials/universal_delete_modal_form.php', [
+    'name' => 'file',
+    'resource_id' => 'file_id',
+    'has_dynamic_resource_name' => true,
+    'path' => 'files/delete'
+]), 'modals'); ?>
 
-    <?php \Altum\Event::add_content(include_view(THEME_PATH . 'views/partials/universal_delete_modal_form.php', [
-        'name' => 'file',
-        'resource_id' => 'file_id',
-        'has_dynamic_resource_name' => true,
-        'path' => 'files/delete'
-    ]), 'modals'); ?>
+<?php include_view(THEME_PATH . 'views/partials/clipboard_js.php') ?>
+<?php include_view(THEME_PATH . 'views/partials/share_modal_js.php') ?>
 
-    <?php include_view(THEME_PATH . 'views/partials/clipboard_js.php') ?>
-    <?php include_view(THEME_PATH . 'views/partials/share_modal_js.php') ?>
+<?php ob_start() ?>
+    <script>
+        'use strict';
+
+        const query_parameters = new URLSearchParams(window.location.search);
+
+        if (query_parameters.has('auto_copy_link')) {
+            let text = document.querySelector('#url_copy').getAttribute('data-clipboard-text');
+            let notification_container = document.querySelector('#transfers_auto_copy_link');
+
+            navigator.clipboard.writeText(text).then(() => {
+                display_notifications(<?= json_encode(l('transfer.auto_copy_link.success')) ?>, 'success', notification_container);
+            }).catch((error) => {
+                display_notifications(<?= json_encode(l('transfer.auto_copy_link.error')) ?>, 'error', notification_container);
+            });
+        }
+    </script>
+<?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>

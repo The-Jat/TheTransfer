@@ -19,7 +19,7 @@
 
 <?= \Altum\Alerts::output_alerts() ?>
 
-<?php //ALTUMCODE:DEMO if(DEMO) {$data->user->email = 'hidden@demo.com'; $data->user->name = $data->user->ip = 'hidden on demo';} ?>
+<?php //ALTUMCODE:DEMO if(DEMO) {$data->user->email = 'hidden@demo.com'; $data->user->name = $data->user->ip = $data->user->api_key = 'hidden on demo';} ?>
 
 <div class="card <?= \Altum\Alerts::has_field_errors() ? 'border-danger' : null ?>">
     <div class="card-body">
@@ -377,8 +377,8 @@
 
 <script>
     'use strict';
-
-    moment.tz.setDefault(<?= json_encode($this->user->timezone) ?>);
+    
+moment.tz.setDefault(<?= json_encode($this->user->timezone) ?>);
 
     let check_plan_id = () => {
         let selected_plan_id = document.querySelector('[name="plan_id"]').value;
@@ -421,7 +421,7 @@
     /* Daterangepicker */
     $('[name="plan_expiration_date"]').daterangepicker({
         startDate: <?= json_encode($data->user->plan_expiration_date) ?>,
-        minDate: new Date(),
+        minDate: "<?= (new \DateTime('', new \DateTimeZone(\Altum\Date::$default_timezone)))->setTimezone(new \DateTimeZone($this->user->timezone))->format('Y-m-d H:i:s'); ?>",
         alwaysShowCalendars: true,
         singleCalendar: true,
         singleDatePicker: true,

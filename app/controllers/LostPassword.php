@@ -71,7 +71,7 @@ class LostPassword extends Controller {
 
                 if($user && $user->status != 2) {
                     /* Define some variables */
-                    $lost_password_code = md5($_POST['email'] . microtime());
+                    $lost_password_code = md5(uniqid('', true) . random_bytes(16));
 
                     /* Update the current activation email */
                     db()->where('user_id', $user->user_id)->update('users', ['lost_password_code' => $lost_password_code]);

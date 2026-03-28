@@ -49,7 +49,7 @@ class AdminUserCreate extends Controller {
             /* Check for any errors */
             $required_fields = ['name', 'email' ,'password'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }

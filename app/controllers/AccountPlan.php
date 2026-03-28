@@ -17,6 +17,7 @@
 namespace Altum\Controllers;
 
 use Altum\Alerts;
+use Altum\Models\Plan;
 use Altum\Models\User;
 
 defined('ALTUMCODE') || die();
@@ -31,10 +32,24 @@ class AccountPlan extends Controller {
         $menu = new \Altum\View('partials/account_header_menu', (array) $this);
         $this->add_view_content('account_header_menu', $menu->run());
 
+        /* Suggested plan */
+        if(settings()->payment->is_enabled && !empty($this->user->plan->additional_settings->suggested_plan_id ?? null)) {
+            $suggested_plan = (new Plan())->get_plan_by_id($this->user->plan->additional_settings->suggested_plan_id);
+
+            if($this->user->plan->additional_settings->suggested_plan_code_id) {
+                $suggested_plan_code = db()->where('code_id', $this->user->plan->additional_settings->suggested_plan_code_id)->getOne('codes');
+            }
+        }
+
         /* Prepare the view */
+        $data = [
+            'suggested_plan' => $suggested_plan ?? null,
+            'suggested_plan_code' => $suggested_plan_code ?? null,
+        ];
+
         $view = new \Altum\View('account-plan/index', (array) $this);
 
-        $this->add_view_content('content', $view->run());
+        $this->add_view_content('content', $view->run($data));
 
     }
 

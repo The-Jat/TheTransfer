@@ -25,6 +25,14 @@ class WebhookPaystack extends Controller {
 
     public function index() {
 
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('not-found');
+        }
+
+        if((strtoupper($_SERVER['REQUEST_METHOD']) != 'POST')) {
+            redirect('not-found');
+        }
+
         if((strtoupper($_SERVER['REQUEST_METHOD']) != 'POST' ) || !isset($_SERVER['HTTP_X_PAYSTACK_SIGNATURE'])) {
             die();
         }
@@ -70,7 +78,7 @@ class WebhookPaystack extends Controller {
 
             /* Payment payer details */
             $payer_email = $data->data->customer->email;
-            $payer_name = $data->data->customer->first_name . $data->data->customer->last_name;
+            $payer_name = $data->data->customer->first_name . ' ' . $data->data->customer->last_name;
 
             /* Process meta data */
             $metadata = $data->data->metadata;

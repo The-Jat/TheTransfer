@@ -79,6 +79,11 @@ class PayThankYou extends Controller {
         if($_GET['payment_processor'] == 'flutterwave' && $_GET['status'] != 'successful') {
             redirect('pay/' . $_GET['plan_id'] . '?return_type=cancel&payment_processor=flutterwave');
         }
+        
+        /* Custom payment redirect */
+        if($plan_id !== 'free' && $plan->settings->custom_redirect_url) {
+            header('Location: ' . $plan->settings->custom_redirect_url);
+        }
 
         /* Prepare the view */
         $data = [

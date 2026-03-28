@@ -36,7 +36,7 @@ class AdminUserUpdate extends Controller {
         $additional_domains = db()->where('is_enabled', 1)->where('type', 1)->get('domains');
 
         if(!empty($_POST)) {
-            /* Filter some the variables */
+            /* Filter some of the variables */
             $_POST['name'] = input_clean($_POST['name']);
             $_POST['status'] = (int) $_POST['status'];
             $_POST['type'] = (int) $_POST['type'];
@@ -120,7 +120,7 @@ class AdminUserUpdate extends Controller {
             /* Check for any errors */
             $required_fields = ['name', 'email'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }

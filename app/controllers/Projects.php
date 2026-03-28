@@ -43,8 +43,8 @@ class Projects extends Controller {
         while($row = $projects_result->fetch_object()) $projects[] = $row;
 
         /* Export handler */
-        process_export_csv($projects, 'include', ['project_id', 'user_id', 'name', 'color', 'last_datetime', 'datetime'], sprintf(l('projects.title')));
-        process_export_json($projects, 'include', ['project_id', 'user_id', 'name', 'color', 'last_datetime', 'datetime'], sprintf(l('projects.title')));
+        process_export_csv($projects, ['project_id', 'user_id', 'name', 'color', 'last_datetime', 'datetime'], sprintf(l('projects.title')));
+        process_export_json($projects, ['project_id', 'user_id', 'name', 'color', 'last_datetime', 'datetime'], sprintf(l('projects.title')));
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/pagination', (array) $this))->run(['paginator' => $paginator]);
@@ -90,12 +90,14 @@ class Projects extends Controller {
 
             set_time_limit(0);
 
+            session_write_close();
+
             switch($_POST['type']) {
                 case 'delete':
 
                     /* Team checks */
                     if(\Altum\Teams::is_delegated() && !\Altum\Teams::has_access('delete.projects')) {
-                        Alerts::add_info(l('global.info_message.team_no_access'));
+                        Alerts::add_error(l('global.info_message.team_no_access'));
                         redirect('projects');
                     }
 
@@ -111,6 +113,8 @@ class Projects extends Controller {
             /* Clear the cache */
             cache()->deleteItem('projects?user_id=' . $this->user->user_id);
 
+            session_start();
+            
             /* Set a nice success message */
             Alerts::add_success(l('bulk_delete_modal.success_message'));
 
@@ -125,7 +129,7 @@ class Projects extends Controller {
 
         /* Team checks */
         if(\Altum\Teams::is_delegated() && !\Altum\Teams::has_access('delete.projects')) {
-            Alerts::add_info(l('global.info_message.team_no_access'));
+            Alerts::add_error(l('global.info_message.team_no_access'));
             redirect('projects');
         }
 

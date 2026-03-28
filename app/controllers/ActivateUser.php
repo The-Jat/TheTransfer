@@ -36,7 +36,7 @@ class ActivateUser extends Controller {
         switch($type) {
             case 'user_activation':
 
-                if(!$user = db()->where('email_activation_code', $email_activation_code)->getOne('users', ['user_id', 'email', 'name', 'password', 'source', 'is_newsletter_subscribed'])) {
+                if(!$user = db()->where('email_activation_code', $email_activation_code)->getOne('users')) {
                     redirect();
                 }
 
@@ -76,6 +76,14 @@ class ActivateUser extends Controller {
                         [
                             '{{NAME}}' => str_replace('.', '. ', $user->name),
                             '{{EMAIL}}' => $user->email,
+                            '{{SOURCE}}' => $user->source,
+                            '{{IP}}' => $user->ip,
+                            '{{COUNTRY_NAME}}' => $user->country ? get_country_from_country_code($user->country) : l('global.unknown'),
+                            '{{CITY_NAME}}' => $user->city_name ?? l('global.unknown'),
+                            '{{DEVICE_TYPE}}' => l('global.device.' . $user->device_type),
+                            '{{OS_NAME}}' => $user->os_name,
+                            '{{BROWSER_NAME}}' => $user->browser_name,
+                            '{{USER_LINK}}' => url('admin/user-view/' . $user->user_id),
                         ],
                         l('global.emails.admin_new_user_notification.body')
                     );
@@ -111,8 +119,8 @@ class ActivateUser extends Controller {
                 Logger::users($user->user_id, 'activate.success');
 
                 /* Login and set a successful message */
-                $_SESSION['user_id'] = $user->user_id;
-                $_SESSION['user_password_hash'] = md5($user->password);
+                session_set('user_id', $user->user_id);
+                session_set('user_password_hash', md5($user->password));
 
                 /* Set a nice success message */
                 Alerts::add_success(l('activate_user.user_activation'));
@@ -122,7 +130,7 @@ class ActivateUser extends Controller {
                 /* Clear the cache */
                 cache()->deleteItemsByTag('user_id=' . $user->user_id);
 
-                redirect($redirect . '&welcome=' . $user->user_id);
+                redirect(append_query_param($redirect, 'welcome=' . $user->user_id));
 
                 break;
 

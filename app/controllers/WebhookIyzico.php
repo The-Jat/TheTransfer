@@ -25,8 +25,12 @@ class WebhookIyzico extends Controller {
 
     public function index() {
 
-        if($_SERVER['REQUEST_METHOD'] != 'POST') {
-            die();
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('not-found');
+        }
+
+        if((strtoupper($_SERVER['REQUEST_METHOD']) != 'POST')) {
+            redirect('not-found');
         }
 
         /* Verify the source of the webhook event */

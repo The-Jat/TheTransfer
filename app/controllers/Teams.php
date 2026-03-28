@@ -53,8 +53,8 @@ class Teams extends Controller {
         while($row = $teams_result->fetch_object()) $teams[] = $row;
 
         /* Export handler */
-        process_export_json($teams, 'include', ['team_id', 'user_id', 'name', 'members', 'datetime', 'last_datetime']);
-        process_export_csv($teams, 'include', ['team_id', 'user_id', 'name', 'members', 'datetime', 'last_datetime']);
+        process_export_json($teams, ['team_id', 'user_id', 'name', 'members', 'datetime', 'last_datetime']);
+        process_export_csv($teams, ['team_id', 'user_id', 'name', 'members', 'datetime', 'last_datetime']);
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/pagination', (array) $this))->run(['paginator' => $paginator]);

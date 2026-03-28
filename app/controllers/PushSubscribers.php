@@ -41,7 +41,7 @@ class PushSubscribers extends Controller {
         /* Check for any errors */
         $required_fields = ['endpoint', 'p256dh', 'auth'];
         foreach($required_fields as $field) {
-            if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+            if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                 redirect();
             }
         }
@@ -91,7 +91,7 @@ class PushSubscribers extends Controller {
         $city_name = isset($maxmind) && isset($maxmind['city']) ? $maxmind['city']['names']['en'] : null;
 
         /* Detect extra details about the user */
-        $whichbrowser = new \WhichBrowser\Parser($_SERVER['HTTP_USER_AGENT']);
+        $whichbrowser = get_whichbrowser();
         $browser_name = $whichbrowser->browser->name ?? null;
         $os_name = $whichbrowser->os->name ?? null;
         $browser_language = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? mb_substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2) : null;
@@ -136,7 +136,7 @@ class PushSubscribers extends Controller {
         /* Check for any errors */
         $required_fields = ['endpoint', 'p256dh', 'auth'];
         foreach($required_fields as $field) {
-            if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+            if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                 redirect();
             }
         }

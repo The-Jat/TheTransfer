@@ -17,5 +17,6 @@
 const PRODUCT_NAME = '66transfer';
 const PRODUCT_KEY = '66transfer';
 const PRODUCT_URL = 'https://altumco.de/66transfer';
+const PRODUCT_BUY_URL = 'https://altumco.de/66transfer#pricing';
 const PRODUCT_DOCUMENTATION_URL = 'https://altumco.de/66transfer-docs';
 const PRODUCT_CHANGELOG_URL = 'https://altumco.de/66transfer-changelog';

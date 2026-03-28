@@ -32,6 +32,16 @@
         <small class="form-text text-muted"><?= l('admin_settings.transfers.parallel_file_uploading_help') ?></small>
     </div>
 
+    <div <?= !\Altum\Plugin::is_active('offload') ? 'data-toggle="tooltip" title="' . sprintf(l('admin_plugins.no_access'), \Altum\Plugin::get('offload')->name ?? 'offload') . '"' : null ?>>
+        <div class="<?= !\Altum\Plugin::is_active('offload') ? 'container-disabled' : null ?>">
+            <div class="form-group custom-control custom-switch">
+                <input id="is_direct_offload_upload" name="is_direct_offload_upload" type="checkbox" class="custom-control-input" <?= settings()->transfers->is_direct_offload_upload ? 'checked="checked"' : null?> <?= !\Altum\Plugin::is_active('offload') ? 'disabled="disabled"' : null ?>>
+                <label class="custom-control-label" for="is_direct_offload_upload"><?= l('admin_settings.transfers.is_direct_offload_upload') ?></label>
+                <small class="form-text text-muted"><?= l('admin_settings.transfers.is_direct_offload_upload_help') ?></small>
+            </div>
+        </div>
+    </div>
+
     <div class="form-group">
         <label for="blacklisted_file_extensions"><?= l('admin_settings.transfers.blacklisted_file_extensions') ?></label>
         <textarea id="blacklisted_file_extensions" class="form-control" name="blacklisted_file_extensions"><?= settings()->transfers->blacklisted_file_extensions ?></textarea>
@@ -53,6 +63,21 @@
             </div>
         </div>
         <small class="form-text text-muted"><?= l('admin_settings.transfers.chunk_size_limit_help') ?></small>
+    </div>
+
+    <div <?= !\Altum\Plugin::is_active('affiliate') ? 'data-toggle="tooltip" title="' . sprintf(l('admin_plugins.no_access'), \Altum\Plugin::get('affiliate')->name ?? 'affiliate') . '"' : null ?>>
+        <div class="<?= !in_array(settings()->license->type, ['Extended License', 'extended']) || !\Altum\Plugin::is_active('affiliate') ? 'container-disabled' : null ?>">
+            <div class="form-group">
+                <label for="offload_chunk_size_limit"><?= l('admin_settings.transfers.offload_chunk_size_limit') ?></label>
+                <div class="input-group">
+                    <input id="offload_chunk_size_limit" type="number" min="5" max="<?= 5000 ?>" step="1" name="offload_chunk_size_limit" class="form-control" value="<?= settings()->transfers->offload_chunk_size_limit ?? 10 ?>" />
+                    <div class="input-group-append">
+                        <span class="input-group-text"><?= l('global.mb') ?></span>
+                    </div>
+                </div>
+                <small class="form-text text-muted"><?= l('admin_settings.transfers.offload_chunk_size_limit_help') ?></small>
+            </div>
+        </div>
     </div>
 
     <div class="form-group custom-control custom-switch">

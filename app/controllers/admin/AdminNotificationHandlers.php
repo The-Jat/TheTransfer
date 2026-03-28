@@ -50,12 +50,13 @@ class AdminNotificationHandlers extends Controller {
             {$paginator->get_sql_limit()}
         ");
         while($row = $notification_handlers_result->fetch_object()) {
+            $row->settings = json_decode($row->settings ?? '');
             $notification_handlers[] = $row;
         }
 
         /* Export handler */
-        process_export_csv($notification_handlers, 'include', ['notification_handler_id', 'user_id', 'name', 'type', 'last_datetime', 'datetime'], sprintf(l('admin_notification_handlers.title')));
-        process_export_json($notification_handlers, 'include', ['notification_handler_id', 'user_id', 'name', 'type', 'settings', 'last_datetime', 'datetime'], sprintf(l('admin_notification_handlers.title')));
+        process_export_csv_new($notification_handlers, ['notification_handler_id', 'user_id', 'name', 'type', 'settings', 'last_datetime', 'datetime'], ['settings'], sprintf(l('admin_notification_handlers.title')));
+        process_export_json($notification_handlers, ['notification_handler_id', 'user_id', 'name', 'type', 'settings', 'last_datetime', 'datetime'], sprintf(l('admin_notification_handlers.title')));
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/admin_pagination', (array) $this))->run(['paginator' => $paginator]);
@@ -98,6 +99,8 @@ class AdminNotificationHandlers extends Controller {
 
             set_time_limit(0);
 
+            session_write_close();
+
             switch($_POST['type']) {
                 case 'delete':
 
@@ -114,6 +117,8 @@ class AdminNotificationHandlers extends Controller {
                     break;
             }
 
+            session_start();
+            
             /* Set a nice success message */
             Alerts::add_success(l('bulk_delete_modal.success_message'));
 

@@ -1,6 +1,6 @@
 <?php defined('ALTUMCODE') || die() ?>
 
-<div>
+<div id="main">
     <div class="form-group">
         <label for="title"><i class="fas fa-fw fa-sm fa-heading text-muted mr-1"></i> <?= l('admin_settings.main.title') ?></label>
         <input id="title" type="text" name="title" class="form-control" value="<?= settings()->main->title ?>" required="required" />
@@ -52,7 +52,7 @@
     </div>
 
     <div class="form-group">
-        <div class="d-flex flex-column flex-xl-row justify-content-between">
+        <div class="d-flex flex-wrap flex-row justify-content-between">
             <label for="default_language"><i class="fas fa-fw fa-sm fa-language text-muted mr-1"></i> <?= l('admin_settings.main.default_language') ?></label>
             <a href="<?= url('admin/languages') ?>" target="_blank" class="small mb-2"><i class="fas fa-fw fa-sm fa-plus mr-1"></i> <?= l('global.create') ?></a>
         </div>
@@ -78,11 +78,11 @@
         </select>
     </div>
 
-    <button class="btn btn-block btn-gray-200 mb-4" type="button" data-toggle="collapse" data-target="#app_settings_container" aria-expanded="false" aria-controls="app_settings_container">
+    <button class="btn btn-block btn-gray-200 font-size-little-small font-weight-450 mb-4" type="button" data-toggle="collapse" data-target="#app_settings_container" aria-expanded="false" aria-controls="app_settings_container">
         <i class="fas fa-fw fa-sliders-h fa-sm mr-1"></i> <?= l('admin_settings.main.app_settings') ?>
     </button>
 
-    <div class="collapse" id="app_settings_container">
+    <div class="collapse" data-parent="#main" id="app_settings_container">
         <div class="form-group custom-control custom-switch">
             <input id="admin_spotlight_is_enabled" name="admin_spotlight_is_enabled" type="checkbox" class="custom-control-input" <?= settings()->main->admin_spotlight_is_enabled ? 'checked="checked"' : null?>>
             <label class="custom-control-label" for="admin_spotlight_is_enabled"><i class="fas fa-fw fa-sm fa-search text-muted mr-1"></i> <?= l('admin_settings.main.admin_spotlight_is_enabled') ?></label>
@@ -158,13 +158,18 @@
             <input id="iframe_embedding" type="text" name="iframe_embedding" class="form-control" value="<?= settings()->main->iframe_embedding ?? 'all' ?>" placeholder="<?= l('global.url_placeholder') ?>" />
             <small class="form-text text-muted"><?= l('admin_settings.main.iframe_embedding_help') ?></small>
         </div>
+
+        <div class="form-group">
+            <label for="title_separator"><i class="fas fa-fw fa-sm fa-quote-left text-muted mr-1"></i> <?= l('admin_settings.main.title_separator') ?></label>
+            <input id="title_separator" type="text" name="title_separator" class="form-control" value="<?= settings()->main->title_separator ?? '-' ?>" required="required" />
+        </div>
     </div>
 
-    <button class="btn btn-block btn-gray-200 mb-4" type="button" data-toggle="collapse" data-target="#index_settings_container" aria-expanded="false" aria-controls="index_settings_container">
+    <button class="btn btn-block btn-gray-200 font-size-little-small font-weight-450 mb-4" type="button" data-toggle="collapse" data-target="#index_settings_container" aria-expanded="false" aria-controls="index_settings_container">
         <i class="fas fa-fw fa-plane-arrival fa-sm mr-1"></i> <?= l('admin_settings.main.index_settings') ?>
     </button>
 
-    <div class="collapse" id="index_settings_container">
+    <div class="collapse" data-parent="#main" id="index_settings_container">
         <div class="form-group custom-control custom-switch">
             <input id="display_index_plans" name="display_index_plans" type="checkbox" class="custom-control-input" <?= settings()->main->display_index_plans ? 'checked="checked"' : null?>>
             <label class="custom-control-label" for="display_index_plans"><i class="fas fa-fw fa-sm fa-box-open text-muted mr-1"></i> <?= l('admin_settings.main.display_index_plans') ?></label>
@@ -192,11 +197,11 @@
         </div>
     </div>
 
-    <button class="btn btn-block btn-gray-200 mb-4" type="button" data-toggle="collapse" data-target="#maintenance_settings_container" aria-expanded="false" aria-controls="maintenance_settings_container">
+    <button class="btn btn-block btn-gray-200 font-size-little-small font-weight-450 mb-4" type="button" data-toggle="collapse" data-target="#maintenance_settings_container" aria-expanded="false" aria-controls="maintenance_settings_container">
         <i class="fas fa-fw fa-paint-roller fa-sm mr-1"></i> <?= l('admin_settings.main.maintenance_settings') ?>
     </button>
 
-    <div class="collapse" id="maintenance_settings_container">
+    <div class="collapse" data-parent="#main" id="maintenance_settings_container">
         <div class="form-group custom-control custom-switch">
             <input id="maintenance_is_enabled" name="maintenance_is_enabled" type="checkbox" class="custom-control-input" <?= settings()->main->maintenance_is_enabled ? 'checked="checked"' : null?>>
             <label class="custom-control-label" for="maintenance_is_enabled"><?= l('admin_settings.main.maintenance_is_enabled') ?></label>
@@ -224,11 +229,11 @@
         </div>
     </div>
 
-    <button class="btn btn-block btn-gray-200 mb-4" type="button" data-toggle="collapse" data-target="#other_settings_container" aria-expanded="false" aria-controls="other_settings_container">
+    <button class="btn btn-block btn-gray-200 font-size-little-small font-weight-450 mb-4" type="button" data-toggle="collapse" data-target="#other_settings_container" aria-expanded="false" aria-controls="other_settings_container">
         <i class="fas fa-fw fa-tasks fa-sm mr-1"></i> <?= l('admin_settings.main.other_settings') ?>
     </button>
 
-    <div class="collapse" id="other_settings_container">
+    <div class="collapse" data-parent="#main" id="other_settings_container">
         <div class="form-group">
             <label for="not_found_url"><i class="fas fa-fw fa-sm fa-compass text-muted mr-1"></i> <?= l('admin_settings.main.not_found_url') ?></label>
             <input id="not_found_url" type="url" name="not_found_url" class="form-control" value="<?= settings()->main->not_found_url ?>" placeholder="<?= l('global.url_placeholder') ?>" />
@@ -268,6 +273,17 @@
         </div>
 
         <div class="form-group">
+            <label for="avatar_size_limit"><?= l('admin_settings.main.avatar_size_limit') ?></label>
+            <div class="input-group">
+                <input id="avatar_size_limit" type="number" min="0" max="<?= get_max_upload() ?>" step="any" name="avatar_size_limit" class="form-control" value="<?= settings()->main->avatar_size_limit ?>" />
+                <div class="input-group-append">
+                    <span class="input-group-text"><?= l('global.mb') ?></span>
+                </div>
+            </div>
+            <small class="form-text text-muted"><?= l('global.accessibility.admin_file_size_limit_help') ?></small>
+        </div>
+
+        <div class="form-group">
             <label for="openai_api_key"><i class="fas fa-fw fa-sm fa-robot text-muted mr-1"></i> <?= l('admin_settings.main.openai_api_key') ?></label>
             <input id="openai_api_key" type="text" name="openai_api_key" class="form-control" value="<?= settings()->main->openai_api_key ?>" />
             <small class="form-text text-muted"><?= l('admin_settings.main.openai_api_key_help') ?></small>
@@ -276,7 +292,7 @@
         <div class="form-group">
             <label for="openai_model"><i class="fas fa-fw fa-sm fa-robot text-muted mr-1"></i> <?= l('admin_settings.main.openai_model') ?></label>
             <select id="openai_model" name="openai_model" class="custom-select">
-                <?php foreach(['gpt-4o', 'gpt-4o-mini', 'o1', 'o1-mini', 'o3-mini', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo',] as $model): ?>
+                <?php foreach(['gpt-5','gpt-5-mini','gpt-5-nano','gpt-4o','gpt-4','gpt-4.1','gpt-4.1-mini','gpt-3.5-turbo'] as $model): ?>
                     <option value="<?= $model ?>" <?= settings()->main->openai_model == $model ? 'selected="selected"' : null ?>><?= $model ?></option>
                 <?php endforeach ?>
             </select>
@@ -292,3 +308,34 @@
 <button type="submit" name="submit" class="btn btn-lg btn-block btn-primary mt-4"><?= l('global.update') ?></button>
 
 <?php include_view(THEME_PATH . 'views/partials/js_cropper.php') ?>
+
+<script>
+    document.querySelectorAll('form input, form select, form textarea').forEach(field => {
+        field.addEventListener('invalid', () => {
+            const invalid_field = field;
+
+            /* find the nearest collapsed parent */
+            const collapse_container = invalid_field.closest('.collapse');
+
+            if (!collapse_container) {
+                return;
+            }
+
+            /* if collapse already open, scroll immediately */
+            if ($(collapse_container).hasClass('show')) {
+                invalid_field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => invalid_field.focus(), 100);
+                return;
+            }
+
+            /* wait for the collapse animation to finish */
+            $(collapse_container).one('shown.bs.collapse', () => {
+                invalid_field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => invalid_field.focus(), 100);
+            });
+
+            /* trigger the open animation */
+            $(collapse_container).collapse('show');
+        });
+    });
+</script>

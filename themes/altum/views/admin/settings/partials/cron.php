@@ -48,7 +48,10 @@
         }
         ?>
 
-        <small class="form-text <?= $text_class ?>"><?= sprintf(l('admin_settings.cron.last_execution'), isset(settings()->cron->{$cron . '_datetime'}) ? \Altum\Date::get_timeago(settings()->cron->{$cron . '_datetime'}) : '-') ?></small>
+        <small class="form-text <?= $text_class ?>"><?= sprintf(l('admin_settings.cron.last_execution'), isset(settings()->cron->{$cron . '_datetime'}) ? \Altum\Date::get_timeago(settings()->cron->{$cron . '_datetime'}) : l('global.na')) ?></small>
+        <?php if(isset(settings()->cron->{$cron . '_datetime'})): ?>
+            <small class="form-text text-muted"><?= sprintf(l('admin_settings.cron.last_processing_time'), isset(settings()->cron->{$cron . '_datetime_processing'}) ? nr(settings()->cron->{$cron . '_datetime_processing'}, 8) . ' ' . l('global.date.seconds') : l('global.na')) ?></small>
+        <?php endif ?>
     </div>
 <?php endforeach ?>
 
@@ -110,8 +113,11 @@
                 }
             }
             ?>
-            
-            <small class="form-text <?= $text_class ?>"><?= sprintf(l('admin_settings.cron.last_execution'), isset(settings()->cron->push_notifications_datetime) ? \Altum\Date::get_timeago(settings()->cron->push_notifications_datetime) : '-') ?></small>
+
+            <small class="form-text <?= $text_class ?>"><?= sprintf(l('admin_settings.cron.last_execution'), isset(settings()->cron->push_notifications_datetime) ? \Altum\Date::get_timeago(settings()->cron->push_notifications_datetime) : l('global.na')) ?></small>
+            <?php if(isset(settings()->cron->push_notifications_datetime)): ?>
+                <small class="form-text text-muted"><?= sprintf(l('admin_settings.cron.last_processing_time'), isset(settings()->cron->push_notifications_datetime_processing) ? nr(settings()->cron->push_notifications_datetime_processing, 8) . ' ' . l('global.date.seconds') : l('global.na')) ?></small>
+            <?php endif ?>
         </div>
     </div>
 </div>

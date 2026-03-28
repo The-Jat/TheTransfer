@@ -33,10 +33,14 @@
         if(!empty(\Altum\Language::$languages[$data->language['name']]['content'][$key])) $total_translated++;
         $total++;
     }
+    $total = ceil($total / 1000) * 1000;
     ?>
 
     <div class="alert <?= $total > (int) ini_get('max_input_vars') ? 'alert-danger' : 'alert-info' ?>" role="alert">
         <?= sprintf(l('admin_languages.info_message.max_input_vars'), nr((int) ini_get('max_input_vars'))) ?>
+        <?php if($total > (int) ini_get('max_input_vars')): ?>
+            <br /><small><?= sprintf(l('admin_languages.info_message.max_input_vars_help'), '<strong>' . $total . '</strong>') ?></small>
+        <?php endif ?>
     </div>
 <?php endif ?>
 
@@ -82,6 +86,7 @@
             <div class="form-group">
                 <label for="order"><i class="fas fa-fw fa-sm fa-sort text-muted mr-1"></i> <?= l('global.order') ?></label>
                 <input id="order" type="number" name="order" value="<?= settings()->languages->{$data->language['name']}->order ?? 1 ?>" class="form-control" />
+                <small class="form-text text-muted"><?= l('global.order_int_help') ?></small>
             </div>
 
             <div class="form-group">
@@ -163,10 +168,10 @@
                             <div class="row" data-display-container>
                                 <div class="col-6">
                                     <div class="form-group">
-                                        <div class="d-flex align-items-center justify-content-between flex-wrap">
-                                            <label for="<?= \Altum\Language::$main_name . '_' . $form_key ?>"><?= $key ?></label>
+                                        <div class="d-flex align-items-center flex-wrap">
+                                            <label for="<?= \Altum\Language::$main_name . '_' . $form_key ?>" class="flex-grow-1 min-width-0"><?= $key ?></label>
 
-                                            <div>
+                                            <div class="ml-auto mb-1">
                                                 <?php if($value && \Altum\Language::$main_name != $data->language['name']): ?>
                                                     <button type="button" class="btn btn-sm btn-light" data-translate="<?= '#' . \Altum\Language::$main_name . '_' . $form_key ?>" data-translate-target="<?= '#' . $form_key ?>" data-toggle="tooltip" title="<?= l('admin_languages.auto_translate_help') ?>" data-is-ajax><?= l('admin_languages.auto_translate') ?></button>
                                                 <?php endif ?>
@@ -270,6 +275,8 @@
 
 <?php ob_start() ?>
 <script>
+    'use strict';
+
     let unused_features = <?= json_encode(\Altum\CustomHooks::generate_language_prefixes_to_skip()) ?>;
 
     let display_handler = () => {
@@ -385,7 +392,12 @@
                     'messages': [
                         {
                             'role': 'system',
-                            'content': `You are a professional translator that will translate strings from English to ${language_to_translate_to}. You should exclude PHP sprintf type of variables and leave them as they are. You will only return the translated strings back with no additional text. You will also only use ending punctuation marks when used in the original string.`
+                            'content':
+                                `You are a professional translator. Translate the given text from English to ${language_to_translate_to}. ` +
+                                `Keep all PHP sprintf placeholders (e.g., %1$s, %2$d) unchanged. ` +
+                                `Keep HTML tags unchanged. ` +
+                                `Do not add, remove, or modify punctuation except to match the original text. ` +
+                                `Return only the translated text with no explanations, comments, or formatting outside the translation.`
                         },
                         {
                             'role': 'user',
@@ -393,7 +405,6 @@
                         }
                     ],
                     'user': 'Admin panel - auto translation',
-                    'temperature': 0
                 })
             });
 
@@ -488,39 +499,54 @@
     let language_main_name = <?= json_encode(\Altum\Language::$main_name) ?>;
     let language_missing_variables = <?= json_encode(l('admin_languages.error_message.missing_variables')) ?>;
 
+    /* counts placeholders: numbered -> unique indexes; unnumbered -> exact occurrences */
+    let count_matched_translation_variables = string => {
+        const safe_string = (string || '');
+
+        /* numbered placeholders like %1$s, %2$s... */
+        const numbered_indexes = [...safe_string.matchAll(/%(\d+)\$s/g)].map(match => parseInt(match[1], 10));
+        if (numbered_indexes.length > 0) {
+            /* allow repeats of the same index */
+            return new Set(numbered_indexes).size;
+        }
+
+        /* unnumbered placeholders like %s (ignore %%s) */
+        const unnumbered_matches = safe_string.match(/(?<!%)%s/g) || [];
+        return unnumbered_matches.length;
+    };
+
     document.querySelectorAll('[data-display-input]').forEach(element => {
         ['change', 'paste', 'keyup'].forEach(event_type => {
             element.addEventListener(event_type, event => {
+                /* get values */
                 let translated_string = event.currentTarget.value.trim();
                 let translated_string_id = event.currentTarget.id;
                 let original_translation_string = document.querySelector(`#${language_main_name}_${translated_string_id}`).value.trim();
 
-                if(translated_string != '') {
+                if (translated_string != '') {
+                    /* counts based on style: numbered -> unique indexes; unnumbered -> occurrences */
                     let original_translation_string_variables = count_matched_translation_variables(original_translation_string);
                     let translated_string_variables = count_matched_translation_variables(translated_string);
 
-                    if(original_translation_string_variables != translated_string_variables) {
-                        /* Display a friendly error */
+                    if (original_translation_string_variables != translated_string_variables) {
+                        /* show error */
                         event.currentTarget.classList.add('is-invalid');
-                        event.currentTarget.nextElementSibling.innerHTML = language_missing_variables.replace('%1$s', original_translation_string_variables).replace('%2$s', translated_string_variables);
+                        event.currentTarget.nextElementSibling.innerHTML = language_missing_variables
+                            .replace('%1$s', original_translation_string_variables)
+                            .replace('%2$s', translated_string_variables);
                     } else {
-                        /* Remove error */
+                        /* clear error */
                         event.currentTarget.classList.remove('is-invalid');
                         event.currentTarget.nextElementSibling.innerHTML = '';
                     }
                 } else {
-                    /* Remove error */
+                    /* clear error for empty input */
                     event.currentTarget.classList.remove('is-invalid');
                     event.currentTarget.nextElementSibling.innerHTML = '';
                 }
-            })
+            });
         });
     });
-
-    let count_matched_translation_variables = string => {
-        const re = /(%\d+\$s|%s)+/g
-        return ((string || '').match(re) || []).length
-    }
 </script>
 <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>
 

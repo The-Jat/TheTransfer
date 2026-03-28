@@ -3,50 +3,72 @@
 <?php ob_start() ?>
 <script>
     'use strict';
+    
+/* Cache elements */
+    let bulk_select_all_element = document.querySelector('#bulk_select_all');
+    let bulk_counter_element = document.querySelector('#bulk_counter');
+    let bulk_actions_element = document.querySelector('#bulk_actions');
+    let bulk_enable_element = document.querySelector('#bulk_enable');
+    let bulk_disable_element = document.querySelector('#bulk_disable');
+    let bulk_group_element = document.querySelector('#bulk_group');
 
-    /* Select all handler */
-    document.querySelector('#bulk_select_all') && document.querySelector('#bulk_select_all').addEventListener('click', event => {
-        if(event.currentTarget.checked) {
-            document.querySelectorAll('td[data-bulk-table]').forEach(element => element.querySelector('input').checked = true);
-        } else {
-            document.querySelectorAll('td[data-bulk-table]').forEach(element => element.querySelector('input').checked = false);
-        }
-    });
-
-    /* Counter handler */
+    /* Function to update bulk counter */
     let bulk_counter_handler = () => {
-        let available_count = document.querySelectorAll('td[data-bulk-table] input').length;
+        let bulk_inputs = document.querySelectorAll('td[data-bulk-table] input');
+        let available_count = bulk_inputs.length;
         let selected_count = document.querySelectorAll('td[data-bulk-table] input:checked').length;
 
         if(selected_count) {
-            document.querySelector('#bulk_counter').textContent = `(${nr(selected_count)})`;
-            document.querySelector('#bulk_counter').classList.remove('d-none');
-            document.querySelector('#bulk_actions').classList.remove('disabled');
+            bulk_counter_element.textContent = `(${nr(selected_count)})`;
+            bulk_counter_element.classList.remove('d-none');
+            bulk_actions_element.classList.remove('disabled');
         } else {
-            document.querySelector('#bulk_counter').classList.add('d-none');
-            document.querySelector('#bulk_actions').classList.add('disabled');
+            bulk_counter_element.classList.add('d-none');
+            bulk_actions_element.classList.add('disabled');
         }
 
-        document.querySelector('#bulk_select_all').checked = selected_count == available_count;
+        bulk_select_all_element.checked = selected_count === available_count;
+    };
+
+    /* Select all handler */
+    if(bulk_select_all_element) {
+        bulk_select_all_element.addEventListener('click', event => {
+            let is_checked = event.currentTarget.checked;
+            let bulk_inputs = document.querySelectorAll('td[data-bulk-table] input');
+            bulk_inputs.forEach(input_element => {
+                input_element.checked = is_checked;
+            });
+            bulk_counter_handler();
+        });
     }
 
-    document.querySelectorAll('[data-bulk-table] input').forEach(element => element.addEventListener('click', bulk_counter_handler));
+    /* Attach event once using delegation if many rows, otherwise keep as is */
+    let bulk_inputs = document.querySelectorAll('td[data-bulk-table] input');
+    bulk_inputs.forEach(input_element => {
+        input_element.addEventListener('click', bulk_counter_handler);
+    });
 
     /* Handler to toggle the bulk actions on */
-    document.querySelector('#bulk_enable').addEventListener('click', event => {
-        if(document.querySelectorAll('[data-bulk-table]').length) {
-            document.querySelector('#bulk_enable').classList.add('d-none');
-            document.querySelector('#bulk_group').classList.remove('d-none');
-            document.querySelectorAll('[data-bulk-table]').forEach(element => element.classList.remove('d-none'));
-            bulk_counter_handler();
-        }
-    });
+    if(bulk_enable_element) {
+        bulk_enable_element.addEventListener('click', event => {
+            let bulk_table_elements = document.querySelectorAll('[data-bulk-table]');
+            if(bulk_table_elements.length) {
+                bulk_enable_element.classList.add('d-none');
+                bulk_group_element.classList.remove('d-none');
+                bulk_table_elements.forEach(element => element.classList.remove('d-none'));
+                bulk_counter_handler();
+            }
+        });
+    }
 
     /* Handler to toggle the bulk actions off */
-    document.querySelector('#bulk_disable').addEventListener('click', event => {
-        document.querySelector('#bulk_group').classList.add('d-none');
-        document.querySelector('#bulk_enable').classList.remove('d-none');
-        document.querySelectorAll('[data-bulk-table]').forEach(element => element.classList.add('d-none'));
-    });
+    if(bulk_disable_element) {
+        bulk_disable_element.addEventListener('click', event => {
+            let bulk_table_elements = document.querySelectorAll('[data-bulk-table]');
+            bulk_group_element.classList.add('d-none');
+            bulk_enable_element.classList.remove('d-none');
+            bulk_table_elements.forEach(element => element.classList.add('d-none'));
+        });
+    }
 </script>
 <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>

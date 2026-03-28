@@ -1,9 +1,15 @@
 <?php defined('ALTUMCODE') || die() ?>
 
 <div class="d-flex flex-column flex-md-row justify-content-between mb-4">
-    <h1 class="h3 mb-3 mb-md-0"><i class="fas fa-fw fa-xs fa-x-ray text-primary-900 mr-2"></i> <?= l('admin_dynamic_og_images.header') ?></h1>
+    <h1 class="h3 mb-3 mb-md-0 text-truncate"><i class="fas fa-fw fa-xs fa-x-ray text-primary-900 mr-2"></i> <?= l('admin_dynamic_og_images.header') ?></h1>
 
     <div class="d-flex position-relative d-print-none">
+        <div>
+            <a href="<?= url('admin/statistics/dynamic_og_images') ?>" class="btn btn-gray-300" data-tooltip title="<?= l('global.statistics') ?>">
+                <i class="fas fa-fw fa-sm fa-chart-bar"></i>
+            </a>
+        </div>
+
         <div class="ml-3">
             <button id="bulk_enable" type="button" class="btn btn-gray-300" data-toggle="tooltip" title="<?= l('global.bulk_actions') ?>"><i class="fas fa-fw fa-sm fa-list"></i></button>
 
@@ -71,7 +77,7 @@
                             <?php endif ?>
 
                             <div>
-                                <?= $row->name ?>
+                                <span data-toggle="tooltip" title="<?= $row->name ?>"><?= string_truncate($row->name, 30) ?></span>
 
                                 <?php if($row->status == 'processed'): ?>
                                     <a href="<?= \Altum\Uploads::get_full_url('dynamic_og_images') . $row->full_name ?>" target="_blank">
@@ -79,6 +85,7 @@
                                     </a>
                                 <?php endif ?>
                             </div>
+                        </div>
                     </td>
 
                     <td class="text-nowrap">
@@ -114,6 +121,8 @@
         </table>
     </div>
 </form>
+
+<div class="mt-3"><?= $data->pagination ?></div>
 
 <?php require THEME_PATH . 'views/partials/js_bulk.php' ?>
 <?php \Altum\Event::add_content(include_view(THEME_PATH . 'views/partials/bulk_delete_modal.php'), 'modals'); ?>

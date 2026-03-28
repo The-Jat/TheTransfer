@@ -82,16 +82,15 @@ class Uploads {
         $returned_file_name = null;
 
         if(!empty($_FILES[$file_key]['name'])) {
-            $file_extension = explode('.', $_FILES[$file_key]['name']);
-            $file_extension = mb_strtolower(end($file_extension));
+            $file_extension = mb_strtolower(pathinfo($_FILES[$file_key]['name'], PATHINFO_EXTENSION));
             $file_temp = $_FILES[$file_key]['tmp_name'];
 
             /* Generate new name for image */
-            $image_new_name = md5(time() . rand() . rand()) . '.' . $file_extension;
+            $image_new_name = md5(uniqid('', true) . random_bytes(16)) . '.' . $file_extension;
 
             /* Try to compress the image */
             if(\Altum\Plugin::is_active('image-optimizer') && settings()->image_optimizer->is_enabled) {
-                \Altum\Plugin\ImageOptimizer::optimize($file_temp, $image_new_name);
+                \Altum\Plugin\ImageOptimizer::optimize($file_temp, $image_new_name, $_FILES[$file_key]['name'], Uploads::get_path($uploads_file_key));
             }
 
             /* Sanitize SVG uploads */
@@ -168,8 +167,7 @@ class Uploads {
         $returned_file_name = $already_existing_file_name;
 
         if(!empty($_FILES[$file_key]['name'])) {
-            $file_extension = explode('.', $_FILES[$file_key]['name']);
-            $file_extension = mb_strtolower(end($file_extension));
+            $file_extension = mb_strtolower(pathinfo($_FILES[$file_key]['name'], PATHINFO_EXTENSION));
             $file_temp = $_FILES[$file_key]['tmp_name'];
 
             if($_FILES[$file_key]['error'] == UPLOAD_ERR_INI_SIZE) {
@@ -197,11 +195,11 @@ class Uploads {
             if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
                 /* Generate new name for image */
-                $image_new_name = md5(time() . rand() . rand()) . '.' . $file_extension;
+                $image_new_name = md5(uniqid('', true) . random_bytes(16)) . '.' . $file_extension;
 
                 /* Try to compress the image */
                 if(\Altum\Plugin::is_active('image-optimizer') && settings()->image_optimizer->is_enabled) {
-                    \Altum\Plugin\ImageOptimizer::optimize($file_temp, $image_new_name);
+                    \Altum\Plugin\ImageOptimizer::optimize($file_temp, $image_new_name, $_FILES[$file_key]['name'], Uploads::get_path($uploads_file_key));
                 }
 
                 /* Sanitize SVG uploads */
@@ -303,8 +301,7 @@ class Uploads {
         }
 
         if(!empty($_FILES[$file_key]['name'])) {
-            $file_extension = explode('.', $_FILES[$file_key]['name']);
-            $file_extension = mb_strtolower(end($file_extension));
+            $file_extension = mb_strtolower(pathinfo($_FILES[$file_key]['name'], PATHINFO_EXTENSION));
             $file_temp = $_FILES[$file_key]['tmp_name'];
 
             if($_FILES[$file_key]['error'] == UPLOAD_ERR_INI_SIZE) {
@@ -358,9 +355,8 @@ class Uploads {
                 break;
         }
 
-        $file_extension = explode('.', $already_existing_file_name);
-        $file_extension = mb_strtolower(end($file_extension));
-        $file_new_name = md5(time() . rand()) . '.' . $file_extension;
+        $file_extension = mb_strtolower(pathinfo($already_existing_file_name, PATHINFO_EXTENSION));
+        $file_new_name = md5(uniqid('', true) . random_bytes(16)) . '.' . $file_extension;
 
         /* Offload uploading */
         if(\Altum\Plugin::is_active('offload') && settings()->offload->uploads_url) {
@@ -408,6 +404,46 @@ class Uploads {
         }
     }
 
+    public static function delete_uploaded_file_and_potential_residue($already_existing_file_name, $uploads_file_key, $upload_id = null) {
+        if(!empty($already_existing_file_name)) {
+            /* Offload deleting */
+            if(\Altum\Plugin::is_active('offload') && settings()->offload->uploads_url) {
+                $s3 = new \Aws\S3\S3Client(get_aws_s3_config());
+
+                /* Delete */
+                if($upload_id) {
+                    try {
+                        /* Generate multipart upload */
+                        $command = $s3->getCommand('AbortMultipartUpload', [
+                            'Bucket' => settings()->offload->storage_name,
+                            'Key' => UPLOADS_URL_PATH . Uploads::get_path($uploads_file_key) . $already_existing_file_name,
+                            'UploadId' => $upload_id,
+                        ]);
+
+                        $result = $s3->execute($command);
+                    } catch (\Exception $exception) {
+                        /* :) */
+                    }
+                }
+
+                /* Delete */
+                try {
+                    $s3->deleteObject([
+                        'Bucket' => settings()->offload->storage_name,
+                        'Key' => UPLOADS_URL_PATH . Uploads::get_path($uploads_file_key) . $already_existing_file_name,
+                    ]);
+                } catch (\Exception $exception) {
+                    /* :) */
+                }
+            }
+
+            /* Local deleting */
+            else if(file_exists(UPLOADS_PATH . Uploads::get_path($uploads_file_key) . $already_existing_file_name)) {
+                unlink(UPLOADS_PATH . Uploads::get_path($uploads_file_key) . $already_existing_file_name);
+            }
+        }
+    }
+
     public static function download_files_as_zip($files = [], $file_name = null) {
         if(is_null($file_name) && \Altum\Title::get()) {
             $file_name = \Altum\Title::get();
@@ -424,25 +460,30 @@ class Uploads {
             true,
             true,
             null,
-            get_slug($file_name) . '.zip'
+            get_slug($file_name) . '.zip',
+            flushOutput: true,
         );
 
         /* Output file data to be downloaded */
         if(!\Altum\Plugin::is_active('offload') || (\Altum\Plugin::is_active('offload') && !settings()->offload->uploads_url)) {
 
-            /* Add all files to the zip */
-            foreach($files as $file_name => $file_path) {
+            foreach($files as $entry_name => $entry_path) {
 
-                /* Make sure the file exists */
-                if(!file_exists(UPLOADS_PATH . $file_path . $file_name)) {
-                    continue;
+                $full_path = UPLOADS_PATH . $entry_path . $entry_name;
+
+                /* Handle folders recursively */
+                if(is_dir($full_path)) {
+                    self::add_folder_to_zip($zip, $full_path, $entry_name . '/');
                 }
 
-                $zip->addFileFromPath($file_name, UPLOADS_PATH . $file_path . $file_name);
+                /* Handle single file */
+                elseif(file_exists($full_path)) {
+                    $zip->addFileFromPath($entry_name, $full_path);
+                }
             }
         }
 
-        /* Offload storage */
+        /* Offload storage (no support for folders via stream wrappers) */
         else {
 
             try {
@@ -453,30 +494,216 @@ class Uploads {
                 redirect();
             }
 
-            /* Add all files to the zip */
             foreach($files as $file_name => $file_path) {
 
-                /* Local files */
-                $file_source = @fopen('s3://' .  settings()->offload->storage_name . '/' . UPLOADS_URL_PATH . $file_path . $file_name, 'rb');
+                $remote_path = 's3://' . settings()->offload->storage_name . '/' . UPLOADS_URL_PATH . $file_path . $file_name;
 
-                /* Download to a temp file */
-                $temp_file = tmpfile();
-                while($buffer = fread($file_source, 5000 * 16)) {
-                    fwrite($temp_file, $buffer);
+                /* Make sure it's a file (not a folder) */
+                if(is_file($remote_path)) {
+                    $file_source = @fopen($remote_path, 'rb');
+                    if($file_source) {
+                        $zip->addFileFromStream($file_name, $file_source);
+                        fclose($file_source);
+                    }
                 }
-                rewind($temp_file);
-
-                $zip->addFileFromStream($file_name, $temp_file);
-
-                /* Close the file stream */
-                fclose($temp_file);
-                fclose($file_source);
             }
-
         }
 
-        /* Output file data to be downloaded */
         $zip->finish();
         die();
+    }
+
+    /* Helper function to recursively add folder contents to zip */
+    private static function add_folder_to_zip($zip, $folder_path, $zip_path_prefix = '') {
+        $folder_path = rtrim($folder_path, '/');
+        $base_path_length = strlen($folder_path) + 1;
+
+        $directory_iterator = new \RecursiveDirectoryIterator(
+            $folder_path,
+            \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::CURRENT_AS_FILEINFO
+        );
+
+        $iterator = new \RecursiveIteratorIterator(
+            $directory_iterator,
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach($iterator as $item) {
+            $full_path = $item->getPathname();
+            $relative_path = $zip_path_prefix . substr($full_path, $base_path_length);
+
+            if($item->isDir()) {
+                /* Add directory with trailing slash */
+                $zip->addDirectory(rtrim($relative_path, '/') . '/');
+            } elseif($item->isFile()) {
+                $zip->addFileFromPath($relative_path, $full_path);
+            }
+        }
+    }
+
+    public static function download_image_from_url($image_url, $uploads_file_key, $save_file_name, $allowed_mime_types = [], $error_response_type = 'error', $error_field = null) {
+        /* Determine the error response */
+        $return_error = null;
+        switch($error_response_type) {
+            case 'error':
+                $return_error = function($message) {
+                    Alerts::add_error($message);
+                };
+                break;
+            case 'field_error':
+                $return_error = function($message) use ($error_field) {
+                    Alerts::add_field_error($message, $error_field);
+                };
+                break;
+            case 'json_error':
+                $return_error = function($message) use ($error_field) {
+                    Response::json($message, 'error');
+                };
+                break;
+        }
+
+        $returned_file_name = null;
+
+        /* Validate the URL */
+        if(!filter_var($image_url, FILTER_VALIDATE_URL)) {
+            $return_error('Invalid image URL.');
+            return null;
+        }
+
+        /* Get file extension from URL */
+        $parsed_url = parse_url($image_url);
+        $url_path = isset($parsed_url['path']) ? $parsed_url['path'] : '';
+        $file_extension = mb_strtolower(pathinfo($url_path, PATHINFO_EXTENSION));
+
+        if(!$file_extension) {
+            $return_error('URL does not contain a file extension.');
+            return null;
+        }
+
+        /* Set temp file path */
+        $temp_file_path = sys_get_temp_dir() . '/' . md5(uniqid('', true) . random_bytes(16)) . '.' . $file_extension;
+
+        /* Check remote content-type header before download (not fully trusted) */
+        $curl_handle = curl_init($image_url);
+        curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl_handle, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($curl_handle, CURLOPT_TIMEOUT, 15);
+        curl_setopt($curl_handle, CURLOPT_USERAGENT, 'Mozilla/5.0');
+        curl_setopt($curl_handle, CURLOPT_HEADER, true);
+        curl_setopt($curl_handle, CURLOPT_NOBODY, true);
+
+        $curl_exec_result = curl_exec($curl_handle);
+        $http_status = curl_getinfo($curl_handle, CURLINFO_HTTP_CODE);
+        $remote_content_type = curl_getinfo($curl_handle, CURLINFO_CONTENT_TYPE);
+
+        curl_close($curl_handle);
+
+        if($http_status !== 200) {
+            $return_error('Failed to fetch the image. HTTP status: ' . $http_status);
+            return null;
+        }
+
+        if(!in_array($remote_content_type, $allowed_mime_types)) {
+            $return_error('Remote mime type not allowed: ' . $remote_content_type);
+            return null;
+        }
+
+        /* Download the image to temp file */
+        $curl_handle = curl_init($image_url);
+        curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl_handle, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($curl_handle, CURLOPT_TIMEOUT, 15);
+        curl_setopt($curl_handle, CURLOPT_USERAGENT, 'Mozilla/5.0');
+        $image_data = curl_exec($curl_handle);
+        $http_status = curl_getinfo($curl_handle, CURLINFO_HTTP_CODE);
+        curl_close($curl_handle);
+
+        if($image_data === false || $http_status !== 200) {
+            $return_error('Failed to download the image.');
+            return null;
+        }
+
+        if(file_put_contents($temp_file_path, $image_data) === false) {
+            $return_error('Failed to save the image to temp location.');
+            return null;
+        }
+
+        /* Validate actual mime type after download */
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $actual_mime_type = finfo_file($finfo, $temp_file_path);
+        finfo_close($finfo);
+
+        if(!in_array($actual_mime_type, $allowed_mime_types)) {
+            unlink($temp_file_path);
+            $return_error('Downloaded file mime type not allowed: ' . $actual_mime_type);
+            return null;
+        }
+
+        /* Validate that it's really an image (except SVG) */
+        if($actual_mime_type !== 'image/svg+xml' && !@getimagesize($temp_file_path)) {
+            unlink($temp_file_path);
+            $return_error('Downloaded file is not a valid image.');
+            return null;
+        }
+
+        /* SVG sanitize if needed */
+        if($actual_mime_type === 'image/svg+xml' && class_exists('\enshrined\svgSanitize\Sanitizer')) {
+            $svg_sanitizer = new \enshrined\svgSanitize\Sanitizer();
+            $dirty_svg = file_get_contents($temp_file_path);
+            $clean_svg = $svg_sanitizer->sanitize($dirty_svg);
+            file_put_contents($temp_file_path, $clean_svg);
+        }
+
+        /* Try to compress/optimize the image if plugin enabled */
+        if(\Altum\Plugin::is_active('image-optimizer') && settings()->image_optimizer->is_enabled) {
+            \Altum\Plugin\ImageOptimizer::optimize($temp_file_path, $save_file_name . '.' . $file_extension, $save_file_name . '.' . $file_extension, Uploads::get_path($uploads_file_key));
+        }
+
+        /* Final file name with extension from URL */
+        $final_file_name = $save_file_name . '.' . $file_extension;
+
+        /* Offload/S3 uploading */
+        if(\Altum\Plugin::is_active('offload') && settings()->offload->uploads_url) {
+            try {
+                $s3 = new \Aws\S3\S3Client(get_aws_s3_config());
+
+                $s3->putObject([
+                    'Bucket' => settings()->offload->storage_name,
+                    'Key' => UPLOADS_URL_PATH . Uploads::get_path($uploads_file_key) . $final_file_name,
+                    'ContentType' => $actual_mime_type,
+                    'SourceFile' => $temp_file_path,
+                    'ACL' => 'public-read'
+                ]);
+            } catch (\Exception $exception) {
+                unlink($temp_file_path);
+                $return_error($exception->getMessage());
+                return null;
+            }
+            unlink($temp_file_path);
+        }
+        /* Local uploading */
+        else {
+            $save_directory_path = UPLOADS_PATH . Uploads::get_path($uploads_file_key);
+            if(!is_writable($save_directory_path)) {
+                unlink($temp_file_path);
+                $return_error(sprintf(l('global.error_message.directory_not_writable'), $save_directory_path));
+                return null;
+            }
+
+            $save_file_path = $save_directory_path . $final_file_name;
+
+            if(file_exists($save_file_path)) {
+                unlink($save_file_path);
+            }
+
+            if(rename($temp_file_path, $save_file_path) === false) {
+                unlink($temp_file_path);
+                $return_error('Failed to move the image to destination.');
+                return null;
+            }
+        }
+
+        $returned_file_name = $final_file_name;
+        return $returned_file_name;
     }
 }

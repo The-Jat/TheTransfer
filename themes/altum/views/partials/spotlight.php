@@ -234,22 +234,22 @@
         /* ------------------------------
            Global Keydown for CTRL+K, etc.
         ------------------------------ */
-        document.addEventListener('keydown', e => {
-            if((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
+        document.addEventListener('keydown', event => {
+            if((event.ctrlKey || event.metaKey) && event.key === 'k') {
+                event.preventDefault();
                 spotlight_wrapper.getAttribute('aria-hidden') === 'true' ? spotlight_display() : spotlight_hide();
             }
 
             if(spotlight_wrapper.getAttribute('aria-hidden') === 'false') {
-                if(e.key === 'Escape') {
+                if(event.key === 'Escape') {
                     spotlight_hide();
-                } else if(e.key === 'ArrowDown') {
-                    e.preventDefault();
+                } else if(event.key === 'ArrowDown') {
+                    event.preventDefault();
                     navigate_results('down');
-                } else if(e.key === 'ArrowUp') {
-                    e.preventDefault();
+                } else if(event.key === 'ArrowUp') {
+                    event.preventDefault();
                     navigate_results('up');
-                } else if(e.key === 'Enter') {
+                } else if(event.key === 'Enter') {
                     /* handle enter if needed */
                 } else {
                     document.querySelector('#spotlight_search').focus();
@@ -260,8 +260,8 @@
         /* ------------------------------
            Hide on Click Outside
         ------------------------------ */
-        spotlight_wrapper.addEventListener('click', e => {
-            if(!spotlight_wrapper.classList.contains('d-none') && !spotlight_modal.contains(e.target)) {
+        spotlight_wrapper.addEventListener('click', event => {
+            if(!spotlight_wrapper.classList.contains('d-none') && !spotlight_modal.contains(event.target)) {
                 spotlight_hide();
             }
         });

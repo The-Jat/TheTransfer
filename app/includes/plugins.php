@@ -24,4 +24,5 @@ return [
     'teams',
     'image-optimizer',
     'dynamic-og-images',
+    'email-shield',
 ];

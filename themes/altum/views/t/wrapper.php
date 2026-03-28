@@ -9,6 +9,15 @@
 
         <?php if(\Altum\Plugin::is_active('pwa') && settings()->pwa->is_enabled): ?>
             <meta name="theme-color" content="<?= settings()->pwa->theme_color ?>"/>
+
+            <?php if(settings()->pwa->is_fullscreen ?? true): ?>
+                <meta name="apple-mobile-web-app-capable" content="yes">
+                <meta name="mobile-web-app-capable" content="yes">
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+            <?php endif ?>
+
+			<?= pwa_generate_dynamic_splash_screen_links() ?>
+
             <link rel="manifest" href="<?= SITE_URL . UPLOADS_URL_PATH . \Altum\Uploads::get_path('pwa') . 'manifest.json' ?>" />
         <?php endif ?>
 
@@ -81,7 +90,7 @@
         <?php if(settings()->transfers->report_is_enabled): ?>
             <div id="info" class="link-info">
                 <a href="<?= url('contact?subject=' . urlencode(sprintf(l('t_transfer.report.subject'), remove_url_protocol_from_url($this->transfer->full_url))) . '&message=' . urlencode(l('t_transfer.report.message'))) ?>" target="_blank" title="<?= l('t_transfer.report') ?>">
-                    <i class="fas fa-fw fa-xs fa-flag"></i>
+                    <i class="fas fa-fw fa-xs fa-exclamation-triangle"></i>
                 </a>
             </div>
         <?php endif ?>

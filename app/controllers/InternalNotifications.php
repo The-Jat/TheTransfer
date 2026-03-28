@@ -46,8 +46,8 @@ class InternalNotifications extends Controller {
         while($row = $internal_notifications_result->fetch_object()) $internal_notifications[] = $row;
 
         /* Export handler */
-        process_export_json($internal_notifications, 'include', ['internal_notification_id', 'user_id', 'for_who', 'from_who', 'icon', 'title', 'description', 'url', 'is_read', 'datetime', 'read_datetime',]);
-        process_export_csv($internal_notifications, 'include', ['internal_notification_id', 'user_id', 'for_who', 'from_who', 'icon', 'title', 'description', 'url', 'is_read', 'datetime', 'read_datetime',]);
+        process_export_json($internal_notifications, ['internal_notification_id', 'user_id', 'for_who', 'from_who', 'icon', 'title', 'description', 'url', 'is_read', 'datetime', 'read_datetime',]);
+        process_export_csv($internal_notifications, ['internal_notification_id', 'user_id', 'for_who', 'from_who', 'icon', 'title', 'description', 'url', 'is_read', 'datetime', 'read_datetime',]);
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/pagination', (array) $this))->run(['paginator' => $paginator]);

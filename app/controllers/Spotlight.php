@@ -305,6 +305,11 @@ class Spotlight extends Controller {
                     ];
 
                     $available_pages[] = [
+                        'name' => l('global.menu.admin') . ' - ' . l('admin_taxes_import.title'),
+                        'url' => 'admin/taxes-import'
+                    ];
+
+                    $available_pages[] = [
                         'name' => l('global.menu.admin') . ' - ' . l('admin_tax_create.title'),
                         'url' => 'admin/tax-create'
                     ];
@@ -474,6 +479,20 @@ class Spotlight extends Controller {
                     $available_pages[] = [
                         'name' => l('global.menu.admin') . ' - ' . l('admin_push_notification_create.title'),
                         'url' => 'admin/push-notification-create'
+                    ];
+                }
+
+                if(\Altum\Plugin::is_active('image-optimizer')) {
+                    $available_pages[] = [
+                        'name' => l('global.menu.admin') . ' - ' . l('admin_image_optimizer.title'),
+                        'url' => 'admin/image-optimizer'
+                    ];
+                }
+
+                if(\Altum\Plugin::is_active('dynamic-og-images')) {
+                    $available_pages[] = [
+                        'name' => l('global.menu.admin') . ' - ' . l('admin_dynamic_og_images.title'),
+                        'url' => 'admin/dynamic-og-images'
                     ];
                 }
 

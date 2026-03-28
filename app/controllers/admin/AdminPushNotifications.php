@@ -53,8 +53,8 @@ class AdminPushNotifications extends Controller {
         }
 
         /* Export handler */
-        process_export_json($push_notifications, 'include', ['push_notification_id', 'title', 'description', 'url', 'status', 'push_subscribers_ids', 'sent_push_subscribers_ids', 'sent_push_notifications', 'total_push_notifications', 'last_sent_datetime', 'datetime', 'last_datetime',]);
-        process_export_csv($push_notifications, 'include', ['push_notification_id', 'title', 'description', 'url', 'status', 'push_subscribers_ids', 'sent_push_subscribers_ids', 'sent_push_notifications', 'total_push_notifications', 'last_sent_datetime', 'datetime', 'last_datetime',]);
+        process_export_json($push_notifications, ['push_notification_id', 'title', 'description', 'url', 'status', 'push_subscribers_ids', 'sent_push_subscribers_ids', 'sent_push_notifications', 'total_push_notifications', 'last_sent_datetime', 'datetime', 'last_datetime',]);
+        process_export_csv($push_notifications, ['push_notification_id', 'title', 'description', 'url', 'status', 'push_subscribers_ids', 'sent_push_subscribers_ids', 'sent_push_notifications', 'total_push_notifications', 'last_sent_datetime', 'datetime', 'last_datetime',]);
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/admin_pagination', (array) $this))->run(['paginator' => $paginator]);
@@ -212,6 +212,8 @@ class AdminPushNotifications extends Controller {
 
             set_time_limit(0);
 
+            session_write_close();
+
             switch($_POST['type']) {
                 case 'delete':
 
@@ -221,6 +223,8 @@ class AdminPushNotifications extends Controller {
                     break;
             }
 
+            session_start();
+            
             /* Set a nice success message */
             Alerts::add_success(l('bulk_delete_modal.success_message'));
 

@@ -1,6 +1,6 @@
 <?php defined('ALTUMCODE') || die() ?>
 
-<div>
+<div id="announcements">
     <ul class="nav nav-pills d-flex flex-fill flex-column flex-lg-row mb-3" role="tablist">
         <li class="nav-item flex-fill text-center" role="presentation">
             <a class="nav-link active" id="pills-guests-tab" data-toggle="pill" href="#pills-guests" role="tab" aria-controls="pills-home" aria-selected="true">
@@ -30,7 +30,7 @@
                 </label>
                 <textarea id="guests_content" name="guests_content" class="form-control"><?= settings()->announcements->guests_content ?></textarea>
                 <small class="form-text text-muted"><?= l('admin_settings.announcements.content_help') ?></small>
-                <small class="form-text text-muted"><?= sprintf(l('global.variables'), '<code>' . implode('</code> , <code>',  ['{{WEBSITE_TITLE}}']) . '</code>') ?></small>
+                <small class="form-text text-muted"><?= sprintf(l('global.variables'), '<code data-copy>' . implode('</code> , <code data-copy>',  ['{{WEBSITE_TITLE}}']) . '</code>') ?></small>
                 <small class="form-text text-muted"><?= l('global.spintax_help') ?></small>
             </div>
 
@@ -69,7 +69,7 @@
                 </label>
                 <textarea id="users_content" name="users_content" class="form-control"><?= settings()->announcements->users_content ?></textarea>
                 <small class="form-text text-muted"><?= l('admin_settings.announcements.content_help') ?></small>
-                <small class="form-text text-muted"><?= sprintf(l('global.variables'), '<code>' . implode('</code> , <code>',  ['{{WEBSITE_TITLE}}', '{{USER:NAME}}', '{{USER:EMAIL}}', '{{USER:CONTINENT_NAME}}', '{{USER:COUNTRY_NAME}}', '{{USER:CITY_NAME}}', '{{USER:DEVICE_TYPE}}', '{{USER:OS_NAME}}', '{{USER:BROWSER_NAME}}', '{{USER:BROWSER_LANGUAGE}}']) . '</code>') ?></small>
+                <small class="form-text text-muted"><?= sprintf(l('global.variables'), '<code data-copy>' . implode('</code> , <code data-copy>',  ['{{WEBSITE_TITLE}}', '{{USER:NAME}}', '{{USER:EMAIL}}', '{{USER:CONTINENT_NAME}}', '{{USER:COUNTRY_NAME}}', '{{USER:CITY_NAME}}', '{{USER:DEVICE_TYPE}}', '{{USER:OS_NAME}}', '{{USER:BROWSER_NAME}}', '{{USER:BROWSER_LANGUAGE}}']) . '</code>') ?></small>
                 <small class="form-text text-muted"><?= l('global.spintax_help') ?></small>
             </div>
 
@@ -100,3 +100,4 @@
 <button type="submit" name="submit" class="btn btn-lg btn-block btn-primary mt-4"><?= l('global.update') ?></button>
 
 <?php include_view(THEME_PATH . 'views/partials/color_picker_js.php') ?>
+<?php include_view(THEME_PATH . 'views/partials/clipboard_js.php') ?>

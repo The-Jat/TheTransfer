@@ -61,8 +61,8 @@ class Team extends Controller {
         }
 
         /* Export handler */
-        process_export_json($team_members, 'include', ['team_member_id', 'team_id', 'user_id', 'name', 'email', 'access', 'datetime', 'last_datetime']);
-        process_export_csv($team_members, 'include', ['team_member_id', 'team_id', 'user_id', 'name', 'email', 'datetime', 'last_datetime']);
+        process_export_json($team_members, ['team_member_id', 'team_id', 'user_id', 'name', 'email', 'access', 'datetime', 'last_datetime']);
+        process_export_csv($team_members, ['team_member_id', 'team_id', 'user_id', 'name', 'email', 'datetime', 'last_datetime']);
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/pagination', (array) $this))->run(['paginator' => $paginator]);

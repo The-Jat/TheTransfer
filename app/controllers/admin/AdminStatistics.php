@@ -80,6 +80,69 @@ class AdminStatistics extends Controller {
         ];
     }
 
+    protected function local_files() {
+        //ALTUMCODE:DEMO if(DEMO) { \Altum\Alerts::add_error('This command is blocked on the demo.'); redirect('admin/statistics'); };
+
+        $base_directory = UPLOADS_PATH;
+        $folders = [];
+        $total_statistics = [
+            'total_files' => 0,
+            'total_size' => 0,
+        ];
+
+        /* List only the main folders inside the base directory */
+        foreach (new \DirectoryIterator($base_directory) as $folder_info) {
+            if ($folder_info->isDot() || !$folder_info->isDir()) {
+                continue;
+            }
+
+            $folder_name = $folder_info->getFilename();
+            $folder_path = $base_directory . DIRECTORY_SEPARATOR . $folder_name;
+
+            $folders[$folder_name] = [
+                'total_files'      => 0,
+                'total_size'       => 0,
+                'extensions'       => [],
+            ];
+
+            /* Only iterate files directly inside the current main folder */
+            foreach (new \DirectoryIterator($folder_path) as $file_info) {
+                if ($file_info->isDot() || !$file_info->isFile()) {
+                    continue;
+                }
+
+                $file_name = $file_info->getFilename();
+
+                if($file_name == 'altumcode.com') {
+                    continue;
+                }
+
+                $file_extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+                $file_size = $file_info->getSize();
+
+                $folders[$folder_name]['total_files'] += 1;
+                $folders[$folder_name]['total_size'] += $file_size;
+                $folders[$folder_name]['extensions'][$file_extension] = ($folders[$folder_name]['extensions'][$file_extension] ?? 0) + 1;
+
+                $total_statistics['total_files'] += 1;
+                $total_statistics['total_size'] += $file_size;
+            }
+
+            uasort($folders, function ($folder_a, $folder_b) {
+                /* Sort folders by total_size descending */
+                if ($folder_a['total_size'] == $folder_b['total_size']) {
+                    return 0;
+                }
+                return ($folder_a['total_size'] > $folder_b['total_size']) ? -1 : 1;
+            });
+        }
+
+        return [
+            'folders' => $folders,
+            'total_statistics' => $total_statistics,
+        ];
+    }
+
     protected function growth() {
 
         $total = ['users' => 0, 'users_logs' => 0];
@@ -726,6 +789,88 @@ class AdminStatistics extends Controller {
         return [
             'total' => $total,
             'teams_members_chart' => $teams_members_chart,
+        ];
+
+    }
+
+    protected function email_shield() {
+
+        $total = ['valid' => 0, 'invalid' => 0];
+
+        $convert_tz_sql = get_convert_tz_sql('`date`', $this->user->timezone);
+
+        $chart = [];
+        $result = database()->query("SELECT `valid`, `invalid`, DATE_FORMAT({$convert_tz_sql}, '{$this->datetime['query_date_format']}') AS `formatted_date` FROM `email_shield` WHERE {$convert_tz_sql} BETWEEN '{$this->datetime['query_start_date']}' AND '{$this->datetime['query_end_date']}'");
+        while($row = $result->fetch_object()) {
+            $row->formatted_date = $this->datetime['process']($row->formatted_date, true);
+
+            $chart[$row->formatted_date] = [
+                'valid' => $row->valid,
+                'invalid' => $row->invalid,
+            ];
+
+            $total['valid'] += $row->valid;
+            $total['invalid'] += $row->invalid;
+        }
+
+        $chart = get_chart_data($chart);
+
+        return [
+            'total' => $total,
+            'chart' => $chart,
+        ];
+
+    }
+
+    protected function image_optimizer() {
+
+        $total = [
+            'total' => 0,
+            'saved_size' => 0,
+            'average_percentage_difference' => 0,
+            'rows' => 0,
+        ];
+
+        $convert_tz_sql = get_convert_tz_sql('`datetime`', $this->user->timezone);
+
+        $chart = [];
+        $result = database()->query("
+            SELECT 
+                COUNT(*) AS `total`,
+                SUM(`original_size`) AS `original_size`,
+                SUM(`new_size`) AS `new_size`,
+                AVG(`percentage_difference`) AS `average_percentage_difference`, 
+                DATE_FORMAT({$convert_tz_sql}, '{$this->datetime['query_date_format']}') AS `formatted_date` 
+            FROM 
+                `image_optimizations`
+            WHERE 
+                {$convert_tz_sql} BETWEEN '{$this->datetime['query_start_date']}' AND '{$this->datetime['query_end_date']}'
+            GROUP BY 
+                `formatted_date`
+        ");
+
+        while($row = $result->fetch_object()) {
+            $row->formatted_date = $this->datetime['process']($row->formatted_date, true);
+
+            $chart[$row->formatted_date] = [
+                'total' => $row->total,
+                'saved_size' => ($row->original_size - $row->new_size),
+                'average_percentage_difference' => $row->average_percentage_difference,
+            ];
+
+            $total['total'] += $row->total;
+            $total['saved_size'] += ($row->original_size - $row->new_size);
+            $total['average_percentage_difference'] += $row->average_percentage_difference;
+            $total['rows']++;
+        }
+
+        $total['average_percentage_difference'] = $total['rows'] ? $total['average_percentage_difference'] / $total['rows'] : 0;
+
+        $chart = get_chart_data($chart);
+
+        return [
+            'total' => $total,
+            'chart' => $chart,
         ];
 
     }

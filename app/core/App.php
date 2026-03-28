@@ -73,6 +73,23 @@ class App {
             header("Strict-Transport-Security: max-age=31536000; preload");
         }
 
+        /* Sessions management */
+        $should_start_session = !isset($_GET['altum'])
+            || (
+                !in_array(\Altum\Router::$controller, ['Cron', 'Sitemap', 'Spotlight', 'PushSubscribers', 'SSO'])
+                && !str_starts_with($_GET['altum'], 'webhook-')
+                && !str_starts_with($_GET['altum'], 'api/')
+                && !str_starts_with($_GET['altum'], 'admin-api/')
+
+                /* Per product */
+                && !in_array(\Altum\Router::$controller, ['Twiml'])
+                && \Altum\Router::$path != 't'
+            );
+
+        if($should_start_session) {
+            session_start();
+        }
+
         /* Initiate the Language system with the default language */
         Language::set_default_by_name(settings()->main->default_language);
 
@@ -87,9 +104,9 @@ class App {
         Date::$date = Date::get();
 
         /* Check if the team is set and do not allow access for certain routes */
-        if(isset($_SESSION['team_id']) && \Altum\Plugin::is_active('teams') && !is_null(\Altum\Router::$controller_settings['allow_team_access'])) {
+        if(!is_null(\Altum\Router::$controller_settings['allow_team_access']) && \Altum\Plugin::is_active('teams') && session_has('team_id')) {
             if(!\Altum\Router::$controller_settings['allow_team_access']) {
-                Alerts::add_info(l('global.info_message.team_limit'));
+                Alerts::add_error(l('global.info_message.team_limit'));
                 redirect();
             }
         }
@@ -101,6 +118,38 @@ class App {
         settings()->main->logo_light_full_url = \Altum\Uploads::get_full_url('logo_light') . settings()->main->logo_light;
         settings()->main->logo_dark_full_url = \Altum\Uploads::get_full_url('logo_dark') . settings()->main->logo_dark;
         settings()->main->favicon_full_url = \Altum\Uploads::get_full_url('favicon') . settings()->main->favicon;
+
+        /* Auto currency detection */
+        if(!is_logged_in() && settings()->payment->auto_currency_detection && settings()->payment->is_enabled && !isset($_COOKIE['set_currency'])) {
+            /* Detect the location */
+            try {
+                $maxmind = get_maxmind_reader_country()->get(get_ip());
+                $continent_code = isset($maxmind) && isset($maxmind['continent']) ? $maxmind['continent']['code'] : null;
+                $country_code = isset($maxmind) && isset($maxmind['country']) ? $maxmind['country']['iso_code'] : null;
+            } catch(\Exception $exception) {
+                /* :) */
+            }
+
+            /* Try association with the country */
+            if(isset($country_code)) {
+                $potential_currency = get_currency_for_country($country_code);
+
+                if(array_key_exists($potential_currency, (array) settings()->payment->currencies)) {
+                    setcookie('set_currency', $potential_currency, time() + 60*60*24*30, COOKIE_PATH);
+                    \Altum\Currency::$currency = $potential_currency;
+                }
+            }
+
+            /* Try association with the continent */
+            if(!isset($_COOKIE['set_currency']) && isset($continent_code)) {
+                $potential_currency = get_currency_for_continent($continent_code);
+
+                if(array_key_exists($potential_currency, (array) settings()->payment->currencies)) {
+                    setcookie('set_currency', $potential_currency, time() + 60*60*24*30, COOKIE_PATH);
+                    \Altum\Currency::$currency = $potential_currency;
+                }
+            }
+        }
 
         /* Check for a potential logged in account and do some extra checks */
         if(is_logged_in()) {
@@ -146,7 +195,7 @@ class App {
 
             /* Update last activity */
             /* Do not update if user is impersonated by an admin */
-            if(!$user->last_activity || (new \DateTime($user->last_activity))->modify('+15 minutes') < (new \DateTime()) && !isset($_SESSION['admin_user_id'])) {
+            if(!$user->last_activity || (new \DateTime($user->last_activity))->modify('+15 minutes') < (new \DateTime()) && !session_has('admin_user_id')) {
                 (new \Altum\Models\User())->update_last_activity(\Altum\Authentication::$user_id);
             }
 
@@ -243,12 +292,12 @@ class App {
         }
 
         /* Initiate the Title system */
-        Title::initialize(settings()->main->title);
+        Title::initialize(settings()->main->title, settings()->main->title_separator ?? '-');
         Meta::initialize();
 
         /* Set a CSRF Token */
-        Csrf::set('token');
-        Csrf::set('global_token');
+//        \Altum\Csrf::set('token');
+//        \Altum\Csrf::set('global_token');
 
         /* If the language code is the default one, redirect to index */
         if(\Altum\Router::$language_code == Language::$default_code) {
@@ -258,13 +307,13 @@ class App {
         /* Redirect based on browser language if needed */
         $browser_language_code = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? mb_substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2) : null;
         if(settings()->main->auto_language_detection_is_enabled && \Altum\Router::$controller_settings['no_browser_language_detection'] == false && !\Altum\Router::$language_code && !is_logged_in() && $browser_language_code && Language::$default_code != $browser_language_code && array_search($browser_language_code, Language::$active_languages)) {
-            if(!isset($_SERVER['HTTP_REFERER']) || (isset($_SERVER['HTTP_REFERER']) && parse_url($_SERVER['HTTP_REFERER'])['host'] != parse_url(SITE_url, PHP_URL_HOST))) {
+            if(!isset($_SERVER['HTTP_REFERER']) || (isset($_SERVER['HTTP_REFERER']) && parse_url($_SERVER['HTTP_REFERER'])['host'] != parse_url(SITE_URL, PHP_URL_HOST))) {
                 header('Location: ' . SITE_URL . $browser_language_code . '/' . \Altum\Router::$original_request . (\Altum\Router::$original_request_query ? '?' . \Altum\Router::$original_request_query : null));
             }
         }
 
         /* Force HTTPS is needed */
-        if(settings()->main->force_https_is_enabled && ($_SERVER['HTTPS'] ?? '') != 'on' && php_sapi_name() != 'cli' && string_starts_with('https://', SITE_URL)) {
+        if(settings()->main->force_https_is_enabled && !is_https_request() && php_sapi_name() != 'cli' && string_starts_with('https://', SITE_URL)) {
             header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], true, 301); die();
         }
 

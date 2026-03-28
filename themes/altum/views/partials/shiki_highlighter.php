@@ -5,8 +5,8 @@
 
 <script>
     'use strict';
-
-    shiki
+    
+shiki
         .getHighlighter({
             theme: 'dracula-soft',
             langs: ['json']

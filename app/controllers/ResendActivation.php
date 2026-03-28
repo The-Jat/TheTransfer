@@ -75,7 +75,7 @@ class ResendActivation extends Controller {
 
                 if($user && !$user->status) {
                     /* Generate new email code */
-                    $email_code = md5($_POST['email'] . microtime());
+                    $email_code = md5(uniqid('', true) . random_bytes(16));
 
                     /* Update the current activation email */
                     db()->where('user_id', $user->user_id)->update('users', ['email_activation_code' => $email_code]);

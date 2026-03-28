@@ -41,7 +41,7 @@ class TeamMemberCreate extends Controller {
         $total_rows = database()->query("SELECT COUNT(*) AS `total` FROM `teams_members` WHERE `team_id` = {$team->team_id}")->fetch_object()->total ?? 0;
 
         if($this->user->plan_settings->team_members_limit != -1 && $total_rows >= $this->user->plan_settings->team_members_limit) {
-            Alerts::add_info(l('global.info_message.plan_feature_limit'));
+            Alerts::add_error(l('global.info_message.plan_feature_limit') . (settings()->payment->is_enabled ? ' <a href="' . url('plan') . '" class="font-weight-bold text-reset">' . l('global.info_message.plan_upgrade') . '.</a>' : null));
             redirect('team/' . $team->team_id);
         }
 
@@ -66,7 +66,7 @@ class TeamMemberCreate extends Controller {
             /* Check for any errors */
             $required_fields = ['user_email'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }

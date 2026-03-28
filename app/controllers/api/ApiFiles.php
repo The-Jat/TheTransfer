@@ -160,7 +160,7 @@ class ApiFiles extends Controller {
         }
 
         /* Delete uploaded file */
-        Uploads::delete_uploaded_file($file->name, 'files');
+        Uploads::delete_uploaded_file_and_potential_residue($file->name, 'files', $file->offload_id);
 
         /* Delete the resource */
         db()->where('file_id', $file->file_id)->delete('files');

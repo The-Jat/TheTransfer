@@ -24,6 +24,14 @@ class WebhookPaypal extends Controller {
 
     public function index() {
 
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('not-found');
+        }
+
+        if((strtoupper($_SERVER['REQUEST_METHOD']) != 'POST')) {
+            redirect('not-found');
+        }
+
         $payload = @file_get_contents('php://input');
         $data = json_decode($payload);
 

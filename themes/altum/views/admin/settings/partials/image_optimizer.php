@@ -8,6 +8,12 @@
                 <label class="custom-control-label" for="is_enabled"><?= l('admin_settings.image_optimizer.is_enabled') ?></label>
             </div>
 
+            <div class="form-group custom-control custom-switch">
+                <input id="statistics_is_enabled" name="statistics_is_enabled" type="checkbox" class="custom-control-input" <?= \Altum\Plugin::is_active('image-optimizer') && settings()->image_optimizer->statistics_is_enabled ? 'checked="checked"' : null?>>
+                <label class="custom-control-label" for="statistics_is_enabled"><?= l('admin_settings.image_optimizer.statistics_is_enabled') ?></label>
+                <small class="form-text text-muted"><?= l('admin_settings.image_optimizer.statistics_is_enabled_help') ?></small>
+            </div>
+
             <div class="form-group">
                 <label for="provider"><i class="fas fa-fw fa-sm fa-fingerprint text-muted mr-1"></i> <?= l('admin_settings.image_optimizer.provider') ?></label>
                 <select id="provider" name="provider" class="custom-select">
@@ -49,6 +55,8 @@
 
 <?php ob_start() ?>
 <script>
+    'use strict';
+    
     type_handler('#provider', 'data-provider');
     document.querySelector('#provider') && document.querySelectorAll('#provider').forEach(element => element.addEventListener('change', () => { type_handler('#provider', 'data-provider'); }));
 </script>

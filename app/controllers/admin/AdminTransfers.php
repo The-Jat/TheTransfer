@@ -55,8 +55,8 @@ class AdminTransfers extends Controller {
         }
 
         /* Export handler */
-        process_export_csv($transfers, 'include', ['transfer_id', 'domain_id', 'project_id', 'user_id', 'pixels_ids', 'name', 'url', 'total_files', 'total_size', 'pageviews', 'downloads_limit', 'downloads', 'expiration_datetime', 'datetime', 'last_datetime'], sprintf(l('transfers.title')));
-        process_export_json($transfers, 'include', ['transfer_id', 'domain_id', 'project_id', 'user_id', 'pixels_ids', 'name', 'url', 'settings', 'total_files', 'total_size', 'pageviews', 'downloads_limit', 'downloads', 'expiration_datetime', 'datetime', 'last_datetime'], sprintf(l('transfers.title')));
+        process_export_csv($transfers, ['transfer_id', 'domain_id', 'project_id', 'user_id', 'pixels_ids', 'name', 'url', 'total_files', 'total_size', 'pageviews', 'downloads_limit', 'downloads', 'expiration_datetime', 'datetime', 'last_datetime'], sprintf(l('transfers.title')));
+        process_export_json($transfers, ['transfer_id', 'domain_id', 'project_id', 'user_id', 'pixels_ids', 'name', 'url', 'settings', 'total_files', 'total_size', 'pageviews', 'downloads_limit', 'downloads', 'expiration_datetime', 'datetime', 'last_datetime'], sprintf(l('transfers.title')));
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/admin_pagination', (array) $this))->run(['paginator' => $paginator]);
@@ -99,6 +99,8 @@ class AdminTransfers extends Controller {
 
             set_time_limit(0);
 
+            session_write_close();
+
             switch($_POST['type']) {
                 case 'delete':
 
@@ -113,6 +115,8 @@ class AdminTransfers extends Controller {
                     break;
             }
 
+            session_start();
+            
             /* Set a nice success message */
             Alerts::add_success(l('bulk_delete_modal.success_message'));
 

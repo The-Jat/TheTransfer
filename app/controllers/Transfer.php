@@ -172,7 +172,7 @@ class Transfer extends Controller {
             }
         }
 
-        /* Filter some the variables */
+        /* Filter some of the variables */
         $_POST['uploaded_files'] = array_query_clean($_POST['uploaded_files']);
         $_POST['uploaded_files'] = array_map(function($uuid) {
             return preg_replace('/[^a-zA-Z0-9]/', '', $uuid ?? '');
@@ -244,7 +244,7 @@ class Transfer extends Controller {
         $_POST['url'] = !empty($_POST['url']) && $this->user->plan_settings->custom_url_is_enabled ? get_slug(input_clean($_POST['url'])) : false;
         $_POST['domain_id'] = isset($_POST['domain_id']) && isset($domains[$_POST['domain_id']]) ? (!empty($_POST['domain_id']) ? (int) $_POST['domain_id'] : null) : null;
         $_POST['is_removed_branding'] = $this->user->plan_settings->removable_branding_is_enabled ? (int) isset($_POST['is_removed_branding']) : 0;
-        $_POST['custom_css'] = $this->user->plan_settings->custom_css_is_enabled ? mb_substr(trim(input_clean($_POST['custom_css'] ?? $this->user->preferences->transfers_default_custom_css)), 0, 10000) : null;
+        $_POST['custom_css'] = $this->user->plan_settings->custom_css_is_enabled ? mb_substr(trim($_POST['custom_css'] ?? $this->user->preferences->transfers_default_custom_css), 0, 10000) : null;
         $_POST['custom_js'] = $this->user->plan_settings->custom_js_is_enabled ? mb_substr(trim($_POST['custom_js'] ?? $this->user->preferences->transfers_default_custom_js), 0, 10000) : null;
 
         /* Check for duplicate url if needed */
@@ -480,7 +480,7 @@ class Transfer extends Controller {
         Response::jsonapi_success([
             'id' => $transfer_id,
             'download_url' => $transfer_full_url,
-            'view_url' => url('transfer/' . $transfer_id),
+            'view_url' => url('transfer/' . $transfer_id . ($this->user->preferences->transfers_auto_copy_link ? '?auto_copy_link=true' : '')),
         ]);
     }
 

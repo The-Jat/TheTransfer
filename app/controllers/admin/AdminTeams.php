@@ -60,8 +60,8 @@ class AdminTeams extends Controller {
         }
 
         /* Export handler */
-        process_export_json($teams, 'include', ['team_id', 'user_id', 'name', 'members', 'datetime', 'last_datetime'], sprintf(l('teams.title')));
-        process_export_csv($teams, 'include', ['team_id', 'user_id', 'name', 'members', 'datetime', 'last_datetime'], sprintf(l('teams.title')));
+        process_export_json($teams, ['team_id', 'user_id', 'name', 'members', 'datetime', 'last_datetime'], sprintf(l('teams.title')));
+        process_export_csv($teams, ['team_id', 'user_id', 'name', 'members', 'datetime', 'last_datetime'], sprintf(l('teams.title')));
 
         /* Prepare the pagination view */
         $pagination = (new \Altum\View('partials/admin_pagination', (array) $this))->run(['paginator' => $paginator]);
@@ -104,6 +104,8 @@ class AdminTeams extends Controller {
 
             set_time_limit(0);
 
+            session_write_close();
+
             switch($_POST['type']) {
                 case 'delete':
 
@@ -121,6 +123,8 @@ class AdminTeams extends Controller {
                     break;
             }
 
+            session_start();
+            
             /* Set a nice success message */
             Alerts::add_success(l('bulk_delete_modal.success_message'));
 

@@ -170,7 +170,9 @@ document.querySelectorAll('[type="submit"][name="submit"]:not([data-is-ajax])').
 /* Enable tooltips everywhere */
 let tooltips_initiate = () => {
     if(typeof $ == 'function') {
-        $('[data-toggle="tooltip"],[data-tooltip]').tooltip({ boundary: 'window' });
+        let tooltips = $('[data-toggle="tooltip"],[data-tooltip]');
+        tooltips.tooltip('dispose');
+        tooltips.tooltip({ boundary: 'window' });
 
         $('[data-tooltip-hide-on-click]').on('click', event => {
             $(event.currentTarget).tooltip('hide');
@@ -487,6 +489,45 @@ let password_toggle_view_initiate = () => {
 
 password_toggle_view_initiate();
 
+/* Filters detect and shortcut CMD/CTRL+SHIFT+F */
+document.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'f') {
+        event.preventDefault();
+
+        const filters_button = $('.filters-button');
+
+        /* temporarily disable tooltip */
+        filters_button.tooltip('disable');
+
+        /* toggle dropdown */
+        filters_button.dropdown('toggle');
+
+        /* focus on search input */
+        setTimeout(function() {
+            document.getElementById('filters_search').focus();
+
+            /* re-enable tooltip after short delay */
+            filters_button.tooltip('enable');
+        }, 100);
+    }
+});
+
+let get_plan_feature_limit_info = (used, total, should_display = true, info_message) => {
+    /* return null if not to be displayed */
+    if (!should_display) return null;
+
+    /* calculate percentage used */
+    let percentage_used = (total === -1 || total === 0) ? 0 : (used / total * 100);
+
+    /* determine remaining percentage or unlimited */
+    let percentage_remaining = (total === -1) ? 'Unlimited' : nr(100 - percentage_used) + '%';
+
+    /* build the final message */
+    return info_message
+        .replace('%1$s', '<strong>' + nr(used) + '</strong>')
+        .replace('%2$s', '<strong>' + (total === -1 ? 'Unlimited' : nr(total)) + '</strong>')
+        .replace('%3$s', '<strong>' + percentage_remaining + '</strong>');
+}
 
 document.querySelectorAll('input[type="url"]').forEach(input => {
     const fixURL = () => input.value = input.value.trim().replace(/^(?!https?:\/\/)(.+\..+)/i, 'https://$1').replace(/^(https?:\/\/)/i, m => m.toLowerCase());
@@ -494,6 +535,37 @@ document.querySelectorAll('input[type="url"]').forEach(input => {
     input.addEventListener('blur', fixURL);
     input.addEventListener('keydown', e => e.key === 'Enter' && fixURL());
 });
+
+document.querySelectorAll('form input, form select, form textarea').forEach(field => {
+    field.addEventListener('invalid', () => {
+        const invalid_field = field;
+
+        /* find the nearest collapsed parent */
+        const collapse_container = invalid_field.closest('.collapse');
+
+        if (!collapse_container) {
+            return;
+        }
+
+        /* if collapse already open, scroll immediately */
+        if ($(collapse_container).hasClass('show')) {
+            invalid_field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => invalid_field.focus(), 100);
+            return;
+        }
+
+        /* wait for the collapse animation to finish */
+        $(collapse_container).one('shown.bs.collapse', () => {
+            invalid_field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => invalid_field.focus(), 100);
+        });
+
+        /* trigger the open animation */
+        $(collapse_container).collapse('show');
+    });
+});
+
+
 
 /* Product specific functions */
 /* :) */

@@ -27,6 +27,13 @@ class AdminPlans extends Controller {
 
         $plans = db()->orderBy('`order`', 'ASC')->get('plans');
 
+        foreach($plans as $plan) {
+            $plan->settings = json_decode($plan->settings ?? '');
+            $plan->additional_settings = json_decode($plan->additional_settings ?? '');
+            $plan->translations = json_decode($plan->translations ?? '');
+            $plan->prices = json_decode($plan->prices);
+        }
+
         /* Get usage by users */
         $users_plans = [];
         $total_users = 0;
@@ -35,6 +42,15 @@ class AdminPlans extends Controller {
             $users_plans[$row->plan_id] = $row->total;
             $total_users += $row->total;
         }
+
+        /* Set for exporting */
+        $export_plans = $plans;
+        if(isset(settings()->plan_guest)) $export_plans[] = settings()->plan_guest;
+        $export_plans[] = settings()->plan_free;
+        $export_plans[] = settings()->plan_custom;
+
+        /* Export handler */
+        process_export_json($export_plans, ['plan_id', 'name', 'description', 'prices', 'trial_days', 'taxes_ids', 'color', 'settings', 'translations', 'additional_settings', 'status', 'order', 'datetime']);
 
         /* Main View */
         $data = [
@@ -73,6 +89,7 @@ class AdminPlans extends Controller {
             $plan_id = db()->insert('plans', [
                 'name' => string_truncate($plan->name . ' - ' . l('global.duplicated'), 64, null),
                 'description' => $plan->description,
+                'translations' => $plan->translations,
                 'prices' => $plan->prices,
                 'trial_days' => $plan->trial_days,
                 'settings' => $plan->settings,

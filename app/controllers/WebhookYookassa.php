@@ -26,8 +26,12 @@ class WebhookYookassa extends Controller {
 
     public function index() {
 
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('not-found');
+        }
+
         if((strtoupper($_SERVER['REQUEST_METHOD']) != 'POST')) {
-            die();
+            redirect('not-found');
         }
 
         $yookassa = new \YooKassa\Client();

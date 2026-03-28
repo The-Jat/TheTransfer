@@ -32,16 +32,16 @@
 
             <div class="form-group">
                 <label for="type"><i class="fas fa-fw fa-sm fa-fingerprint text-muted mr-1"></i> <?= l('global.type') ?></label>
-                <div class="row btn-group-toggle" data-toggle="buttons">
-                    <div class="col-12 col-lg-6">
-                        <label class="btn btn-light btn-block text-truncate <?= $data->code->type == 'discount' ? 'active"' : null?>">
+                <div class="row btn-group-toggle m-n2" data-toggle="buttons">
+                    <div class="p-2 col-12 col-lg-6">
+                        <label class="btn btn-light btn-block font-size-small mb-0 text-truncate <?= $data->code->type == 'discount' ? 'active"' : null?>">
                             <input type="radio" name="type" value="discount" class="custom-control-input" <?= $data->code->type == 'discount' ? 'checked="checked"' : null?> required="required" />
                             <i class="fas fa-percent fa-fw fa-sm mr-1"></i> <?= l('admin_codes.type_discount') ?>
                         </label>
                     </div>
 
-                    <div class="col-12 col-lg-6">
-                        <label class="btn btn-light btn-block text-truncate <?= $data->code->type == 'redeemable' ? 'active"' : null?>">
+                    <div class="p-2 col-12 col-lg-6">
+                        <label class="btn btn-light btn-block font-size-small mb-0 text-truncate <?= $data->code->type == 'redeemable' ? 'active"' : null?>">
                             <input type="radio" name="type" value="redeemable" class="custom-control-input" <?= $data->code->type == 'redeemable' ? 'checked="checked"' : null?> required="required" />
                             <i class="fas fa-parachute-box fa-fw fa-sm mr-1"></i> <?= l('admin_codes.type_redeemable') ?>
                         </label>
@@ -104,6 +104,8 @@
 
 <?php ob_start() ?>
 <script>
+    'use strict';
+
     type_handler('input[name="type"]', 'data-type');
     document.querySelector('input[name="type"]') && document.querySelectorAll('input[name="type"]').forEach(element => element.addEventListener('change', () => { type_handler('input[name="type"]', 'data-type'); }));
 </script>

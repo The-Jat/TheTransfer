@@ -42,6 +42,14 @@ return [
         'whitelisted_file_extensions' => ['jpg', 'jpeg', 'png', 'svg', 'gif', 'webp', 'avif'],
         'path' => 'main/',
     ],
+    'taxes_csv' => [
+        'whitelisted_file_extensions' => ['csv'],
+        'path' => 'main/',
+    ],
+    'resources_csv' => [
+        'whitelisted_file_extensions' => ['csv'],
+        'path' => 'main/',
+    ],
 
     /* Users misc */
     'users' => [

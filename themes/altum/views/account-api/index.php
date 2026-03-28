@@ -31,6 +31,10 @@
                     <div class="form-group <?= $this->user->plan_settings->api_is_enabled ? null : 'container-disabled' ?>">
                         <label for="api_key"><i class="fas fa-fw fa-sm fa-code text-muted mr-1"></i> <?= l('account_api.api_key') ?></label>
                         <div class="input-group">
+                            <?php
+                            //ALTUMCODE:DEMO if(DEMO) if($this->user->user_id == 1) $this->user->api_key = 'hidden on demo';
+                            ?>
+                            
                             <input type="text" id="api_key" name="api_key" value="<?= $this->user->api_key ?>" class="form-control" onclick="this.select();" readonly="readonly" />
                             <div class="input-group-append">
                                 <button
@@ -51,7 +55,7 @@
                     </div>
                 </div>
 
-                <button type="submit" name="submit" class="btn btn-block btn-outline-secondary" <?= $this->user->plan_settings->api_is_enabled ? null : 'data-toggle="tooltip" title="' . l('global.info_message.plan_feature_no_access') . '" disabled="disabled"' ?>><?= l('account_api.button') ?></button>
+                <button type="submit" name="submit" class="btn btn-block btn-outline-secondary" <?= $this->user->plan_settings->api_is_enabled ? null : get_plan_feature_disabled_info() ?>><?= l('account_api.button') ?></button>
             </form>
 
         </div>

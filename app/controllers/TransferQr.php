@@ -41,7 +41,7 @@ class TransferQr extends Controller {
 
         /* Check for plan access */
         if(!$this->user->plan_settings->qr_is_enabled) {
-            Alerts::add_info(l('global.info_message.plan_feature_no_access'));
+            Alerts::add_error(l('global.info_message.plan_feature_no_access'));
             redirect('transfer/' . $transfer->transfer_id);
         }
 

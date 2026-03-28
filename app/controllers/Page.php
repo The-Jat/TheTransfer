@@ -51,6 +51,18 @@ class Page extends Controller {
             redirect('not-found');
         }
 
+        $page->plans_ids = json_decode($page->plans_ids ?? '');
+
+        if(!empty($page->plans_ids)) {
+            if(!is_logged_in()) {
+                redirect('not-found');
+            };
+
+            if(!in_array(user()->plan_id, $page->plans_ids)) {
+                redirect('not-found');
+            }
+        }
+
         /* Get the page category */
         $pages_category = $page->pages_category_id ? \Altum\Cache::cache_function_result('pages_category?hash=' . md5($page->pages_category_id), 'pages_categories', function() use ($page) {
             return db()->where('pages_category_id', $page->pages_category_id)->getOne('pages_categories');
@@ -64,7 +76,7 @@ class Page extends Controller {
         }
 
         /* Transform content if needed */
-        $page->content = json_decode($page->content) ? convert_editorjs_json_to_html($page->content) : nl2br($page->content);
+        $page->content = json_decode($page->content) ? convert_editorjs_json_to_html($page->content) : output_blog_post_content($page->content);
 
         /* Prepare the view */
         $data = [
@@ -80,7 +92,7 @@ class Page extends Controller {
         Title::set($page->title);
 
         /* Meta */
-        
+
         Meta::set_description($page->description);
         Meta::set_keywords($page->keywords);
 

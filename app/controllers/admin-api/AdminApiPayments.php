@@ -26,6 +26,10 @@ class AdminApiPayments extends Controller {
 
     public function index() {
 
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('not-found');
+        }
+
         $this->verify_request(true);
 
         /* Decide what to continue with */

@@ -132,7 +132,7 @@ class ApiDownloads extends Controller {
                         `{$type}`
                     ORDER BY
                         `downloads` DESC
-                    LIMIT 250
+                    
                 ");
 
                 while($row = $result->fetch_object()) {
@@ -164,7 +164,7 @@ class ApiDownloads extends Controller {
                         `referrer_path`
                     ORDER BY
                         `downloads` DESC
-                    LIMIT 250
+                    
                 ");
 
                 while($row = $result->fetch_object()) {
@@ -197,7 +197,7 @@ class ApiDownloads extends Controller {
                         `city_name`
                     ORDER BY
                         `downloads` DESC
-                    LIMIT 250
+                    
                 ");
 
                 while($row = $result->fetch_object()) {
@@ -227,7 +227,7 @@ class ApiDownloads extends Controller {
                         `utm_source`
                     ORDER BY
                         `downloads` DESC
-                    LIMIT 250
+                    
                 ");
 
                 while($row = $result->fetch_object()) {
@@ -259,7 +259,7 @@ class ApiDownloads extends Controller {
                         `utm_medium`
                     ORDER BY
                         `downloads` DESC
-                    LIMIT 250
+                    
                 ");
 
                 while($row = $result->fetch_object()) {
@@ -296,7 +296,7 @@ class ApiDownloads extends Controller {
                         `utm_campaign`
                     ORDER BY
                         `downloads` DESC
-                    LIMIT 250
+                    
                 ");
 
                 while($row = $result->fetch_object()) {

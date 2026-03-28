@@ -4,7 +4,9 @@ defined('ALTUMCODE') || die();
 ?>
 
 <?php if(isset($data->demo_url)): ?>
-    <script> if(window.location !== window.parent.location){ window.top.location.href = <?= json_encode($data->demo_url) ?>; } </script>
+    <script>
+    'use strict';
+     if(window.location !== window.parent.location){ window.top.location.href = <?= json_encode($data->demo_url) ?>; } </script>
 <?php endif ?>
 
 <style>
@@ -143,6 +145,6 @@ defined('ALTUMCODE') || die();
 
     <div class="ac-cta-wrapper">
         <a href="https://altumcode.com/contact" target="_blank" class="ac-secondary"><span class="d-none d-lg-inline">Any questions? ✉️</span><span class="d-lg-none">Support</span></a>
-        <a href="<?= $data->product_url ?>" class="ac-primary ac-bg-gradient"><span class="d-none d-lg-inline"><?= 'Buy ' . $data->product_name ?> 🎁</span><span class="d-lg-none">Buy 🎁</span></a>
+        <a href="<?= $data->product_buy_url ?>" class="ac-primary ac-bg-gradient" target="_blank"><span class="d-none d-lg-inline"><?= 'Buy ' . $data->product_name ?> 🎁</span><span class="d-lg-none">Buy 🎁</span></a>
     </div>
 </div>

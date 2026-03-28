@@ -24,8 +24,11 @@ class AdminPageCreate extends Controller {
 
     public function index() {
 
+        /* Get all plans */
+        $plans = (new \Altum\Models\Plan())->get_plans();
+
         if(!empty($_POST)) {
-            /* Filter some the variables */
+            /* Filter some of the variables */
             $_POST['title'] = input_clean($_POST['title'], 256);
             $_POST['description'] = input_clean($_POST['description'], 256);
             $_POST['icon'] = input_clean($_POST['icon']);
@@ -38,6 +41,21 @@ class AdminPageCreate extends Controller {
             $_POST['order'] = (int) $_POST['order'];
             $_POST['open_in_new_tab'] = (int) isset($_POST['open_in_new_tab']);
             $_POST['is_published'] = (int) isset($_POST['is_published']);
+            $_POST['content'] = $_POST['editor'] == 'wysiwyg' ? quilljs_to_bootstrap($_POST['content']) : $_POST['content'];
+
+            $_POST['plans_ids'] = array_map(
+                function($plan_id) {
+                    return (int) $plan_id;
+                },
+                array_filter($_POST['plans_ids'] ?? [], function($plan_id) use($plans) {
+                    return array_key_exists($plan_id, $plans);
+                })
+            );
+            if(empty($_POST['plans_ids'])) {
+                $_POST['plans_ids'] = null;
+            } else {
+                $_POST['plans_ids'] = json_encode($_POST['plans_ids']);
+            }
 
             switch($_POST['type']) {
                 case 'internal':
@@ -54,7 +72,7 @@ class AdminPageCreate extends Controller {
             /* Check for any errors */
             $required_fields = ['title', 'url'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }
@@ -73,6 +91,7 @@ class AdminPageCreate extends Controller {
                 /* Database query */
                 db()->insert('pages', [
                     'pages_category_id' => $_POST['pages_category_id'],
+                    'plans_ids' => $_POST['plans_ids'],
                     'url' => $_POST['url'],
                     'title' => $_POST['title'],
                     'description' => $_POST['description'],
@@ -105,6 +124,9 @@ class AdminPageCreate extends Controller {
         /* Get the pages categories available */
         $pages_categories = db()->get('pages_categories', null, ['pages_category_id', 'title']);
 
+        $suggested_next_order_number = db()->orderBy('`order`', 'DESC')->getValue('pages', '`order`', 1);
+        $suggested_next_order_number = $suggested_next_order_number ? $suggested_next_order_number + 1 : 1;
+
         /* Set default values */
         $values = [
             'pages_category_id' => $_POST['pages_category_id'] ?? '',
@@ -118,14 +140,16 @@ class AdminPageCreate extends Controller {
             'position' => $_POST['position'] ?? 'top',
             'language' => $_POST['language'] ?? '',
             'icon' => $_POST['icon'] ?? '',
-            'order' => $_POST['order'] ?? 0,
+            'order' => $_POST['order'] ?? $suggested_next_order_number,
             'open_in_new_tab' => $_POST['open_in_new_tab'] ?? 1,
             'is_published' => $_POST['is_published'] ?? 1,
+            'plans_ids' => $_POST['plans_ids'] ?? [],
         ];
 
         $data = [
             'values' => $values,
-            'pages_categories' => $pages_categories
+            'pages_categories' => $pages_categories,
+            'plans' => $plans,
         ];
 
         /* Main View */

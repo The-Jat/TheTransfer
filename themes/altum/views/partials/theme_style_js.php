@@ -2,6 +2,8 @@
 
 <?php ob_start() ?>
 <script>
+    'use strict';
+    
     let switch_theme_style = document.querySelector('#switch_theme_style');
 
     if(switch_theme_style) {
@@ -10,7 +12,7 @@
             let new_theme_style = theme_style == 'light' ? 'dark' : 'light';
 
             /* Set a cookie with the new theme style */
-            document.cookie = 'theme_style=' + encodeURIComponent(new_theme_style) + '; max-age=' + (30 * 24 * 60 * 60) + '; path=<?= json_encode(COOKIE_PATH) ?>';
+            set_cookie(`theme_style`, new_theme_style, 90, <?= json_encode(COOKIE_PATH) ?>);
 
             /* Change the css and button on the page */
             let css = document.querySelector(`#css_theme_style`);
@@ -50,9 +52,9 @@
             event.preventDefault();
         });
 
-        document.addEventListener('keydown', e => {
-            if((e.ctrlKey || e.metaKey) && e.key === 'i') {
-                e.preventDefault();
+        document.addEventListener('keydown', event => {
+            if((event.ctrlKey || event.metaKey) && event.key === 'i') {
+                event.preventDefault();
                 switch_theme_style.click();
 
                 if (typeof bootstrap !== 'undefined' && typeof bootstrap.Tooltip === 'function' && typeof Popper !== 'undefined') {

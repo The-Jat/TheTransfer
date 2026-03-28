@@ -1,8 +1,13 @@
 <?php defined('ALTUMCODE') || die() ?>
 
-
 <div class="container">
     <?= \Altum\Alerts::output_alerts() ?>
+
+    <?php if($this->user->plan_settings->transfers_limit != -1 && $data->total_transfers > $this->user->plan_settings->transfers_limit): ?>
+        <div class="alert alert-danger">
+            <i class="fas fa-fw fa-times-circle text-danger mr-2"></i> <?= sprintf(settings()->payment->is_enabled ? l('global.info_message.plan_feature_limit_removal_with_upgrade') : l('global.info_message.plan_feature_limit_removal'), '<strong>' . $data->total_transfers - $this->user->plan_settings->transfers_limit, mb_strtolower(l('transfers.title')) . '</strong>', '<a href="' . url('plan') . '" class="font-weight-bold text-reset">' . l('global.info_message.plan_upgrade') . '</a>') ?>
+        </div>
+    <?php endif ?>
 
     <div class="row mb-4">
         <div class="col-12 col-lg d-flex align-items-center mb-3 mb-lg-0 text-truncate">
@@ -18,7 +23,7 @@
         <div class="col-12 col-lg-auto d-flex flex-wrap gap-3 d-print-none">
             <div>
                 <?php if($this->user->plan_settings->transfers_limit != -1 && $data->total_transfers >= $this->user->plan_settings->transfers_limit): ?>
-                    <button type="button" class="btn btn-primary disabled" data-toggle="tooltip" title="<?= l('global.info_message.plan_feature_limit') ?>">
+                    <button type="button" class="btn btn-primary disabled" <?= get_plan_feature_limit_reached_info() ?>>
                         <i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('transfers.create') ?>
                     </button>
                 <?php else: ?>
@@ -35,13 +40,13 @@
                     </button>
 
                     <div class="dropdown-menu dropdown-menu-right d-print-none">
-                        <a href="<?= url('transfers?' . $data->filters->get_get() . '&export=csv')  ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->csv ? null : 'disabled' ?>">
+                        <a href="<?= url('transfers?' . $data->filters->get_get() . '&export=csv')  ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->csv ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->csv ? null : get_plan_feature_disabled_info() ?>>
                             <i class="fas fa-fw fa-sm fa-file-csv mr-2"></i> <?= sprintf(l('global.export_to'), 'CSV') ?>
                         </a>
-                        <a href="<?= url('transfers?' . $data->filters->get_get() . '&export=json') ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->json ? null : 'disabled' ?>">
+                        <a href="<?= url('transfers?' . $data->filters->get_get() . '&export=json') ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->json ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->json ? null : get_plan_feature_disabled_info() ?>>
                             <i class="fas fa-fw fa-sm fa-file-code mr-2"></i> <?= sprintf(l('global.export_to'), 'JSON') ?>
                         </a>
-                        <a href="#" onclick="window.print();return false;" class="dropdown-item <?= $this->user->plan_settings->export->pdf ? null : 'disabled' ?>">
+                        <a href="#" class="dropdown-item <?= $this->user->plan_settings->export->pdf ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->pdf ? $this->user->plan_settings->export->pdf ? 'onclick="event.preventDefault(); window.print();"' : 'disabled pointer-events-all' : get_plan_feature_disabled_info() ?>>
                             <i class="fas fa-fw fa-sm fa-file-pdf mr-2"></i> <?= sprintf(l('global.export_to'), 'PDF') ?>
                         </a>
                     </div>
@@ -50,7 +55,7 @@
 
             <div>
                 <div class="dropdown">
-                    <button type="button" class="btn <?= $data->filters->has_applied_filters ? 'btn-dark' : 'btn-light' ?> filters-button dropdown-toggle-simple <?= count($data->transfers) || $data->filters->has_applied_filters ? null : 'disabled' ?>" data-toggle="dropdown" data-boundary="viewport" data-tooltip title="<?= l('global.filters.header') ?>" data-tooltip-hide-on-click>
+                    <button type="button" class="btn <?= $data->filters->has_applied_filters ? 'btn-dark' : 'btn-light' ?> filters-button dropdown-toggle-simple <?= count($data->transfers) || $data->filters->has_applied_filters ? null : 'disabled' ?>" data-toggle="dropdown" data-boundary="viewport" data-tooltip data-html="true" title="<?= l('global.filters.tooltip') ?>" data-tooltip-hide-on-click>
                         <i class="fas fa-fw fa-sm fa-filter"></i>
                     </button>
 
@@ -171,7 +176,7 @@
         </div>
     </div>
 
-    <?php if(count($data->transfers)): ?>
+    <?php if (!empty($data->transfers)): ?>
         <?php if($data->transfers_chart): ?>
         <div class="card mb-4">
             <div class="card-body">
@@ -181,7 +186,10 @@
                 <?= !$data->transfers_chart['is_empty'] ? null : include_view(THEME_PATH . 'views/partials/no_chart_data.php', ['has_wrapper' => false]); ?>
 
                 <?php if(!$data->transfers_chart['is_empty'] && settings()->main->chart_cache ?? 12): ?>
-                    <small class="text-muted"><i class="fas fa-fw fa-sm fa-info-circle mr-1"></i> <?= sprintf(l('global.chart_help'), settings()->main->chart_cache ?? 12, settings()->main->chart_days ?? 30) ?></small>
+                    <small class="text-muted">
+                        <span data-toggle="tooltip" title="<?= sprintf(l('global.chart_help'), settings()->main->chart_cache ?? 12, settings()->main->chart_days ?? 30) ?>"><i class="fas fa-fw fa-sm fa-info-circle mr-1"></i></span>
+                        <span class="d-lg-none"><?= sprintf(l('global.chart_help'), settings()->main->chart_cache ?? 12, settings()->main->chart_days ?? 30) ?></span>
+                    </small>
                 <?php endif ?>
             </div>
         </div>
@@ -191,6 +199,8 @@
     <?php ob_start() ?>
 
         <script>
+    'use strict';
+
             if(document.getElementById('pageviews_chart')) {
                 let css = window.getComputedStyle(document.body);
                 let pageviews_color = css.getPropertyValue('--primary');
@@ -320,7 +330,7 @@
                                         <i class="fas fa-fw fa-calendar text-muted"></i>
                                     </span>
 
-                                    <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.last_datetime_tooltip'), ($row->last_datetime ? '<br />' . \Altum\Date::get($row->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($row->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->last_datetime) . ')</small>' : '<br />-')) ?>">
+                                    <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.last_datetime_tooltip'), ($row->last_datetime ? '<br />' . \Altum\Date::get($row->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($row->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->last_datetime) . ')</small>' : '<br />' . l('global.na'))) ?>">
                                         <i class="fas fa-fw fa-history text-muted"></i>
                                     </span>
 
@@ -348,6 +358,20 @@
 
                             <td>
                                 <div class="d-flex justify-content-end">
+                                    <button
+                                            id="url_copy"
+                                            type="button"
+                                            class="btn btn-link text-secondary"
+                                            data-toggle="tooltip"
+                                            title="<?= l('global.clipboard_copy') ?>"
+                                            aria-label="<?= l('global.clipboard_copy') ?>"
+                                            data-copy="<?= l('global.clipboard_copy') ?>"
+                                            data-copied="<?= l('global.clipboard_copied') ?>"
+                                            data-clipboard-text="<?= $row->full_url ?>"
+                                    >
+                                        <i class="fas fa-fw fa-sm fa-copy"></i>
+                                    </button>
+
                                     <?= include_view(THEME_PATH . 'views/transfers/transfer_dropdown_button.php', ['id' => $row->transfer_id, 'resource_name' => $row->name]) ?>
                                 </div>
                             </td>
@@ -375,3 +399,4 @@
 <?php require THEME_PATH . 'views/partials/js_bulk.php' ?>
 <?php \Altum\Event::add_content(include_view(THEME_PATH . 'views/partials/bulk_delete_modal.php'), 'modals'); ?>
 
+<?php include_view(THEME_PATH . 'views/partials/clipboard_js.php') ?>

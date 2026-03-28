@@ -21,7 +21,7 @@ if(DEBUG) {
     ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
 } else {
-    error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
+    error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING & ~E_DEPRECATED & ~E_USER_DEPRECATED);
     ini_set('display_errors', 'Off');
 }
 

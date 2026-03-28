@@ -1,6 +1,7 @@
 config.php
 vendor
 
+uploads/
 uploads/cache/
 uploads/files/
 uploads/logs/

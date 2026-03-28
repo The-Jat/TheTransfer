@@ -1,25 +1,25 @@
 <?php defined('ALTUMCODE') || die() ?>
 
 <?php if(!settings()->content->blog_is_enabled): ?>
-    <div class="alert alert-warning">
-        <i class="fas fa-fw fa-exclamation-triangle text-warning mr-1"></i>
-        <?= sprintf(l('admin_blog.warning_message.disabled'), '<a href="' . url('admin/settings/content') . '" class="font-weight-bold">', '</a>') ?>
+    <div class="alert alert-info">
+        <i class="fas fa-fw fa-info-circle mr-1"></i>
+        <?= sprintf(l('global.info_message.admin_feature_disabled'), url('admin/settings/content')) ?>
     </div>
 <?php endif ?>
 
 <?php if(count($data->blog_posts) || $data->filters->has_applied_filters): ?>
 
     <div class="d-flex flex-column flex-md-row justify-content-between mb-4">
-        <h1 class="h3 mb-3 mb-md-0"><i class="fas fa-fw fa-xs fa-paste text-primary-900 mr-2"></i> <?= l('admin_blog_posts.header') ?></h1>
+        <h1 class="h3 mb-3 mb-md-0 text-truncate"><i class="fas fa-fw fa-xs fa-paste text-primary-900 mr-2"></i> <?= l('admin_blog_posts.header') ?></h1>
 
         <div class="d-flex position-relative">
             <div>
-                <a href="<?= url('admin/blog-post-create') ?>" class="btn btn-primary"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_blog_posts.create') ?></a>
+                <a href="<?= url('admin/blog-post-create') ?>" class="btn btn-primary text-nowrap"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_blog_posts.create') ?></a>
             </div>
 
             <div class="ml-3">
                 <div class="dropdown">
-                    <button type="button" class="btn <?= $data->filters->has_applied_filters ? 'btn-secondary' : 'btn-gray-300' ?> filters-button dropdown-toggle-simple" data-toggle="dropdown" data-boundary="viewport" data-tooltip title="<?= l('global.filters.header') ?>" data-tooltip-hide-on-click>
+                    <button type="button" class="btn <?= $data->filters->has_applied_filters ? 'btn-secondary' : 'btn-gray-300' ?> filters-button dropdown-toggle-simple" data-toggle="dropdown" data-boundary="viewport" data-tooltip data-html="true" title="<?= l('global.filters.tooltip') ?>" data-tooltip-hide-on-click>
                         <i class="fas fa-fw fa-sm fa-filter"></i>
                     </button>
 
@@ -128,8 +128,8 @@
     <form id="table" action="<?= SITE_URL . 'admin/blog-posts/bulk' ?>" method="post" role="form">
         <input type="hidden" name="token" value="<?= \Altum\Csrf::get() ?>" />
         <input type="hidden" name="type" value="" data-bulk-type />
-    <input type="hidden" name="original_request" value="<?= base64_encode(\Altum\Router::$original_request) ?>" />
-    <input type="hidden" name="original_request_query" value="<?= base64_encode(\Altum\Router::$original_request_query) ?>" />
+        <input type="hidden" name="original_request" value="<?= base64_encode(\Altum\Router::$original_request) ?>" />
+        <input type="hidden" name="original_request_query" value="<?= base64_encode(\Altum\Router::$original_request_query) ?>" />
 
         <div class="table-responsive table-custom-container">
             <table class="table table-custom">
@@ -163,7 +163,7 @@
                             <div class="d-flex">
                                 <a href="<?= url('admin/blog-post-update/' . $row->blog_post_id) ?>" class="mr-3">
                                     <?php if($row->image): ?>
-                                        <img src="<?= \Altum\Uploads::get_full_url('blog') . $row->image ?>" class="user-avatar rounded-circle" alt="" />
+                                        <img src="<?= \Altum\Uploads::get_full_url('blog') . $row->image ?>" class="user-avatar rounded-circle" alt="" loading="lazy" />
                                     <?php else: ?>
                                         <div class="user-avatar rounded-circle"></div>
                                     <?php endif ?>
@@ -194,12 +194,16 @@
                         </td>
 
                         <td class="text-nowrap">
+
                             <?php if($row->blog_posts_category_id): ?>
-                                <a href="<?= url('admin/blog-posts-category-update/' . $row->blog_posts_category_id) ?>">
+                                <a href="<?= url('admin/blog-posts-category-update/' . $row->blog_posts_category_id) ?>" class="badge badge-info">
                                     <?= $data->blog_posts_categories[$row->blog_posts_category_id]->title ?? null ?>
                                 </a>
                             <?php else: ?>
-                                <?= l('global.none') ?>
+                                <div class="badge badge-info">
+                                    <?= l('global.none') ?>
+                                </div>
+
                             <?php endif ?>
                         </td>
 
@@ -221,7 +225,7 @@
                                     <i class="fas fa-fw fa-calendar text-muted"></i>
                                 </span>
 
-                                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.last_datetime_tooltip'), ($row->last_datetime ? '<br />' . \Altum\Date::get($row->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($row->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->last_datetime) . ')</small>' : '<br />-')) ?>">
+                                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.last_datetime_tooltip'), ($row->last_datetime ? '<br />' . \Altum\Date::get($row->last_datetime, 2) . '<br /><small>' . \Altum\Date::get($row->last_datetime, 3) . '</small>' . '<br /><small>(' . \Altum\Date::get_timeago($row->last_datetime) . ')</small>' : '<br />' . l('global.na'))) ?>">
                                     <i class="fas fa-fw fa-history text-muted"></i>
                                 </span>
                             </div>
@@ -257,7 +261,7 @@
                     <p class="text-muted"><?= l('admin_blog_posts.subheader_no_data') ?></p>
 
                     <div>
-                        <a href="<?= url('admin/blog-post-create') ?>" class="btn btn-primary"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_blog_posts.create') ?></a>
+                        <a href="<?= url('admin/blog-post-create') ?>" class="btn btn-primary text-nowrap"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_blog_posts.create') ?></a>
                     </div>
                 </div>
             </div>

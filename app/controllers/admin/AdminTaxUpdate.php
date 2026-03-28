@@ -24,6 +24,10 @@ class AdminTaxUpdate extends Controller {
 
     public function index() {
 
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('admin');
+        }
+
         $tax_id = isset($this->params[0]) ? (int) $this->params[0] : null;
 
         if(!$tax = db()->where('tax_id', $tax_id)->getOne('taxes')) {

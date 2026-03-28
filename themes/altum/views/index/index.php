@@ -47,7 +47,7 @@
                             <div class="col-12 col-lg-5 offset-lg-1 mb-4 mb-lg-0" id="upload_previews_settings">
 
                                 <div class="form-group mb-3">
-                                    <div class="row btn-group-toggle" data-toggle="buttons">
+                                    <div class="row btn-group-toggle m-n2" data-toggle="buttons">
                                         <div class="col">
                                             <label class="btn btn-sm btn-light btn-block active">
                                                 <input type="radio" name="type" value="link" class="custom-control-input" <?= ($this->user->preferences->transfers_default_type ?? 'link') == 'link' ? 'checked="checked"' : null ?> required="required" />
@@ -92,7 +92,7 @@
                                         <div class="col-sm-8">
                                             <select id="domain_id" name="domain_id" class="custom-select custom-select-sm">
                                                 <?php if(settings()->transfers->main_domain_is_enabled || \Altum\Authentication::is_admin()): ?>
-                                                    <option value=""><?= remove_url_protocol_from_url(SITE_URL) ?></option>
+                                                    <option value=" "><?= remove_url_protocol_from_url(SITE_URL) ?></option>
                                                 <?php endif ?>
 
                                                 <?php foreach($data->domains as $row): ?>
@@ -243,7 +243,7 @@
                                         <div class="tab-pane fade" id="pills-pixels" role="tabpanel" aria-labelledby="pixels-tab">
                                             <div <?= $this->user->plan_settings->pixels_limit != 0 ? null : get_plan_feature_disabled_info() ?>>
                                                 <div class="form-group <?= $this->user->plan_settings->pixels_limit != 0 ? null : 'container-disabled' ?>">
-                                                    <div class="d-flex flex-column flex-xl-row justify-content-between">
+                                                    <div class="d-flex flex-wrap flex-row justify-content-between">
                                                         <label><?= l('transfer.pixels') ?></label>
                                                         <a href="<?= url('pixel-create') ?>" target="_blank" class="small mb-2"><i class="fas fa-fw fa-sm fa-plus mr-1"></i> <?= l('pixels.create') ?></a>
                                                     </div>
@@ -272,12 +272,12 @@
                                         <?php if(settings()->transfers->projects_is_enabled): ?>
                                         <div <?= $this->user->plan_settings->projects_limit != 0 ? null : get_plan_feature_disabled_info() ?>>
                                             <div class="form-group <?= $this->user->plan_settings->projects_limit != 0 ? null : 'container-disabled' ?>">
-                                                <div class="d-flex flex-column flex-xl-row justify-content-between">
+                                                <div class="d-flex flex-wrap flex-row justify-content-between">
                                                     <label for="project_id"><?= l('projects.project_id') ?></label>
                                                     <a href="<?= url('project-create') ?>" target="_blank" class="small mb-2"><i class="fas fa-fw fa-sm fa-plus mr-1"></i> <?= l('projects.create') ?></a>
                                                 </div>
                                                 <select id="project_id" name="project_id" class="custom-select custom-select-sm">
-                                                    <option value=""><?= l('global.none') ?></option>
+                                                    <option value=" "><?= l('global.none') ?></option>
                                                     <?php foreach($data->projects as $project_id => $project): ?>
                                                         <option value="<?= $project_id ?>" <?= $project_id == $this->user->preferences->transfers_default_project_id ? 'checked="checked"' : null ?>><?= $project->name ?></option>
                                                     <?php endforeach ?>
@@ -321,7 +321,7 @@
                                     <div class="tab-pane fade" id="pills-notification-handlers" role="tabpanel" aria-labelledby="notification-handlers-tab">
                                         <div <?= $this->user->plan_id != 'guest' ? null : get_plan_feature_disabled_info() ?>>
                                             <div class="form-group <?= $this->user->plan_settings != 'guest' ? null : 'container-disabled' ?>">
-                                                <div class="d-flex flex-column flex-xl-row justify-content-between">
+                                                <div class="d-flex flex-wrap flex-row justify-content-between">
                                                     <label><?= l('transfer.notification_handlers') ?></label>
                                                     <a href="<?= url('notification-handler-create') ?>" target="_blank" class="small mb-2"><i class="fas fa-fw fa-sm fa-plus mr-1"></i> <?= l('notification_handlers.create') ?></a>
                                                 </div>
@@ -596,7 +596,7 @@
 
     <div class="container">
         <div class="row align-items-center justify-content-between" data-aos="fade-up">
-            <div class="col-12 col-lg-6 mb-5 mb-lg-0 d-flex flex-column justify-content-center">
+            <div class="col-12 col-lg-5 mb-5 mb-lg-0 d-flex flex-column justify-content-center">
                 <div class="text-uppercase font-weight-bold text-primary mb-3"><?= l('index.api.name') ?></div>
 
                 <div>
@@ -633,8 +633,8 @@
             </div>
 
             <div class="col-12 col-lg-6">
-                <div class="card bg-dark text-white">
-                    <div class="card-body p-4 text-monospace font-size-small" style="line-height: 1.75">
+                <div class="card rounded-2x bg-dark text-white">
+                    <div class="card-body p-4 text-monospace reveal-effect font-size-small" style="line-height: 1.75">
                         curl --request POST \<br />
                         --url '<?= SITE_URL ?>transfer/create_api' \<br />
                         --header 'Authorization: Bearer <span class="text-primary" <?= is_logged_in() ? 'data-toggle="tooltip" title="' . l('api_documentation.api_key') . '"' : null ?>><?= is_logged_in() ? $this->user->api_key : '{api_key}' ?></span>' \<br />
@@ -647,6 +647,100 @@
             </div>
         </div>
     </div>
+
+    <style>
+        /* hide until words are wrapped to avoid flash */
+        .reveal-effect { visibility: hidden; }
+
+        /* base state for each word */
+        .reveal-effect-prepared .reveal-effect-word {
+            opacity: 0;
+            filter: blur(6px);
+            transform: translate3d(0, 8px, 0);
+            display: inline-block;
+            transition: opacity .5s ease, filter .5s ease, transform .5s ease;
+        }
+
+        /* animate in when container gets .reveal-effect-in */
+        .reveal-effect-prepared.reveal-effect-in .reveal-effect-word {
+            opacity: 1;
+            filter: blur(0);
+            transform: none;
+        }
+    </style>
+
+    <script defer>
+        /* wrap words in a text node while preserving existing HTML */
+        const wrap_words_in_text_node = (text_node) => {
+            /* split into words + spaces, keep spacing intact */
+            const tokens = text_node.textContent.split(/(\s+)/);
+            const fragment = document.createDocumentFragment();
+
+            tokens.forEach((token) => {
+                if (token.trim().length === 0) {
+                    fragment.appendChild(document.createTextNode(token));
+                } else {
+                    const span_node = document.createElement('span');
+                    span_node.className = 'reveal-effect-word';
+                    span_node.textContent = token;
+                    fragment.appendChild(span_node);
+                }
+            });
+
+            text_node.parentNode.replaceChild(fragment, text_node);
+        };
+
+        /* prepare a container: wrap only pure text nodes, not tags */
+        const prepare_reveal_container = (container_node) => {
+            /* collect first to avoid live-walking issues while replacing */
+            const walker = document.createTreeWalker(
+                container_node,
+                NodeFilter.SHOW_TEXT,
+                { acceptNode: (node) => node.textContent.trim().length ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT }
+            );
+            const text_nodes = [];
+            while (walker.nextNode()) { text_nodes.push(walker.currentNode); }
+            text_nodes.forEach(wrap_words_in_text_node);
+
+            /* add stagger */
+            const word_nodes = container_node.querySelectorAll('.reveal-effect-word');
+            word_nodes.forEach((word_node, index) => {
+                word_node.style.transitionDelay = (index * 40) + 'ms';
+            });
+
+            /* mark as prepared and reveal visibility */
+            container_node.classList.add('reveal-effect-prepared');
+            container_node.style.visibility = 'visible';
+        };
+
+        /* set up scroll trigger */
+        document.addEventListener('DOMContentLoaded', () => {
+            const container_node = document.querySelector('.reveal-effect');
+            if (!container_node) { return; }
+
+            /* prepare once (preserves HTML) */
+            prepare_reveal_container(container_node);
+
+            /* trigger when in view */
+            const on_intersect = (entries, observer) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        /* start the animation */
+                        container_node.classList.add('reveal-effect-in');
+                        observer.unobserve(container_node);
+                    }
+                });
+            };
+
+            const intersection_observer = new IntersectionObserver(on_intersect, {
+                root: null,
+                rootMargin: '0px 0px -10% 0px',
+                threshold: 0.1
+            });
+
+            intersection_observer.observe(container_node);
+        });
+    </script>
 <?php endif ?>
 
 <?php if(settings()->main->display_index_testimonials): ?>
@@ -675,9 +769,9 @@
                 $testimonials_language_keys = array_unique($testimonials_language_keys);
                 ?>
 
-                <div class="row mt-8">
+                <div class="row mt-8 mx-n3">
                     <?php foreach($testimonials_language_keys as $key => $value): ?>
-                        <div class="col-12 col-lg-4 mb-6 mb-lg-0" data-aos="fade-up" data-aos-delay="<?= $key * 100 ?>">
+                        <div class="col-12 col-lg-4 mb-7 mb-lg-0 px-4" data-aos="fade-up" data-aos-delay="<?= $key * 100 ?>">
                             <div class="card border-0 zoom-animation-subtle">
                                 <div class="card-body">
                                     <img src="<?= get_custom_image_if_any('index/testimonial-' . $value . '.webp') ?>" class="img-fluid index-testimonial-avatar" alt="<?= l('index.testimonials.' . $value . '.name') . ', ' . l('index.testimonials.' . $value . '.attribute') ?>" loading="lazy" />
@@ -689,7 +783,7 @@
                                     </p>
 
                                     <div class="blockquote-footer mt-4">
-                                        <span class="font-weight-bold"><?= l('index.testimonials.' . $value . '.name') ?></span>, <span class="text-muted"><?= l('index.testimonials.' . $value . '.attribute') ?></span>
+                                        <span class="font-weight-bold"><?= l('index.testimonials.' . $value . '.name') ?></span><br /> <span class="text-muted index-testimonial-comment"><?= l('index.testimonials.' . $value . '.attribute') ?></span>
                                     </div>
                                 </div>
                             </div>
@@ -720,7 +814,7 @@
 
     <div class="container">
         <div class="text-center mb-5">
-            <h2><?= sprintf(l('index.faq.header'), '<span class="text-primary">', '</span>') ?></h2>
+            <h2><?= l('index.faq.header') ?></h2>
         </div>
 
         <?php
@@ -745,8 +839,8 @@
                     <div class="card-body">
                         <div class="" id="<?= 'faq_accordion_' . $key ?>">
                             <h3 class="mb-0">
-                                <button class="btn btn-lg font-weight-bold btn-block d-flex justify-content-between text-gray-800 px-0 icon-zoom-animation" type="button" data-toggle="collapse" data-target="<?= '#faq_accordion_answer_' . $key ?>" aria-expanded="true" aria-controls="<?= 'faq_accordion_answer_' . $key ?>">
-                                    <span><?= l('index.faq.' . $key . '.question') ?></span>
+                                <button class="btn btn-lg font-weight-500 btn-block d-flex justify-content-between text-gray-800 px-0 icon-zoom-animation no-focus" type="button" data-toggle="collapse" data-target="<?= '#faq_accordion_answer_' . $key ?>" aria-expanded="true" aria-controls="<?= 'faq_accordion_answer_' . $key ?>">
+                                    <span class="text-left"><?= l('index.faq.' . $key . '.question') ?></span>
 
                                     <span data-icon>
                                         <i class="fas fa-fw fa-circle-chevron-down"></i>
@@ -816,7 +910,7 @@
     </div>
 <?php endif ?>
 
-<?php if(count($data->blog_posts)): ?>
+<?php if (!empty($data->blog_posts)): ?>
     <div class="my-5">&nbsp;</div>
 
     <div class="container">
@@ -824,10 +918,10 @@
             <h2><?= sprintf(l('index.blog.header'), '<span class="text-primary">', '</span>') ?></h2>
         </div>
 
-        <div class="row">
+        <div class="row m-n4">
             <?php foreach($data->blog_posts as $blog_post): ?>
                 <div class="col-12 col-lg-4 p-4">
-                    <div class="card h-100 zoom-animation-subtle">
+                    <div class="card h-100 zoom-animation-subtle position-relative">
                         <div class="card-body">
                             <?php if($blog_post->image): ?>
                                 <a href="<?= SITE_URL . ($blog_post->language ? \Altum\Language::$active_languages[$blog_post->language] . '/' : null) . 'blog/' . $blog_post->url ?>" aria-label="<?= $blog_post->title ?>">
@@ -835,8 +929,8 @@
                                 </a>
                             <?php endif ?>
 
-                            <a href="<?= SITE_URL . ($blog_post->language ? \Altum\Language::$active_languages[$blog_post->language] . '/' : null) . 'blog/' . $blog_post->url ?>">
-                                <h3 class="h5 card-title mb-2"><?= $blog_post->title ?></h3>
+                            <a href="<?= SITE_URL . ($blog_post->language ? \Altum\Language::$active_languages[$blog_post->language] . '/' : null) . 'blog/' . $blog_post->url ?>" class="stretched-link text-decoration-none">
+                                <h3 class="h5 card-title mb-2 d-inline"><?= $blog_post->title ?></h3>
                             </a>
 
                             <p class="text-muted mb-0"><?= $blog_post->description ?></p>
@@ -857,8 +951,9 @@
 <script src="<?= ASSETS_FULL_URL . 'js/libraries/aos.min.js?v=' . PRODUCT_CODE ?>"></script>
 
 <script>
+    'use strict';
+    
     AOS.init({
-        delay: 100,
         duration: 600
     });
 </script>
@@ -867,8 +962,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    let active_notification_handlers_per_resource_limit = <?= (int) $this->user->plan_settings->active_notification_handlers_per_resource_limit ?>;
+    
+let active_notification_handlers_per_resource_limit = <?= (int) $this->user->plan_settings->active_notification_handlers_per_resource_limit ?>;
 
     if(active_notification_handlers_per_resource_limit != -1) {
         let process_notification_handlers = () => {
@@ -945,3 +1040,7 @@
     </script>
 <?php endif ?>
 <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>
+
+<?php ob_start() ?>
+<link href="<?= ASSETS_FULL_URL . 'css/index-custom.css?v=' . PRODUCT_CODE ?>" rel="stylesheet" media="screen,print">
+<?php \Altum\Event::add_content(ob_get_clean(), 'head') ?>

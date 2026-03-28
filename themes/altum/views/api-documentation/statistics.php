@@ -112,31 +112,32 @@
 
                     <div class="form-group">
                         <label><?= l('api_documentation.response') ?></label>
-                        <div data-shiki="json">
-                            {
-                            "data": [
-                            {
-                            "pageviews": 20,
-                            "visitors": 5,
-                            "formatted_date": "2021-01"
-                            },
-                            {
-                            "pageviews": 35,
-                            "visitors": 10,
-                            "formatted_date": "2021-02"
-                            },
-                            {
-                            "pageviews": 50,
-                            "visitors": 25,
-                            "formatted_date": "2021-03"
-                            }
-                            ]
-                            }
+                        <pre data-shiki="json">
+{
+    "data": [
+        {
+            "pageviews": 20,
+            "visitors": 5,
+            "formatted_date": "2021-01"
+        },
+        {
+            "pageviews": 35,
+            "visitors": 10,
+            "formatted_date": "2021-02"
+        },
+        {
+            "pageviews": 50,
+            "visitors": 25,
+            "formatted_date": "2021-03"
+        }
+    ]
+}
+</pre>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+
     </div>
 </div>
 

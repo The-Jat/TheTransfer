@@ -5,22 +5,25 @@
         <div class="card-body">
             <?= \Altum\Alerts::output_alerts() ?>
 
-            <div class="d-flex flex-column align-items-center justify-content-center text-center">
-                <?= sprintf(file_get_contents(ROOT_PATH . ASSETS_URL_PATH . 'images/thank_you.svg'), 'var(--primary)', 'col-10 col-md-6 col-lg-4 mb-4') ?>
+            <div class="d-flex align-items-center flex-column flex-lg-row">
+                <?= sprintf(file_get_contents(ROOT_PATH . ASSETS_URL_PATH . 'images/thank_you.svg'), 'var(--primary)', 'col-6 col-lg-5 mb-5 mb-lg-0 mr-lg-3 img-fluid', 'max-height: 350px;') ?>
 
-                <h1><?= l('pay_thank_you.header') ?></h1>
+                <div class="text-center text-lg-left">
+                    <h1 class="h3"><?= l('pay_thank_you.header') ?></h1>
 
-                <?php if(isset($_GET['code_days'])): ?>
-                    <p class="text-muted"><?= sprintf(l('pay_thank_you.plan_redeemed'), (int) $_GET['code_days']) ?></p>
-                <?php elseif(isset($_GET['payment_processor']) && in_array($_GET['payment_processor'], ['paypal', 'stripe', 'coinbase', 'payu', 'paystack', 'razorpay', 'mollie', 'yookassa', 'crypto_com', 'paddle', 'midtrans', 'flutterwave', 'lemonsqueezy', 'myfatoorah'])): ?>
-                    <p class="text-muted"><?= l('pay_thank_you.plan_custom_will_start') ?></p>
-                <?php elseif(isset($_GET['payment_processor']) && $_GET['payment_processor'] == 'offline_payment'): ?>
-                    <p class="text-muted"><?= l('pay_thank_you.plan_custom_pending') ?></p>
-                <?php else: ?>
-                    <p class="text-muted"><?= sprintf(l('pay_thank_you.plan_trial_start'), (int) $_GET['trial_days']) ?></p>
-                <?php endif ?>
+                    <?php if(isset($_GET['code_days'])): ?>
+                        <p class="text-muted"><?= sprintf(l('pay_thank_you.plan_redeemed'), (int) $_GET['code_days']) ?></p>
+                    <?php elseif(isset($_GET['payment_processor']) && in_array($_GET['payment_processor'], ['paypal', 'stripe', 'coinbase', 'payu', 'paystack', 'razorpay', 'mollie', 'yookassa', 'crypto_com', 'paddle', 'paddle_billing', 'midtrans', 'flutterwave', 'lemonsqueezy', 'myfatoorah', 'klarna', 'plisio'])): ?>
+                        <p class="text-muted"><?= l('pay_thank_you.plan_custom_will_start') ?></p>
+                    <?php elseif(isset($_GET['payment_processor']) && in_array($_GET['payment_processor'], ['offline_payment', 'plisio_whitelabel'])): ?>
+                        <p class="text-muted"><?= l('pay_thank_you.plan_custom_pending') ?></p>
+                    <?php else: ?>
+                        <p class="text-muted"><?= sprintf(l('pay_thank_you.plan_trial_start'), (int) $_GET['trial_days']) ?></p>
+                    <?php endif ?>
 
-                <a id="dashboard" href="<?= url('dashboard') ?>" class="btn btn-outline-primary mt-4"><?= l('pay_thank_you.button') ?></a>
+                    <a id="dashboard" href="<?= url('dashboard') ?>" class="btn btn-outline-primary mt-4"><?= l('pay_thank_you.button') ?></a>
+                </div>
+
             </div>
         </div>
     </div>

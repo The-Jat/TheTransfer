@@ -127,7 +127,7 @@ class User extends Model {
 
     public function verify_null_password($user_id, $email, $password) {
         if(empty($password)) {
-            $lost_password_code = $lost_password_code ?? md5($email . microtime());
+            $lost_password_code = $lost_password_code ?? md5(uniqid('', true) . random_bytes(16));
             db()->where('user_id', $user_id)->update('users', ['lost_password_code' => $lost_password_code]);
             redirect('reset-password/' . md5($email) . '/' . $lost_password_code);
         }
@@ -158,8 +158,8 @@ class User extends Model {
         $plan_expiration_date = $plan_expiration_date ?? get_date();
         $plan_trial_done = 0;
         $language = \Altum\Language::$name;
-        $api_key = md5($email . microtime() . microtime());
-        $referral_key = md5(rand() . $email . microtime() . $email. microtime());
+        $api_key = md5(uniqid('', true) . random_bytes(16));
+        $referral_key = md5(uniqid('', true) . random_bytes(16));
         $ip = $is_admin_created ? null : get_ip();
 
         /* Detect the location */
@@ -176,7 +176,7 @@ class User extends Model {
         $billing = json_encode(['type' => 'personal', 'name' => '', 'address' => '', 'city' => '', 'county' => '', 'zip' => '', 'country' => $country_code, 'phone' => '', 'tax_id' => '', 'notes' => '']);
 
         /* Detect extra details about the user */
-        $whichbrowser = new \WhichBrowser\Parser($_SERVER['HTTP_USER_AGENT']);
+        $whichbrowser = get_whichbrowser();
         $browser_name = $whichbrowser->browser->name ?? null;
         $os_name = $whichbrowser->os->name ?? null;
         $browser_language = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? mb_substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2) : null;
@@ -239,6 +239,13 @@ class User extends Model {
         return [
             'user_id' => $registered_user_id,
             'password' => $password,
+            'source' => $source,
+            'ip' => $ip,
+            'country' => $country_code,
+            'city_name' => $city_name,
+            'device_type' => $device_type,
+            'os_name' => $os_name,
+            'browser_name' => $browser_name,
         ];
     }
 
@@ -263,7 +270,7 @@ class User extends Model {
         $city_name = isset($maxmind) && isset($maxmind['city']) ? $maxmind['city']['names']['en'] : null;
 
         /* Detect extra details about the user */
-        $whichbrowser = new \WhichBrowser\Parser($_SERVER['HTTP_USER_AGENT']);
+        $whichbrowser = get_whichbrowser();
         $browser_name = $whichbrowser->browser->name ?? null;
         $os_name = $whichbrowser->os->name ?? null;
         $browser_language = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? mb_substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2) : null;
@@ -397,6 +404,27 @@ class User extends Model {
                 if($response->code >= 400) {
                     throw new \Exception($response->body);
                 }
+
+                break;
+
+            case 'paddle_billing':
+
+                /* Paddle API setup */
+                $paddle_api_url = 'https://' . (settings()->paddle_billing->mode == 'sandbox' ? 'sandbox-api' : 'api') . '.paddle.com/';
+                $paddle_headers = [
+                    'Authorization' => 'Bearer ' . settings()->paddle_billing->api_key,
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json'
+                ];
+
+                /* Cancel the subscription */
+                $response = \Unirest\Request::post(
+                    $paddle_api_url . 'subscriptions/' . $user->payment_subscription_id . '/cancel',
+                    $paddle_headers,
+                    \Unirest\Request\Body::json([
+                        'effective_from' => 'next_billing_period',
+                    ])
+                );
 
                 break;
         }

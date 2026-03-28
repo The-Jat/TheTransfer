@@ -37,7 +37,7 @@
                 <input type="text" id="subject" name="subject" value="<?= $data->broadcast->subject ?>" class="form-control <?= \Altum\Alerts::has_field_errors('subject') ? 'is-invalid' : null ?>" maxlength="128" required="required" <?= $data->broadcast->status == 'sent' ? 'readonly="readonly"' : null ?> />
                 <?= \Altum\Alerts::output_field_error('subject') ?>
                 <small class="form-text text-muted"><?= l('admin_broadcasts.subject_help') ?></small>
-                <small class="form-text text-muted"><?= sprintf(l('global.variables'), '<code>' . implode('</code> , <code>',  ['{{WEBSITE_TITLE}}', '{{USER:NAME}}', '{{USER:EMAIL}}', '{{USER:CONTINENT_NAME}}', '{{USER:COUNTRY_NAME}}', '{{USER:CITY_NAME}}', '{{USER:DEVICE_TYPE}}', '{{USER:OS_NAME}}', '{{USER:BROWSER_NAME}}', '{{USER:BROWSER_LANGUAGE}}']) . '</code>') ?></small>
+                <small class="form-text text-muted"><?= sprintf(l('global.variables'), '<code data-copy>' . implode('</code> , <code data-copy>',  ['{{WEBSITE_TITLE}}', '{{USER:NAME}}', '{{USER:EMAIL}}', '{{USER:CONTINENT_NAME}}', '{{USER:COUNTRY_NAME}}', '{{USER:CITY_NAME}}', '{{USER:DEVICE_TYPE}}', '{{USER:OS_NAME}}', '{{USER:BROWSER_NAME}}', '{{USER:BROWSER_LANGUAGE}}']) . '</code>') ?></small>
             </div>
 
             <div class="form-group custom-control custom-switch" data-type="external">
@@ -236,7 +236,7 @@
                 </div>
                 <textarea name="content" id="content" class="form-control d-none <?= \Altum\Alerts::has_field_errors('content') ? 'is-invalid' : null ?>"><?= e($data->broadcast->content) ?></textarea>
                 <?= \Altum\Alerts::output_field_error('content') ?>
-                <small class="form-text text-muted"><?= sprintf(l('global.variables'), '<code>' . implode('</code> , <code>',  ['{{WEBSITE_TITLE}}', '{{USER:NAME}}', '{{USER:EMAIL}}', '{{USER:CONTINENT_NAME}}', '{{USER:COUNTRY_NAME}}', '{{USER:CITY_NAME}}', '{{USER:DEVICE_TYPE}}', '{{USER:OS_NAME}}', '{{USER:BROWSER_NAME}}', '{{USER:BROWSER_LANGUAGE}}']) . '</code>') ?></small>
+                <small class="form-text text-muted"><?= sprintf(l('global.variables'), '<code data-copy>' . implode('</code> , <code data-copy>',  ['{{WEBSITE_TITLE}}', '{{USER:NAME}}', '{{USER:EMAIL}}', '{{USER:CONTINENT_NAME}}', '{{USER:COUNTRY_NAME}}', '{{USER:CITY_NAME}}', '{{USER:DEVICE_TYPE}}', '{{USER:OS_NAME}}', '{{USER:BROWSER_NAME}}', '{{USER:BROWSER_LANGUAGE}}']) . '</code>') ?></small>
                 <small class="form-text text-muted"><?= l('global.spintax_help') ?></small>
             </div>
 
@@ -302,7 +302,7 @@
             holder: 'editorjs',
 
             /* Data */
-            data: is_valid_json(document.querySelector('#content').innerText) ? JSON.parse(document.querySelector('#content').innerText) : {},
+            data: is_valid_json(document.querySelector('#content').value) ? JSON.parse(document.querySelector('#content').value) : {},
 
             /* Tolls */
             tools: {
@@ -348,8 +348,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    type_handler('[name="segment"]', 'data-segment');
+    
+type_handler('[name="segment"]', 'data-segment');
     document.querySelector('[name="segment"]') && document.querySelectorAll('[name="segment"]').forEach(element => element.addEventListener('change', () => { type_handler('[name="segment"]', 'data-segment'); }));
 </script>
 <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>
@@ -357,8 +357,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    document.querySelector('#segment').addEventListener('change', async event => {
+    
+document.querySelector('#segment').addEventListener('change', async event => {
         await get_segment_count();
     });
 
@@ -412,3 +412,5 @@
     get_segment_count();
 </script>
 <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>
+
+<?php include_view(THEME_PATH . 'views/partials/clipboard_js.php') ?>

@@ -15,14 +15,17 @@
 
 <div class="d-flex align-items-center mb-4">
     <h1 class="h3 m-0"><i class="fas fa-fw fa-xs fa-globe text-primary-900 mr-2"></i> <?= l('admin_domain_create.header') ?></h1>
-    <div class="ml-2">
-        <span data-toggle="tooltip" data-html="true" title="<?= sprintf(l('admin_domains.helper'), '<strong>' . (settings()->transfers->domains_custom_main_ip ?: $_SERVER['SERVER_ADDR']) . '</strong>', '<strong>' . $host . '</strong>') ?>">
-            <i class="fas fa-fw fa-info-circle text-muted"></i>
-        </span>
-    </div>
 </div>
 
 <?= \Altum\Alerts::output_alerts() ?>
+
+<div class="alert alert-secondary">
+    <span class="h6">1.</span> <?= sprintf(l('admin_domains.info_one'), '<strong>' . (settings()->links->domains_custom_main_ip ?: $_SERVER['SERVER_ADDR']) . '</strong>', '<strong>' . $host . '</strong>') ?>
+</div>
+
+<div class="alert alert-secondary">
+    <span class="h6">2.</span> <?= l('admin_domains.info_two') ?>
+</div>
 
 <div class="card <?= \Altum\Alerts::has_field_errors() ? 'border-danger' : null ?>">
     <div class="card-body">

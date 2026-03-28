@@ -74,7 +74,7 @@ class PayBilling extends Controller {
 
             $required_fields = ['billing_name', 'billing_address', 'billing_city', 'billing_county', 'billing_zip'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }

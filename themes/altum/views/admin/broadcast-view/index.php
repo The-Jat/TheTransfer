@@ -139,21 +139,21 @@
                 <div class="form-group">
                     <label class="font-weight-bold">
                         <i class="fas fa-fw fa-sm fa-paper-plane text-muted mr-1"></i>
-                        <?= sprintf(l('admin_broadcasts.last_sent_email_datetime'), ($data->broadcast->last_sent_email_datetime ? \Altum\Date::get($data->broadcast->last_sent_email_datetime, 2) . ' - <small>' . \Altum\Date::get($data->broadcast->last_sent_email_datetime, 3) . '</small>' : '-')) ?>
+                        <?= sprintf(l('admin_broadcasts.last_sent_email_datetime'), ($data->broadcast->last_sent_email_datetime ? \Altum\Date::get($data->broadcast->last_sent_email_datetime, 2) . ' - <small>' . \Altum\Date::get($data->broadcast->last_sent_email_datetime, 3) . '</small>' : l('global.na'))) ?>
                     </label>
                 </div>
 
                 <div class="form-group">
                     <label class="font-weight-bold">
                         <i class="fas fa-fw fa-sm fa-clock text-muted mr-1"></i>
-                        <?= sprintf(l('global.datetime_tooltip'), ($data->broadcast->datetime ? \Altum\Date::get($data->broadcast->datetime, 2) . ' - <small>' . \Altum\Date::get($data->broadcast->datetime, 3) . '</small>' : '-')) ?>
+                        <?= sprintf(l('global.datetime_tooltip'), ($data->broadcast->datetime ? \Altum\Date::get($data->broadcast->datetime, 2) . ' - <small>' . \Altum\Date::get($data->broadcast->datetime, 3) . '</small>' : l('global.na'))) ?>
                     </label>
                 </div>
 
                 <div class="form-group">
                     <label class="font-weight-bold">
                         <i class="fas fa-fw fa-sm fa-history text-muted mr-1"></i>
-                        <?= sprintf(l('global.last_datetime_tooltip'), ($data->broadcast->last_datetime ? \Altum\Date::get($data->broadcast->last_datetime, 2) . ' - <small>' . \Altum\Date::get($data->broadcast->last_datetime, 3) . '</small>' : '-')) ?>
+                        <?= sprintf(l('global.last_datetime_tooltip'), ($data->broadcast->last_datetime ? \Altum\Date::get($data->broadcast->last_datetime, 2) . ' - <small>' . \Altum\Date::get($data->broadcast->last_datetime, 3) . '</small>' : l('global.na'))) ?>
                     </label>
                 </div>
 
@@ -167,7 +167,7 @@
                 <div class="card-body">
                     <h2 class="h5 mb-4"><?= l('admin_broadcasts.latest_views') ?></h2>
 
-                    <?php if(count($data->users)): ?>
+                    <?php if (!empty($data->users)): ?>
 
                         <div>
                             <?php foreach($data->users as $user): ?>
@@ -215,7 +215,7 @@
         <div class="card-body">
             <h2 class="h5 mb-4"><?= l('admin_broadcasts.clicks') ?></h2>
 
-            <?php if(count($data->clicks)): ?>
+            <?php if (!empty($data->clicks)): ?>
 
                 <div>
                     <?php foreach($data->clicks as $click): ?>
@@ -272,10 +272,13 @@
         ranges: {
             <?= json_encode(l('global.date.today')) ?>: [moment(), moment()],
             <?= json_encode(l('global.date.yesterday')) ?>: [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-            <?= json_encode(l('global.date.last_7_days')) ?>: [moment().subtract(6, 'days'), moment()],
+            <?= json_encode(l('global.date.this_week')) ?>: [moment().startOf('week'), moment().endOf('week')],
+            
             <?= json_encode(l('global.date.last_30_days')) ?>: [moment().subtract(29, 'days'), moment()],
-            <?= json_encode(l('global.date.this_month')) ?>: [moment().startOf('month'), moment().endOf('month')],
+                <?= json_encode(l('global.date.this_month')) ?>: [moment().startOf('month'), moment().endOf('month')],
             <?= json_encode(l('global.date.last_month')) ?>: [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                <?= json_encode(l('global.date.this_year')) ?>: [moment().startOf('year'), moment()],
+                <?= json_encode(l('global.date.last_year')) ?>: [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
             <?= json_encode(l('global.date.all_time')) ?>: [moment('2015-01-01'), moment()]
         },
         alwaysShowCalendars: true,

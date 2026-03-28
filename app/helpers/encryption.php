@@ -39,19 +39,27 @@ function encrypt_file($original_file_location, $new_file_location, $key) {
 }
 
 function decrypt_and_output($file_stream, $key, $temp_file = null) {
-    /* Generate key based on the password */
     $key = substr(hash('sha256', $key, true), 0, 32);
-
-    /* Cipher used for encryption */
     $cipher = 'AES-256-CBC';
-
-    /* Get IV length */
     $iv_length = openssl_cipher_iv_length($cipher);
 
-    /* Read IV from first part of the file */
     $iv = fread($file_stream, $iv_length);
 
-    while($buffer = fread($file_stream, (5000 + 1) * $iv_length)) {
+    $chunk_size = (5000 + 1) * $iv_length;
+    $buffer = '';
+
+    while(!feof($file_stream)) {
+        /* Fill buffer until we have a full chunk or reach EOF */
+        while(strlen($buffer) < $chunk_size && !feof($file_stream)) {
+            $read = fread($file_stream, $chunk_size - strlen($buffer));
+            if($read === false || $read === '') break;
+            $buffer .= $read;
+        }
+
+        if(strlen($buffer) == 0) {
+            break;
+        }
+
         $plaintext = openssl_decrypt($buffer, $cipher, $key, OPENSSL_RAW_DATA, $iv);
         $iv = substr($buffer, 0, $iv_length);
 
@@ -60,6 +68,8 @@ function decrypt_and_output($file_stream, $key, $temp_file = null) {
         } else {
             echo $plaintext;
         }
+
+        $buffer = '';
     }
 }
 
@@ -84,3 +94,19 @@ function decrypt_file($original_file_location, $new_file_location, $key) {
     fclose($new_file);
 }
 
+/* decrypt helper keeps everything in memory until 2 MiB, then spills to /tmp */
+function decrypt_to_temp($encrypted_stream, $password) {
+    $temp = fopen('php://temp/maxmemory:2097152', 'wb+');
+
+    /* callback fires every time decrypt_and_output() echoes */
+    ob_start(function ($chunk) use ($temp) {
+        fwrite($temp, $chunk);
+        return '';
+    }, 4096);
+
+    decrypt_and_output($encrypted_stream, $password);
+
+    ob_end_flush();
+    rewind($temp);
+    return $temp;
+}

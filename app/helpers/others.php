@@ -27,6 +27,7 @@ function get_custom_image_if_any($image_key) {
 }
 
 function output_alert($type, $message, $icon = true, $dismissable = true) {
+    if(empty($message)) return;
 
     switch($type) {
         case 'error':
@@ -82,40 +83,40 @@ function get_aws_s3_config() {
 
     if(settings()->offload->provider != 'aws-s3') {
         $aws_s3_config['endpoint'] = settings()->offload->endpoint_url;
+        $aws_s3_config['bucket_endpoint'] = (bool) (settings()->offload->bucket_endpoint ?? false);
+        $aws_s3_config['use_path_style_endpoint'] = (bool) (settings()->offload->bucket_endpoint ?? false);
     }
 
     return $aws_s3_config;
 }
 
 /* Generate chart data for based on the date key and each of keys inside */
-function get_chart_data(Array $main_array) {
+function get_chart_data(array $main_array) {
 
-    $results = [];
+    $dataset_arrays = [];
 
-    foreach($main_array as $date_label => $data) {
-
-        foreach($data as $label_key => $label_value) {
-
-            if(!isset($results[$label_key])) {
-                $results[$label_key] = [];
-            }
-
-            $results[$label_key][] = $label_value;
-
+    /* collect values for every dataset label */
+    foreach ($main_array as $date_label => $data_row) {
+        foreach ($data_row as $dataset_label => $dataset_value) {
+            $dataset_arrays[$dataset_label][] = $dataset_value;
         }
-
     }
 
-    foreach($results as $key => $value) {
-        $results[$key] = '["' . implode('", "', $value) . '"]';
+    /* no datasets ⇒ chart is empty */
+    $is_empty = empty($dataset_arrays);
+
+    /* json-encode every dataset */
+    foreach ($dataset_arrays as $dataset_label => $dataset_values) {
+        $dataset_arrays[$dataset_label] = json_encode($dataset_values);
     }
 
-    $results['labels'] = '["' . implode('", "', array_keys($main_array)) . '"]';
+    /* generate labels */
+    $dataset_arrays['labels']   = json_encode(array_keys($main_array));
+    $dataset_arrays['is_empty'] = $is_empty;
 
-    $results['is_empty'] = count($results) > 1 ? false : true;
-
-    return $results;
+    return $dataset_arrays;
 }
+
 
 function get_user_avatar($avatar, $email) {
     return $avatar ? \Altum\Uploads::get_full_url('users') . $avatar : get_gravatar($email);
@@ -209,6 +210,30 @@ function get_maxmind_reader_city() {
     return $cached = (new \MaxMind\Db\Reader(APP_PATH . 'includes/GeoLite2-City.mmdb'));
 }
 
+function get_whichbrowser() {
+    static $cached = null;
+
+    if($cached !== null) {
+        return $cached;
+    }
+
+    return $cached = (new \WhichBrowser\Parser($_SERVER['HTTP_USER_AGENT']));
+}
+
+function is_https_request() {
+    /* Native HTTPS */
+    if (!empty($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] === '1')) { return true; }
+    if (!empty($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'] === 'https') { return true; }
+    if (!empty($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443) { return true; }
+
+    /* Common proxy/CDN headers */
+    if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') { return true; }
+    if (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') { return true; }
+    if (!empty($_SERVER['HTTP_CF_VISITOR']) && strpos($_SERVER['HTTP_CF_VISITOR'], '"https"') !== false) { return true; }
+
+    return false;
+}
+
 function get_ip() {
     static $cached_ip_address = null;
 
@@ -262,22 +287,22 @@ function get_device_type($user_agent) {
     $normalized_user_agent = strtolower(trim($user_agent));
 
     /* regular expressions */
-    $mobile_regex = '/(?:phone|windows\s+phone|ipod|blackberry|(?:android|bb\d+|meego|silk|googlebot)[^;]*mobile|palm|windows\s+ce|opera mini|avantgo|mobilesafari|docomo)/i';
-    $tablet_regex = '/(?:ipad|playbook|(?:android|bb\d+|meego|silk)(?![^;]*mobile))/i';
+    $mobile_regex = '/(?:phone|windows\s+phone|ipod|blackberry|(?:android|bb\d+|meego|silk|googlebot).*mobile|palm|windows\s+ce|opera mini|avantgo|mobilesafari|docomo)/i';
+    $tablet_regex = '/(?:ipad|playbook|(?:android|bb\d+|meego|silk)(?!.*mobile))/i';
 
     /* detect device type */
-    if(preg_match($mobile_regex, $normalized_user_agent)) {
+    if (preg_match($mobile_regex, $normalized_user_agent)) {
         return 'mobile';
     }
 
-    if(preg_match($tablet_regex, $normalized_user_agent)) {
+    if (preg_match($tablet_regex, $normalized_user_agent)) {
         return 'tablet';
     }
 
     return 'desktop';
 }
 
-function process_export_json($array_of_objects, $type = '', $type_array = [], $file_name = 'data') {
+function process_export_json($array_of_objects, $type_array = [], $file_name = 'data') {
 
     if(isset($_GET['export']) && $_GET['export'] == 'json') {
         //ALTUMCODE:DEMO if(DEMO) exit('This command is blocked on the demo.');
@@ -286,6 +311,7 @@ function process_export_json($array_of_objects, $type = '', $type_array = [], $f
         header('Content-Disposition: attachment; filename="' . $file_name . '.json";');
         header('Content-Type: application/json; charset=UTF-8');
 
+        $type = count($type_array) ? 'include' : 'basic';
         $json = json_exporter($array_of_objects, $type, $type_array);
 
         die($json);
@@ -293,24 +319,28 @@ function process_export_json($array_of_objects, $type = '', $type_array = [], $f
 
 }
 
-function json_exporter($array_of_objects, $type = 'basic', $type_array = []) {
+function json_exporter($array_of_objects, $type = 'basic', $include_keys_array = []) {
 
-    foreach($array_of_objects as $object) {
+    /* Quick early return */
+    if($type !== 'include' || empty($include_keys_array)) {
+        return json_encode($array_of_objects);
+    }
 
-        foreach($object as $key => $value) {
+    /* Lookups */
+    $include_keys_lookup = array_flip($include_keys_array);
 
-            if(($type == 'exclude' && in_array($key, $type_array)) || ($type == 'include' && !in_array($key, $type_array))) {
-                unset($object->{$key});
-            }
+    foreach($array_of_objects as $index => $object) {
+        $object_as_array   = (array) $object;
+        $filtered_array    = array_intersect_key($object_as_array, $include_keys_lookup);
 
-        }
-
+        /* Regenerate original array */
+        $array_of_objects[$index] = (object) $filtered_array;
     }
 
     return json_encode($array_of_objects);
 }
 
-function process_export_csv($array, $type = '', $type_array = [], $file_name = 'data') {
+function process_export_csv($array, $type_array = [], $file_name = 'data') {
 
     if(isset($_GET['export']) && $_GET['export'] == 'csv') {
         //ALTUMCODE:DEMO if(DEMO) exit('This command is blocked on the demo.');
@@ -319,11 +349,136 @@ function process_export_csv($array, $type = '', $type_array = [], $file_name = '
         header('Content-Disposition: attachment; filename="' . $file_name . '.csv";');
         header('Content-Type: application/csv; charset=UTF-8');
 
+        $type = count($type_array) ? 'include' : 'basic';
         $csv = csv_exporter($array, $type, $type_array);
 
         die($csv);
     }
 
+}
+
+function process_export_csv_new($array, $item_list, $json_item_list = [], $file_name = 'data') {
+
+    if(isset($_GET['export']) && $_GET['export'] == 'csv') {
+        //ALTUMCODE:DEMO if(DEMO) exit('This command is blocked on the demo.');
+
+        if(\Altum\Title::get()) $file_name = \Altum\Title::get();
+        header('Content-Disposition: attachment; filename="' . $file_name . '.csv";');
+        header('Content-Type: application/csv; charset=UTF-8');
+
+        $csv = csv_exporter_new($array, $item_list, $json_item_list);
+
+        die($csv);
+    }
+
+}
+
+function csv_exporter_new($array_of_rows, $field_list, $json_field_list = []) {
+
+    $flatten_json_inplace = function (&$output_map, $input_data, $parent_keys = []) use (&$flatten_json_inplace) {
+        if ($input_data instanceof stdClass) {
+            $input_data = (array) $input_data;
+        }
+        if (is_array($input_data)) {
+            foreach ($input_data as $current_key => $current_value) {
+                $new_keys   = $parent_keys;
+                $new_keys[] = (string) $current_key;
+
+                if (is_array($current_value) || $current_value instanceof stdClass) {
+                    $flatten_json_inplace($output_map, $current_value, $new_keys);
+                } else {
+                    $output_map[implode('][', $new_keys)] = $current_value;
+                }
+            }
+            return;
+        }
+        $output_map[''] = $input_data;
+    };
+
+    $to_string = function ($input_value) {
+        if ($input_value === null) {
+            return '';
+        }
+        if (is_bool($input_value)) {
+            return $input_value ? '1' : '0';
+        }
+        if (is_string($input_value)) {
+            return html_entity_decode($input_value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+        if (is_scalar($input_value)) {
+            return (string) $input_value;
+        }
+        return json_encode($input_value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    };
+
+    $has_json          = !empty($json_field_list);
+    $json_field_lookup = $has_json ? array_flip($json_field_list) : [];
+
+    $json_keys_per_column = [];
+    if ($has_json) {
+        foreach ($array_of_rows as $row) {
+            foreach ($json_field_list as $json_column) {
+                if (!isset($row->$json_column)) {
+                    continue;
+                }
+                $flat = [];
+                $flatten_json_inplace($flat, $row->$json_column);
+                foreach ($flat as $json_key => $_) {
+                    $json_keys_per_column[$json_column][$json_key] = true;
+                }
+            }
+        }
+        foreach ($json_keys_per_column as $column => $keys) {
+            $json_keys_per_column[$column] = array_keys($keys);
+        }
+    }
+
+    $file_pointer = fopen('php://temp', 'r+');
+
+    $header_row = [];
+    foreach ($field_list as $field) {
+        if ($has_json && isset($json_field_lookup[$field]) && !empty($json_keys_per_column[$field])) {
+            foreach ($json_keys_per_column[$field] as $json_key) {
+                $header_row[] = ($json_key === '') ? $field : $field . '[' . $json_key . ']';
+            }
+        } else {
+            $header_row[] = $field;
+        }
+    }
+
+    fputcsv($file_pointer, $header_row, ',', '"', '\\');
+
+    foreach ($array_of_rows as $row_object) {
+        $row     = (array) $row_object;
+        $csv_row = [];
+
+        foreach ($field_list as $field) {
+
+            if ($has_json && isset($json_field_lookup[$field]) && !empty($json_keys_per_column[$field])) {
+
+                $flat = [];
+                if (isset($row[$field])) {
+                    $flatten_json_inplace($flat, $row[$field]);
+                }
+
+                foreach ($json_keys_per_column[$field] as $json_sub_key) {
+                    $raw_value = array_key_exists($json_sub_key, $flat) ? $flat[$json_sub_key] : '';
+                    $csv_row[] = $to_string($raw_value);
+                }
+
+            } else {
+                $csv_row[] = $to_string($row[$field] ?? '');
+            }
+        }
+
+        fputcsv($file_pointer, $csv_row, ',', '"', '\\');
+    }
+
+    rewind($file_pointer);
+    $csv_string = stream_get_contents($file_pointer);
+    fclose($file_pointer);
+
+    return $csv_string;
 }
 
 function csv_exporter($array, $type = 'basic', $type_array = []) {
@@ -362,6 +517,179 @@ function csv_exporter($array, $type = 'basic', $type_array = []) {
 
 function csv_link_exporter($csv) {
     return 'data:application/csv;charset=utf-8,' . urlencode($csv);
+}
+
+function get_currencies_array() {
+    return [
+        'USD' => 'United States Dollar',
+        'EUR' => 'Euro',
+        'GBP' => 'British Pound Sterling',
+        'CAD' => 'Canadian Dollar',
+        'AUD' => 'Australian Dollar',
+        'JPY' => 'Japanese Yen',
+        'CHF' => 'Swiss Franc',
+        'CNY' => 'Chinese Yuan',
+        'INR' => 'Indian Rupee',
+        'NZD' => 'New Zealand Dollar',
+        'SEK' => 'Swedish Krona',
+        'NOK' => 'Norwegian Krone',
+        'DKK' => 'Danish Krone',
+        'SGD' => 'Singapore Dollar',
+        'HKD' => 'Hong Kong Dollar',
+        'KRW' => 'South Korean Won',
+        'BRL' => 'Brazilian Real',
+        'MXN' => 'Mexican Peso',
+        'ZAR' => 'South African Rand',
+        'RUB' => 'Russian Ruble',
+        'TRY' => 'Turkish Lira',
+        'AED' => 'United Arab Emirates Dirham',
+        'SAR' => 'Saudi Riyal',
+        'PLN' => 'Polish Złoty',
+        'THB' => 'Thai Baht',
+        'IDR' => 'Indonesian Rupiah',
+        'MYR' => 'Malaysian Ringgit',
+        'PHP' => 'Philippine Peso',
+        'VND' => 'Vietnamese Đồng',
+        'ILS' => 'Israeli New Shekel',
+        'EGP' => 'Egyptian Pound',
+        'PKR' => 'Pakistani Rupee',
+        'ARS' => 'Argentine Peso',
+        'CLP' => 'Chilean Peso',
+        'COP' => 'Colombian Peso',
+        'PEN' => 'Peruvian Sol',
+        'NGN' => 'Nigerian Naira',
+        'KES' => 'Kenyan Shilling',
+        'UAH' => 'Ukrainian Hryvnia',
+        'CZK' => 'Czech Koruna',
+        'HUF' => 'Hungarian Forint',
+        'RON' => 'Romanian Leu',
+        'BGN' => 'Bulgarian Lev',
+        'QAR' => 'Qatari Riyal',
+        'KWD' => 'Kuwaiti Dinar',
+        'BHD' => 'Bahraini Dinar',
+        'OMR' => 'Omani Rial',
+        'MAD' => 'Moroccan Dirham',
+        'TWD' => 'New Taiwan Dollar',
+        'LKR' => 'Sri Lankan Rupee',
+        'BDT' => 'Bangladeshi Taka',
+        'MMK' => 'Burmese Kyat',
+        'KHR' => 'Cambodian Riel',
+        'MNT' => 'Mongolian Tögrög',
+        'NPR' => 'Nepalese Rupee',
+        'MZN' => 'Mozambican Metical',
+        'TZS' => 'Tanzanian Shilling',
+        'UGX' => 'Ugandan Shilling',
+        'GHS' => 'Ghanaian Cedi',
+        'DZD' => 'Algerian Dinar',
+        'TND' => 'Tunisian Dinar',
+        'LYD' => 'Libyan Dinar',
+        'ETB' => 'Ethiopian Birr',
+        'XOF' => 'West African CFA Franc',
+        'XAF' => 'Central African CFA Franc',
+        'BWP' => 'Botswana Pula',
+        'MWK' => 'Malawian Kwacha',
+        'ZMW' => 'Zambian Kwacha',
+        'MUR' => 'Mauritian Rupee',
+        'SCR' => 'Seychellois Rupee',
+        'BBD' => 'Barbadian Dollar',
+        'TTD' => 'Trinidad and Tobago Dollar',
+        'JMD' => 'Jamaican Dollar',
+        'BSD' => 'Bahamian Dollar',
+        'FJD' => 'Fijian Dollar',
+        'PGK' => 'Papua New Guinean Kina',
+        'WST' => 'Samoan Tala',
+        'TOP' => 'Tongan Paʻanga',
+        'SBD' => 'Solomon Islands Dollar',
+        'VUV' => 'Vanuatu Vatu',
+        'XCD' => 'East Caribbean Dollar',
+        'MVR' => 'Maldivian Rufiyaa',
+        'BTN' => 'Bhutanese Ngultrum',
+        'AOA' => 'Angolan Kwanza',
+        'MGA' => 'Malagasy Ariary',
+        'CDF' => 'Congolese Franc',
+        'GNF' => 'Guinean Franc',
+        'RWF' => 'Rwandan Franc',
+        'SOS' => 'Somali Shilling',
+        'SDG' => 'Sudanese Pound',
+        'SLE' => 'Sierra Leonean Leone',
+        'SHP' => 'Saint Helena Pound',
+        'GIP' => 'Gibraltar Pound',
+        'FKP' => 'Falkland Islands Pound',
+        'IMP' => 'Isle of Man Pound',
+        'GGP' => 'Guernsey Pound',
+        'JEP' => 'Jersey Pound',
+        'BZD' => 'Belize Dollar',
+        'GYD' => 'Guyanese Dollar',
+        'SRD' => 'Surinamese Dollar',
+        'PAB' => 'Panamanian Balboa',
+        'CRC' => 'Costa Rican Colón',
+        'GTQ' => 'Guatemalan Quetzal',
+        'HNL' => 'Honduran Lempira',
+        'NIO' => 'Nicaraguan Córdoba',
+        'CUP' => 'Cuban Peso',
+        'BND' => 'Brunei Dollar',
+        'LAK' => 'Lao Kip',
+        'KZT' => 'Kazakhstani Tenge',
+        'UZS' => 'Uzbekistani Som',
+        'TJS' => 'Tajikistani Somoni',
+        'AZN' => 'Azerbaijani Manat',
+        'GEL' => 'Georgian Lari',
+        'AMD' => 'Armenian Dram',
+        'BYN' => 'Belarusian Ruble',
+        'MDL' => 'Moldovan Leu',
+        'RSD' => 'Serbian Dinar',
+        'MKD' => 'Macedonian Denar',
+        'ISK' => 'Icelandic Króna',
+        'BAM' => 'Bosnia-Herzegovina Convertible Mark',
+        'ALL' => 'Albanian Lek',
+        'HRK' => 'Croatian Kuna',
+        'SYP' => 'Syrian Pound',
+        'IQD' => 'Iraqi Dinar',
+        'IRR' => 'Iranian Rial',
+        'YER' => 'Yemeni Rial',
+        'AFN' => 'Afghan Afghani',
+        'VED' => 'Venezuelan Digital Bolívar',
+        'VES' => 'Venezuelan Bolívar Soberano',
+        'BMD' => 'Bermudian Dollar',
+        'AWG' => 'Aruban Florin',
+        'ANG' => 'Netherlands Antillean Guilder',
+        'CVE' => 'Cape Verdean Escudo',
+        'STN' => 'São Tomé and Príncipe Dobra',
+        'MRU' => 'Mauritanian Ouguiya',
+        'SZL' => 'Eswatini Lilangeni',
+        'LSL' => 'Lesotho Loti',
+        'TMT' => 'Turkmenistani Manat',
+        'ERN' => 'Eritrean Nakfa',
+        'DJF' => 'Djiboutian Franc',
+        'FOK' => 'Faroese Króna',
+        'KID' => 'Kiribati Dollar',
+        'TVD' => 'Tuvaluan Dollar',
+        'XPF' => 'CFP Franc',
+        'XDR' => 'Special Drawing Rights (IMF)',
+        'ZWL' => 'Zimbabwean Dollar'
+    ];
+}
+
+function get_zero_decimal_currencies_array() {
+    return [
+        'JPY',
+        'KRW',
+        'VND',
+        'VUV',
+        'KMF',
+        'DJF',
+        'XOF',
+        'XPF',
+        'GNF',
+        'RWF',
+        'UGX',
+        'CLP',
+        'PYG',
+        'MGA',
+        'BIF',
+        'XAF',
+        'HUF',
+    ];
 }
 
 function get_continents_array() {
@@ -905,6 +1233,97 @@ function get_country_from_country_code($code) {
     return get_countries_no_emoji_array()[$code] ?? $code;
 }
 
+function get_currency_for_country($country_code) {
+    $country_currency_map = [
+        'AF' => 'AFN','AX' => 'EUR','AL' => 'ALL','DZ' => 'DZD','AS' => 'USD','AD' => 'EUR','AO' => 'AOA','AI' => 'XCD',
+        'AQ' => 'USD','AG' => 'XCD','AR' => 'ARS','AM' => 'AMD','AW' => 'AWG','AU' => 'AUD','AT' => 'EUR','AZ' => 'AZN',
+
+        'BS' => 'BSD','BH' => 'BHD','BD' => 'BDT','BB' => 'BBD','BY' => 'BYN','BE' => 'EUR','BZ' => 'BZD','BJ' => 'XOF',
+        'BM' => 'BMD','BT' => 'BTN','BO' => 'BOB','BQ' => 'USD','BA' => 'BAM','BW' => 'BWP','BV' => 'NOK','BR' => 'BRL',
+        'IO' => 'USD','BN' => 'BND','BG' => 'BGN','BF' => 'XOF','BI' => 'BIF',
+
+        'KH' => 'KHR','CM' => 'XAF','CA' => 'CAD','CV' => 'CVE','KY' => 'KYD','CF' => 'XAF','TD' => 'XAF','CL' => 'CLP',
+        'CN' => 'CNY','CX' => 'AUD','CC' => 'AUD','CO' => 'COP','KM' => 'KMF','CD' => 'CDF','CG' => 'XAF','CK' => 'NZD',
+        'CR' => 'CRC','CI' => 'XOF','HR' => 'EUR','CU' => 'CUP','CW' => 'ANG','CY' => 'EUR','CZ' => 'CZK',
+
+        'DK' => 'DKK','DJ' => 'DJF','DM' => 'XCD','DO' => 'DOP',
+
+        'EC' => 'USD','EG' => 'EGP','SV' => 'USD','GQ' => 'XAF','ER' => 'ERN','EE' => 'EUR','SZ' => 'SZL','ET' => 'ETB',
+
+        'FK' => 'FKP','FO' => 'DKK','FJ' => 'FJD','FI' => 'EUR','FR' => 'EUR',
+
+        'GF' => 'EUR','PF' => 'XPF','TF' => 'EUR','GA' => 'XAF','GM' => 'GMD','GE' => 'GEL','DE' => 'EUR','GH' => 'GHS',
+        'GI' => 'GIP','GR' => 'EUR','GL' => 'DKK','GD' => 'XCD','GP' => 'EUR','GU' => 'USD','GT' => 'GTQ','GG' => 'GBP',
+        'GN' => 'GNF','GW' => 'XOF','GY' => 'GYD',
+
+        'HT' => 'HTG','HM' => 'AUD','VA' => 'EUR','HN' => 'HNL','HK' => 'HKD','HU' => 'HUF',
+
+        'IS' => 'ISK','IN' => 'INR','ID' => 'IDR','IR' => 'IRR','IQ' => 'IQD','IE' => 'EUR','IM' => 'GBP','IL' => 'ILS',
+        'IT' => 'EUR',
+
+        'JM' => 'JMD','JP' => 'JPY','JE' => 'GBP','JO' => 'JOD',
+
+        'KZ' => 'KZT','KE' => 'KES','KI' => 'AUD','KP' => 'KPW','KR' => 'KRW','KW' => 'KWD','KG' => 'KGS',
+
+        'LA' => 'LAK','LV' => 'EUR','LB' => 'LBP','LS' => 'LSL','LR' => 'LRD','LY' => 'LYD','LI' => 'CHF','LT' => 'EUR',
+        'LU' => 'EUR',
+
+        'MO' => 'MOP','MG' => 'MGA','MW' => 'MWK','MY' => 'MYR','MV' => 'MVR','ML' => 'XOF','MT' => 'EUR','MH' => 'USD',
+        'MQ' => 'EUR','MR' => 'MRU','MU' => 'MUR','YT' => 'EUR','MX' => 'MXN','FM' => 'USD','MD' => 'MDL','MC' => 'EUR',
+        'MN' => 'MNT','ME' => 'EUR','MS' => 'XCD','MA' => 'MAD','MZ' => 'MZN','MM' => 'MMK',
+
+        'NA' => 'NAD','NR' => 'AUD','NP' => 'NPR','NL' => 'EUR','NC' => 'XPF','NZ' => 'NZD','NI' => 'NIO','NE' => 'XOF',
+        'NG' => 'NGN','NU' => 'NZD','NF' => 'AUD','MK' => 'MKD','MP' => 'USD','NO' => 'NOK',
+
+        'OM' => 'OMR',
+
+        'PK' => 'PKR','PW' => 'USD','PS' => 'ILS','PA' => 'PAB','PG' => 'PGK','PY' => 'PYG','PE' => 'PEN','PH' => 'PHP',
+        'PN' => 'NZD','PL' => 'PLN','PT' => 'EUR','PR' => 'USD',
+
+        'QA' => 'QAR',
+
+        'RE' => 'EUR','RO' => 'RON','RU' => 'RUB','RW' => 'RWF',
+
+        'BL' => 'EUR','SH' => 'SHP','KN' => 'XCD','LC' => 'XCD','MF' => 'EUR','PM' => 'EUR','VC' => 'XCD','WS' => 'WST',
+        'SM' => 'EUR','ST' => 'STN','SA' => 'SAR','SN' => 'XOF','RS' => 'RSD','SC' => 'SCR','SL' => 'SLL','SG' => 'SGD',
+        'SX' => 'ANG','SK' => 'EUR','SI' => 'EUR','SB' => 'SBD','SO' => 'SOS','ZA' => 'ZAR','GS' => 'GBP','SS' => 'SSP',
+        'ES' => 'EUR','LK' => 'LKR','SD' => 'SDG','SR' => 'SRD','SJ' => 'NOK','SE' => 'SEK','CH' => 'CHF','SY' => 'SYP',
+
+        'TW' => 'TWD','TJ' => 'TJS','TZ' => 'TZS','TH' => 'THB','TL' => 'USD','TG' => 'XOF','TK' => 'NZD','TO' => 'TOP',
+        'TT' => 'TTD','TN' => 'TND','TR' => 'TRY','TM' => 'TMT','TC' => 'USD','TV' => 'AUD',
+
+        'UG' => 'UGX','UA' => 'UAH','AE' => 'AED','GB' => 'GBP','US' => 'USD','UM' => 'USD','UY' => 'UYU','UZ' => 'UZS',
+
+        'VU' => 'VUV','VE' => 'VES','VN' => 'VND','VG' => 'USD','VI' => 'USD',
+
+        'WF' => 'XPF','EH' => 'MAD',
+
+        'YE' => 'YER',
+
+        'ZM' => 'ZMW','ZW' => 'ZWL'
+    ];
+
+    $country_code = strtoupper(trim($country_code));
+
+    return $country_currency_map[$country_code] ?? null;
+}
+
+function get_currency_for_continent($continent_code) {
+    $currency_map = [
+        'EU' => 'EUR',
+        'NA' => 'USD',
+        'SA' => 'USD',
+        'AS' => 'USD',
+        'AF' => 'USD',
+        'OC' => 'AUD'
+    ];
+
+    $continent_code = strtoupper(trim($continent_code));
+
+    return $currency_map[$continent_code] ?? null;
+}
+
+
 function get_locale_languages_array() {
     return [
         'ab' => 'Abkhazian',
@@ -1274,10 +1693,24 @@ function hex_to_rgb($hex) {
     return $color;
 }
 
+function append_query_param($string, $param) {
+    $parsed = parse_url($string);
+
+    if(isset($parsed['query'])) {
+        return $string . '&' . $param;
+    } else {
+        return $string . '?' . $param;
+    }
+}
+
 function process_and_get_redirect_params() {
     $redirect = null;
 
     if(isset($_GET['redirect'])) {
+        if(!is_string($_GET['redirect'])) {
+            return null;
+        }
+
         /* Clean the redirect input */
         $redirect = query_clean($_GET['redirect']);
 
@@ -1287,11 +1720,11 @@ function process_and_get_redirect_params() {
         }
 
         if($redirect !== null) {
-            $_SESSION['redirect'] = $redirect;
+            session_set('redirect', $redirect);
         }
     }
 
-    return $redirect ?? $_SESSION['redirect'] ?? null;
+    return $redirect ?? session_get('redirect') ?? null;
 }
 
 function os_name_to_os_key($os_name) {
@@ -1343,20 +1776,51 @@ function get_random_line_from_text($text) {
 function get_plan_feature_limit_info($used, $total, $should_display = true) {
     if(!$should_display) return null;
 
-    $percentage_used = $total == -1 || $total == 0 ? 0 : ($used / $total * 100);
-    $percentage_remaining = $total == -1 ? l('global.unlimited') : nr(100-$percentage_used) . '%';
+    if($total == -1 || $total == 0) {
+        $percentage_used = 0;
+    } else {
+        $percentage_used = ($used / $total * 100);
+        $percentage_used = max(0, min(100, $percentage_used));
+    }
 
-    return sprintf(l('global.info_message.plan_feature_limit_info'), '<strong>' . nr($used) . '</strong>', '<strong>' . ($total == -1 ? l('global.unlimited') : nr($total)) . '</strong>', '<strong>' . $percentage_remaining . '</strong>');
+    $percentage_remaining = $total == -1 ? l('global.unlimited') : nr(100 - $percentage_used) . '%';
+
+    return sprintf(
+        l('global.info_message.plan_feature_limit_info'),
+        '<strong>' . nr($used) . '</strong>',
+        '<strong>' . ($total == -1 ? l('global.unlimited') : nr($total)) . '</strong>',
+        '<strong>' . $percentage_remaining . '</strong>'
+    );
+}
+
+function get_plan_feature_limit_reached_info($has_upgrade_link = true) {
+    $tooltip_title = l('global.info_message.plan_feature_limit');
+    $onclick_html = null;
+
+    if($has_upgrade_link && settings()->payment->is_enabled) {
+        $tooltip_title .= '<br /><br /><strong>' . l('global.info_message.plan_upgrade') . '</strong>';
+        $onclick_html = '
+            onclick="window.location.href=\'' . url('plan') . '\';return false;"
+            class="cursor-pointer"    
+        ';
+    }
+
+    return <<<ALTUM
+        data-toggle="tooltip"
+        data-html="true"
+        title="{$tooltip_title}"
+        {$onclick_html}
+    ALTUM;
 }
 
 function get_plan_feature_disabled_info($has_upgrade_link = true) {
     $tooltip_title = l('global.info_message.plan_feature_no_access');
     $onclick_html = null;
 
-    if($has_upgrade_link) {
-        $tooltip_title .= '<br /><strong>' . l('global.info_message.plan_upgrade') . '</strong>';
+    if($has_upgrade_link && settings()->payment->is_enabled) {
+        $tooltip_title .= '<br /><br /><strong>' . l('global.info_message.plan_upgrade') . '</strong>';
         $onclick_html = '
-            onclick="window.location.href=\'' . url('plan') . '\';"
+            onclick="window.location.href=\'' . url('plan') . '\';return false;"
             class="cursor-pointer"    
         ';
     }
@@ -1483,6 +1947,14 @@ function fire_and_forget(
     $port   = $parsed_url['port']   ?? ($scheme === 'https' ? 443 : 80);
     $path   = $parsed_url['path']   ?? '/';
 
+    $wait_for_response_domains = settings()->webhooks->wait_for_response_domains ?? [];
+    foreach ($wait_for_response_domains as $domain) {
+        if ($domain && stripos($host, $domain) !== false) {
+            $wait_for_response = true;
+            break;
+        }
+    }
+
     /* keep any existing query from $url */
     $existing_query = $parsed_url['query'] ?? '';
     $is_json        = strtolower($content_type) === 'json';
@@ -1574,4 +2046,176 @@ function fire_and_forget(
     fgets($socket, 128);
     fclose($socket);
     return null;
+}
+
+/* quilljs to bootstrap4 */
+function quilljs_to_bootstrap($html_content) {
+    $quill_replacements = [
+        /* Alignment */
+        'ql-align-right'   => 'text-right',
+        'ql-align-left'    => 'text-left',
+        'ql-align-center'  => 'text-center',
+        'ql-align-justify' => 'text-justify',
+
+        /* Sizes */
+        'ql-size-small' => 'small',
+        'ql-size-large' => 'h4',
+        'ql-size-huge'  => 'h3',
+    ];
+
+    /* Add Bootstrap classes next to existing Quill classes */
+    foreach ($quill_replacements as $quill_class => $bootstrap_class) {
+        $html_content = preg_replace(
+            '/class="([^"]*?)\b' . preg_quote($quill_class, '/') . '\b([^"]*?)"/',
+            'class="$1' . $quill_class . ' ' . $bootstrap_class . '$2"',
+            $html_content
+        );
+    }
+
+    /* Replace direction classes with dir attribute */
+    $html_content = preg_replace(
+        '/class="([^"]*?)\bql-direction-rtl\b([^"]*?)"/',
+        'dir="rtl" class="$1$2"',
+        $html_content
+    );
+    $html_content = preg_replace(
+        '/class="([^"]*?)\bql-direction-ltr\b([^"]*?)"/',
+        'dir="ltr" class="$1$2"',
+        $html_content
+    );
+
+    /* Add text-left to <p> or <div> without any ql-align-* class */
+    $html_content = preg_replace_callback(
+        '/<(p|div)([^>]*)>/i',
+        function ($matches) {
+            $tag = $matches[1];
+            $attributes = $matches[2];
+
+            /* Skip if ql-align-* already exists */
+            if (preg_match('/ql-align-(right|center|justify)/', $attributes)) {
+                return "<$tag$attributes>";
+            }
+
+            /* Add text-left if no alignment class exists */
+            if (preg_match('/class="/', $attributes)) {
+                return preg_replace(
+                    '/class="([^"]*)"/',
+                    'class="$1 text-left"',
+                    "<$tag$attributes>"
+                );
+            } else {
+                return "<$tag class='text-left'$attributes>";
+            }
+        },
+        $html_content
+    );
+
+    return $html_content;
+}
+
+function bootstrap_to_quilljs($html_content) {
+    $bootstrap_replacements = [
+        /* Alignment */
+        'text-right'   => 'ql-align-right',
+        'text-left'    => 'ql-align-left',
+        'text-center'  => 'ql-align-center',
+        'text-justify' => 'ql-align-justify',
+
+        /* Sizes */
+        'small' => 'ql-size-small',
+        'h4'    => 'ql-size-large',
+        'h3'    => 'ql-size-huge',
+    ];
+
+    /* Remove Bootstrap classes and leave only Quill classes */
+    foreach ($bootstrap_replacements as $bootstrap_class => $quill_class) {
+        $html_content = preg_replace_callback(
+            '/class="([^"]*?)\b' . preg_quote($bootstrap_class, '/') . '\b([^"]*?)"/',
+            function ($matches) use ($bootstrap_class) {
+                $class_attribute = $matches[1] . $matches[2];
+                $class_attribute = preg_replace('/\s*\b' . preg_quote($bootstrap_class, '/') . '\b\s*/', ' ', $class_attribute);
+                return 'class="' . trim(preg_replace('/\s+/', ' ', $class_attribute)) . '"';
+            },
+            $html_content
+        );
+    }
+
+    /* Convert dir="rtl" or dir="ltr" to ql-direction-* classes */
+    $html_content = preg_replace_callback(
+        '/<(\w+)([^>]*)\sdir="(rtl|ltr)"([^>]*)>/i',
+        function ($matches) {
+            $tag = $matches[1];
+            $before = $matches[2];
+            $direction = $matches[3];
+            $after = $matches[4];
+            $ql_class = 'ql-direction-' . $direction;
+
+            /* Append class or add new class attribute */
+            if (preg_match('/class="/', $before . $after)) {
+                $html = preg_replace(
+                    '/class="([^"]*)"/',
+                    'class="$1 ' . $ql_class . '"',
+                    $before . $after
+                );
+            } else {
+                $html = $before . ' class="' . $ql_class . '"' . $after;
+            }
+
+            return '<' . $tag . $html . '>';
+        },
+        $html_content
+    );
+
+    return $html_content;
+}
+
+function generate_prefilled_dynamic_names($type, $timezone_identifier = null) {
+    if(!$timezone_identifier && is_logged_in()) $timezone_identifier = user()->timezone;
+
+    $is_valid_timezone = $timezone_identifier && in_array($timezone_identifier, timezone_identifiers_list(), true);
+    $timezone_object = $is_valid_timezone ? new DateTimeZone($timezone_identifier) : new DateTimeZone(date_default_timezone_get());
+
+    /* get current datetime in chosen timezone */
+    $current_datetime = new DateTime('now', $timezone_object);
+    $current_hour = (int) $current_datetime->format('G');
+
+    /* define time ranges for day parts with translations */
+    $day_parts = [
+        l('global.day_part_late_night') => [0, 2],
+        l('global.day_part_early_morning') => [2, 5],
+        l('global.day_part_morning') => [5, 12],
+        l('global.day_part_afternoon') => [12, 17],
+        l('global.day_part_evening') => [17, 20],
+        l('global.day_part_night') => [20, 24]
+    ];
+
+    /* emojis for each day part */
+    $day_part_emojis = [
+        l('global.day_part_late_night') => '🌙',
+        l('global.day_part_early_morning') => '🌅',
+        l('global.day_part_morning') => '🌤️',
+        l('global.day_part_afternoon') => '☀️',
+        l('global.day_part_evening') => '🌇',
+        l('global.day_part_night') => '🌙'
+    ];
+
+    /* find the matching day part */
+    $day_part_name = l('global.day_part_morning'); /* default fallback */
+    foreach ($day_parts as $day_part => $hours) {
+        if ($current_hour >= $hours[0] && $current_hour < $hours[1]) {
+            $day_part_name = $day_part;
+            break;
+        }
+    }
+
+    /* prepend emoji */
+    $day_part_with_emoji = (isset($day_part_emojis[$day_part_name]) ? $day_part_emojis[$day_part_name] . ' ' : '') . $day_part_name;
+
+    /* format hour in 12-hour with AM/PM */
+    $formatted_hour = $current_datetime->format('g A');
+
+    /* format date */
+    $formatted_date = $current_datetime->format('j M Y');
+
+    return sprintf(l('global.prefilled_dynamic_name'), $day_part_with_emoji, $type, $formatted_hour, $formatted_date);
 }

@@ -9,6 +9,15 @@
 
         <?php if(\Altum\Plugin::is_active('pwa') && settings()->pwa->is_enabled): ?>
             <meta name="theme-color" content="<?= settings()->pwa->theme_color ?>"/>
+
+            <?php if(settings()->pwa->is_fullscreen ?? true): ?>
+                <meta name="apple-mobile-web-app-capable" content="yes">
+                <meta name="mobile-web-app-capable" content="yes">
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+            <?php endif ?>
+
+			<?= pwa_generate_dynamic_splash_screen_links() ?>
+
             <link rel="manifest" href="<?= SITE_URL . UPLOADS_URL_PATH . \Altum\Uploads::get_path('pwa') . 'manifest.json' ?>" />
         <?php endif ?>
 
@@ -69,7 +78,7 @@
             <?= settings()->custom->body_content ?>
         <?php endif ?>
 
-        <?php //ALTUMCODE:DEMO if(DEMO) echo include_view(THEME_PATH . 'views/partials/ac_banner.php', ['demo_url' => 'https://66transfer.com/demo/', 'product_name' => PRODUCT_NAME, 'product_url' => PRODUCT_URL]) ?>
+        <?php //ALTUMCODE:DEMO if(DEMO) echo include_view(THEME_PATH . 'views/partials/ac_banner.php', ['demo_url' => 'https://66transfer.com/demo/', 'product_name' => PRODUCT_NAME, 'product_url' => PRODUCT_URL, 'product_buy_url' => PRODUCT_BUY_URL]) ?>
 
         <?php require THEME_PATH . 'views/partials/js_welcome.php' ?>
         <?php require THEME_PATH . 'views/partials/admin_impersonate_user.php' ?>
@@ -114,10 +123,13 @@
         <?= \Altum\Event::get_content('javascript') ?>
 
         <script>
+    'use strict';
+    
             /* Custom select implementation */
             $('select:not([multiple="multiple"]):not([class="input-group-text"]):not([class="custom-select custom-select-sm"]):not([class^="ql"]):not([data-is-not-custom-select])').each(function() {
                 let $select = $(this);
                 $select.select2({
+                    placeholder: <?= json_encode(l('global.no_data')) ?>,
                     dir: <?= json_encode(l('direction')) ?>,
                     minimumResultsForSearch: 5,
                 });

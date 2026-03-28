@@ -61,6 +61,8 @@
 <?php if($has_announcements): ?>
     <?php ob_start() ?>
     <script>
+    'use strict';
+    
         document.querySelector('[data-announcement-close]').addEventListener('click', event => {
             let type = event.currentTarget.getAttribute('data-announcement-close');
             let id = event.currentTarget.getAttribute('data-announcement-id');

@@ -25,6 +25,10 @@ class AdminInvoice extends Controller {
 
     public function index() {
 
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('admin');
+        }
+
         $id = isset($this->params[0]) ? (int) $this->params[0] : null;
 
         /* Make sure the campaign exists and is accessible to the user */

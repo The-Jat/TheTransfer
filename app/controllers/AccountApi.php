@@ -29,7 +29,7 @@ class AccountApi extends Controller {
         if(!empty($_POST)) {
 
             /* Clean some posted variables */
-            $api_key = md5($this->user->email . microtime() . microtime());
+            $api_key = md5(uniqid('', true) . random_bytes(16));
 
             //ALTUMCODE:DEMO if(DEMO) if($this->user->user_id == 1) Alerts::add_error('Please create an account on the demo to test out this function.');
 

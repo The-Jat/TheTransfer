@@ -35,7 +35,7 @@ class CookieConsent extends Controller {
         }
 
         /* Detect extra details about the user */
-        $whichbrowser = new \WhichBrowser\Parser($_SERVER['HTTP_USER_AGENT']);
+        $whichbrowser = get_whichbrowser();
 
         /* Do not track bots */
         if($whichbrowser->device->type == 'bot') {

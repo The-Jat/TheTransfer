@@ -268,7 +268,7 @@
 
 <div class="mb-5">
     <div class="d-flex flex-column flex-md-row justify-content-between mb-4">
-        <h1 class="h3 mb-3 mb-md-0"><i class="fas fa-fw fa-xs fa-users text-primary-900 mr-2"></i> <?= l('admin_index.users') ?></h1>
+        <h1 class="h3 mb-3 mb-md-0 text-truncate"><i class="fas fa-fw fa-xs fa-users text-primary-900 mr-2"></i> <?= l('admin_index.users') ?></h1>
 
         <div>
             <span class="badge badge-success" data-toggle="tooltip" title="<?= l('admin_index.active_users_tooltip') ?>">
@@ -379,7 +379,7 @@
 
             <tr>
                 <td colspan="5">
-                    <a href="<?= url('admin/users') ?>" class="text-muted">
+                    <a href="<?= url('admin/users') ?>" class="text-muted text-decoration-none small">
                         <i class="fas fa-angle-right fa-sm fa-fw mr-1"></i> <?= l('global.view_more') ?>
                     </a>
                 </td>
@@ -450,6 +450,7 @@
                         <th><?= l('global.type') ?></th>
                         <th></th>
                         <th></th>
+                        <th></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -499,10 +500,18 @@
                             <td class="text-nowrap">
                                 <div class="d-flex flex-column">
                                     <span><?= l('pay.custom_plan.' . $row->type . '_type') ?></span>
+
                                     <div>
-                                        <span class="text-muted"><?= l('pay.custom_plan.' . $row->frequency) ?></span> - <span class="text-muted"><?= l('pay.custom_plan.' . $row->processor) ?></span>
+                                        <span class="small text-muted"><?= l('pay.custom_plan.' . $row->frequency) ?></span>
                                     </div>
                                 </div>
+                            </td>
+
+                            <td class="text-nowrap">
+                                <a href="<?= url('admin/payments?processor=' . $row->processor) ?>" class="badge badge-light">
+                                    <i class="<?= $data->payment_processors[$row->processor]['icon'] ?> fa-fw fa-sm mr-1" style="color: <?= $data->payment_processors[$row->processor]['color'] ?>"></i>
+                                    <?= l('pay.custom_plan.' . $row->processor) ?>
+                                </a>
                             </td>
 
                             <td class="text-nowrap">
@@ -513,7 +522,7 @@
                                 <?php
                                 $taxes_html = null;
                                 if(count($row->taxes_ids ?? [])) {
-                                    $taxes_html = l('admin_taxes.menu') . ' - ';
+                                    $taxes_html = l('admin_taxes.menu') . ': ';
                                     foreach($row->taxes_ids as $tax_id) {
                                         $taxes_html .= '<a href=\'' . url('admin/tax-update/' . $tax_id) . '\' target=\'_blank\' class=\'mr-1\'>' . $tax_id . '</a>';
                                     }
@@ -543,7 +552,7 @@
 
                     <tr>
                         <td colspan="6">
-                            <a href="<?= url('admin/payments') ?>" class="text-muted">
+                            <a href="<?= url('admin/payments') ?>" class="text-muted text-decoration-none small">
                                 <i class="fas fa-angle-right fa-sm fa-fw mr-1"></i> <?= l('global.view_more') ?>
                             </a>
                         </td>
@@ -655,6 +664,8 @@
 
 <?php ob_start() ?>
     <script>
+    'use strict';
+    
         (async function fetch_statistics() {
             /* Send request to server */
             let response = await fetch(`${url}admin/index/get_stats_ajax`, {

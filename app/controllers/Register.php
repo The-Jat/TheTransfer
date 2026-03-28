@@ -45,7 +45,7 @@ class Register extends Controller {
         /* Default variables */
         $values = [
             'name' => isset($_GET['name']) ? query_clean($_GET['name']) : '',
-            'email' => isset($_GET['email']) ? query_clean($_GET['email']) : '',
+            'email' => isset($_GET['email']) && is_string($_GET['email']) ? query_clean($_GET['email']) : '',
             'password' => ''
         ];
 
@@ -55,9 +55,9 @@ class Register extends Controller {
         if(!empty($_POST) && !settings()->users->register_only_social_logins) {
 
             /* Clean some posted variables */
-            $_POST['name'] = input_clean($_POST['name'], 64);
+            $_POST['name'] = input_clean_name($_POST['name'], 64);
             $_POST['email'] = input_clean_email($_POST['email'] ?? '');
-            $_POST['is_newsletter_subscribed'] = settings()->users->register_display_newsletter_checkbox ? (bool) $_POST['is_newsletter_subscribed'] : false;
+            $_POST['is_newsletter_subscribed'] = settings()->users->register_display_newsletter_checkbox && isset($_POST['is_newsletter_subscribed']);
 
             /* Default variables */
             $values['name'] = $_POST['name'];
@@ -67,7 +67,7 @@ class Register extends Controller {
             /* Check for any errors */
             $required_fields = ['name', 'email' ,'password'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }
@@ -84,6 +84,9 @@ class Register extends Controller {
             if(!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
                 Alerts::add_field_error('email', l('global.error_message.invalid_email'));
             }
+            if(!settings()->users->email_aliases_is_enabled && str_contains($_POST['email'], '+')) {
+                Alerts::add_field_error('email', l('register.error_message.email_aliases_not_allowed'));
+            }
             if(mb_strlen($_POST['password']) < 6 || mb_strlen($_POST['password']) > 64) {
                 Alerts::add_field_error('password', l('global.error_message.password_length'));
             }
@@ -91,6 +94,16 @@ class Register extends Controller {
             /* Make sure the domain is not blacklisted */
             $email_domain = get_domain_from_email($_POST['email']);
             if(settings()->users->blacklisted_domains && in_array($email_domain, settings()->users->blacklisted_domains)) {
+                Alerts::add_field_error('email', l('register.error_message.blacklisted_domain'));
+            }
+
+            /* Email shield plugin */
+            if(
+                \Altum\Plugin::is_active('email-shield')
+                && settings()->email_shield->is_enabled
+                && !in_array($email_domain, settings()->email_shield->whitelisted_domains ?? [])
+                && !\Altum\Plugin\EmailShield::validate($email_domain)
+            ) {
                 Alerts::add_field_error('email', l('register.error_message.blacklisted_domain'));
             }
 
@@ -105,6 +118,10 @@ class Register extends Controller {
                 Alerts::add_error(l('register.error_message.blacklisted_country'));
             }
 
+            /* Make sure the IP is not blacklisted */
+            if(in_array(get_ip(), settings()->users->blacklisted_ips ?? [])) {
+                Alerts::add_error(l('register.error_message.blacklisted_country'));
+            }
             /* Make sure to check against the limiter */
             if(settings()->users->register_lockout_is_enabled) {
                 $days_ago_datetime = (new \DateTime())->modify('-' . settings()->users->register_lockout_time . ' days')->format('Y-m-d H:i:s');
@@ -128,7 +145,7 @@ class Register extends Controller {
 
                 /* Define some needed variables */
                 $active 	                = (int) !settings()->users->email_confirmation;
-                $email_code                 = md5($_POST['email'] . microtime());
+                $email_code                 = md5(uniqid('', true) . random_bytes(16));
 
                 /* Determine what plan is set by default */
                 $plan_id                    = 'free';
@@ -183,6 +200,14 @@ class Register extends Controller {
                             [
                                 '{{NAME}}' => str_replace('.', '. ', $_POST['name']),
                                 '{{EMAIL}}' => $_POST['email'],
+                                '{{SOURCE}}' => $registered_user['source'],
+                                '{{IP}}' => $registered_user['ip'],
+                                '{{COUNTRY_NAME}}' => $registered_user['country'] ? get_country_from_country_code($registered_user['country']) : l('global.unknown'),
+                                '{{CITY_NAME}}' => $registered_user['city_name'] ?? l('global.unknown'),
+                                '{{DEVICE_TYPE}}' => l('global.device.' . $registered_user['device_type']),
+                                '{{OS_NAME}}' => $registered_user['os_name'],
+                                '{{BROWSER_NAME}}' => $registered_user['browser_name'],
+                                '{{USER_LINK}}' => url('admin/user-view/' . $registered_user['user_id']),
                             ],
                             l('global.emails.admin_new_user_notification.body')
                         );
@@ -231,12 +256,12 @@ class Register extends Controller {
                     /* Set a nice success message */
                     Alerts::add_success(l('register.success_message.login'));
 
-                    $_SESSION['user_id'] = $registered_user['user_id'];
-                    $_SESSION['user_password_hash'] = md5($registered_user['password']);
+                    session_set('user_id', $registered_user['user_id']);
+                    session_set('user_password_hash', md5($registered_user['password']));
 
                     Logger::users($registered_user['user_id'], 'login.success');
 
-                    redirect($redirect . '&welcome=' . $registered_user['user_id']);
+                    redirect(append_query_param($redirect, 'welcome=' . $registered_user['user_id']));
                 } else {
 
                     /* Prepare the email */

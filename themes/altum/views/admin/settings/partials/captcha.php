@@ -62,8 +62,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    /* Captcha */
+    
+/* Captcha */
     let initiate_captcha_type = () => {
         switch(document.querySelector('select[name="type"]').value) {
             case 'basic':

@@ -150,7 +150,7 @@ function google_safe_browsing_check($url, $api_key = '') {
             'clientVersion' => '1.5.2'
         ],
         'threatInfo' => [
-            'threatTypes' => ['MALWARE', 'SOCIAL_ENGINEERING','THREAT_TYPE_UNSPECIFIED'],
+            'threatTypes' => ['MALWARE', 'SOCIAL_ENGINEERING','THREAT_TYPE_UNSPECIFIED', 'UNWANTED_SOFTWARE', 'POTENTIALLY_HARMFUL_APPLICATION'],
             'platformTypes' => ['ANY_PLATFORM'],
             'threatEntryTypes' => ['URL'],
             'threatEntries' => [

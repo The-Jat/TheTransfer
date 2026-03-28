@@ -32,7 +32,7 @@ class ProjectCreate extends Controller {
 
         /* Team checks */
         if(\Altum\Teams::is_delegated() && !\Altum\Teams::has_access('create.projects')) {
-            Alerts::add_info(l('global.info_message.team_no_access'));
+            Alerts::add_error(l('global.info_message.team_no_access'));
             redirect('projects');
         }
 
@@ -40,12 +40,12 @@ class ProjectCreate extends Controller {
         $total_rows = database()->query("SELECT COUNT(*) AS `total` FROM `projects` WHERE `user_id` = {$this->user->user_id}")->fetch_object()->total ?? 0;
 
         if($this->user->plan_settings->projects_limit != -1 && $total_rows >= $this->user->plan_settings->projects_limit) {
-            Alerts::add_info(l('global.info_message.plan_feature_limit'));
+            Alerts::add_error(l('global.info_message.plan_feature_limit') . (settings()->payment->is_enabled ? ' <a href="' . url('plan') . '" class="font-weight-bold text-reset">' . l('global.info_message.plan_upgrade') . '.</a>' : null));
             redirect('projects');
         }
 
         if(!empty($_POST)) {
-            $_POST['name'] = trim(query_clean($_POST['name']));
+            $_POST['name'] = input_clean($_POST['name'], 64);
             $_POST['color'] = !verify_hex_color($_POST['color']) ? '#000000' : $_POST['color'];
 
             //ALTUMCODE:DEMO if(DEMO) if($this->user->user_id == 1) Alerts::add_error('Please create an account on the demo to test out this function.');
@@ -53,7 +53,7 @@ class ProjectCreate extends Controller {
             /* Check for any errors */
             $required_fields = ['name', 'color'];
             foreach($required_fields as $field) {
-                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                     Alerts::add_field_error($field, l('global.error_message.empty_field'));
                 }
             }
@@ -82,9 +82,45 @@ class ProjectCreate extends Controller {
             }
         }
 
+        /* Generate random nice looking hex color */
+        function generate_random_color() {
+            /* Generate random hue */
+            $hue = mt_rand(0, 360);
+
+            /* Keep saturation and lightness balanced */
+            $saturation = mt_rand(60, 80) / 100; /* rich but not too intense */
+            $lightness = mt_rand(45, 60) / 100; /* middle brightness range */
+
+            /* Convert HSL to RGB */
+            $chroma = (1 - abs(2 * $lightness - 1)) * $saturation;
+            $x = $chroma * (1 - abs(fmod($hue / 60, 2) - 1));
+            $m = $lightness - ($chroma / 2);
+
+            if ($hue < 60) {
+                $red = $chroma; $green = $x; $blue = 0;
+            } elseif ($hue < 120) {
+                $red = $x; $green = $chroma; $blue = 0;
+            } elseif ($hue < 180) {
+                $red = 0; $green = $chroma; $blue = $x;
+            } elseif ($hue < 240) {
+                $red = 0; $green = $x; $blue = $chroma;
+            } elseif ($hue < 300) {
+                $red = $x; $green = 0; $blue = $chroma;
+            } else {
+                $red = $chroma; $green = 0; $blue = $x;
+            }
+
+            $red = ($red + $m) * 255;
+            $green = ($green + $m) * 255;
+            $blue = ($blue + $m) * 255;
+
+            /* Convert to hex */
+            return sprintf('#%02X%02X%02X', $red, $green, $blue);
+        }
+
         $values = [
             'name' => $_POST['name'] ?? '',
-            'color' => $_POST['color'] ?? '#000000',
+            'color' => $_POST['color'] ?? generate_random_color(),
         ];
 
         /* Prepare the view */

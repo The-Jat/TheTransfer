@@ -37,6 +37,8 @@
     </style>
 
     <script>
+    'use strict';
+    
         window.addEventListener('load', () => {
             let language_code = document.documentElement.getAttribute('lang');
             let language_direction = document.documentElement.getAttribute('dir');
@@ -105,22 +107,28 @@
                     translations
                 },
 
-                <?php if(settings()->cookie_consent->logging_is_enabled): ?>
                 onFirstConsent: () => {
                     const preferences = CookieConsent.getUserPreferences();
+                    window.dispatchEvent(new CustomEvent('cookie_consent_update', { detail: { accepted_categories: preferences.acceptedCategories } }));
 
+                    <?php if(settings()->cookie_consent->logging_is_enabled): ?>
                     if(!get_cookie('cookie_consent_logged')) {
                         navigator.sendBeacon(`${url}cookie-consent`, JSON.stringify({global_token, level: preferences.acceptedCategories}));
                         set_cookie('cookie_consent_logged', '1', 182, <?= json_encode(COOKIE_PATH) ?>);
                     }
+                    <?php endif ?>
                 },
+
                 onChange: () => {
                     const preferences = CookieConsent.getUserPreferences();
+                    window.dispatchEvent(new CustomEvent('cookie_consent_update', { detail: { accepted_categories: preferences.acceptedCategories } }));
 
+                    <?php if(settings()->cookie_consent->logging_is_enabled): ?>
                     navigator.sendBeacon(`${url}cookie-consent`, JSON.stringify({global_token, level: preferences.acceptedCategories}));
                     set_cookie('cookie_consent_logged', '1', 182, <?= json_encode(COOKIE_PATH) ?>);
+                    <?php endif ?>
+
                 },
-                <?php endif ?>
 
                 guiOptions: {
                     consentModal: {

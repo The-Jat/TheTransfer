@@ -6,8 +6,8 @@
 
 <script>
     'use strict';
-
-    /* Default chart settings */
+    
+/* Default chart settings */
     const set_hex_opacity = (color, alpha) => {
     if (color.startsWith("#")) {
         const r = parseInt(color.slice(1, 3), 16);

@@ -27,22 +27,17 @@ class AdminBroadcastCreate extends Controller {
         $plans = (new \Altum\Models\Plan())->get_plans();
 
         if(!empty($_POST)) {
-            /* Filter some the variables */
+            /* Filter some of the variables */
             $_POST['name'] = input_clean($_POST['name'], 64);
             $_POST['subject'] = input_clean($_POST['subject'], 128);
             $_POST['segment'] = in_array($_POST['segment'], ['all', 'subscribers', 'custom', 'filter']) ? input_clean($_POST['segment']) : 'subscribers';
             $_POST['is_system_email'] = (int) isset($_POST['is_system_email']);
 
+            /* Users ids */
             $_POST['users_ids'] = trim($_POST['users_ids'] ?? '');
-            if($_POST['users_ids']) {
-                $_POST['users_ids'] = explode(',', $_POST['users_ids'] ?? '');
-                if(count($_POST['users_ids'])) {
-                    $_POST['users_ids'] = array_map(function ($user_id) {
-                        return (int) $user_id;
-                    }, $_POST['users_ids']);
-                    $_POST['users_ids'] = array_unique($_POST['users_ids']);
-                }
-            }
+            $_POST['users_ids'] = array_filter(array_map('intval', explode(',', $_POST['users_ids'])));
+            $_POST['users_ids'] = array_values(array_unique($_POST['users_ids']));
+            $_POST['users_ids'] = $_POST['users_ids'] ?: [0];
 
             //ALTUMCODE:DEMO if(DEMO) Alerts::add_error('This command is blocked on the demo.');
 
@@ -56,7 +51,7 @@ class AdminBroadcastCreate extends Controller {
 
                 $required_fields = ['subject', 'content', 'preview_email'];
                 foreach($required_fields as $field) {
-                    if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                    if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                         Alerts::add_field_error($field, l('global.error_message.empty_field'));
                     }
                 }
@@ -70,7 +65,7 @@ class AdminBroadcastCreate extends Controller {
             else {
                 $required_fields = ['name', 'subject', 'content'];
                 foreach($required_fields as $field) {
-                    if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+                    if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                         Alerts::add_field_error($field, l('global.error_message.empty_field'));
                     }
                 }
@@ -243,10 +238,11 @@ class AdminBroadcastCreate extends Controller {
                             break;
                     }
 
-                    $users_ids = [];
-                    foreach($users as $user) {
-                        $users_ids[] = $user->user_id;
-                    }
+                    /* Get all users ids */
+                    $users_ids = array_column($users, 'user_id');
+
+                    /* Free memory */
+                    unset($users);
 
                     /* Database query */
                     $broadcast_id = db()->insert('broadcasts', [
@@ -277,11 +273,11 @@ class AdminBroadcastCreate extends Controller {
         }
 
         $values = [
-            'name' => $_POST['name'] ?? null,
+            'name' => $_POST['name'] ?? $_GET['name'] ?? generate_prefilled_dynamic_names(l('admin_broadcasts.broadcast')),
             'subject' => $_POST['subject'] ?? null,
             'is_system_email' => $_POST['is_system_email'] ?? false,
             'segment' => $_POST['segment'] ?? 'all',
-            'users_ids' => $_POST['users_ids'] ?? null,
+            'users_ids' => implode(',', $_POST['users_ids'] ?? []),
             'content' => $_POST['content'] ?? json_encode([
                     'blocks' => [
                         [
@@ -300,7 +296,7 @@ class AdminBroadcastCreate extends Controller {
             'filters_device_type' => $_POST['filters_device_type'] ?? [],
             'filters_continents' => $_POST['filters_continents'] ?? [],
             'filters_countries' => $_POST['filters_countries'] ?? [],
-            'filters_cities' => implode(',', is_array($_POST['filters_cities']) ? $_POST['filters_cities'] : []),
+            'filters_cities' => isset($_POST['filters_cities']) && implode(',', is_array($_POST['filters_cities']) ? $_POST['filters_cities'] : []),
             'filters_languages' => $_POST['filters_languages'] ?? [],
             'filters_browser_languages' => $_POST['filters_browser_languages'] ?? [],
             'filters_operating_systems' => $_POST['filters_operating_systems'] ?? [],

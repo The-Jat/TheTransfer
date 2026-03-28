@@ -26,6 +26,21 @@ function input_clean($string, $max_characters = null) {
     return $wrapper_function(trim(strip_tags(filter_var_filter_string_polyfill($string ?? ''))));
 }
 
+function input_clean_name($string, $max_characters = null) {
+    /* Allow valid name chars */
+    $string = preg_replace('/[^\p{L}\p{M}\s\'\.\-]/u', '', $string);
+
+    /* Remove domain-like patterns */
+    $string = preg_replace('/\b\w+\.\w{2,}\b/u', '', $string);
+
+    /* trim to maximum length if needed */
+    if ($max_characters !== null) {
+        $string = mb_substr($string, 0, $max_characters);
+    }
+
+    return $string;
+}
+
 function input_clean_email($string) {
     return mb_substr(mb_strtolower(filter_var($_POST['email'], FILTER_SANITIZE_EMAIL)), 0, 320);
 }
@@ -126,6 +141,16 @@ function verify_hex_color($color) {
     }
 
     return false;
+}
+
+function output_blog_post_content($blog_post_content) {
+    if (strip_tags($blog_post_content) != $blog_post_content) {
+        /* Content has HTML, output as is */
+        return $blog_post_content;
+    } else {
+        /* Content is plain text, nl2br */
+        return nl2br($blog_post_content);
+    }
 }
 
 function generate_readable_uuid() {

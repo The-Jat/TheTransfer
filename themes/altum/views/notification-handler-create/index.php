@@ -168,8 +168,8 @@
 <?php ob_start() ?>
 <script>
     'use strict';
-
-    type_handler('select[name="type"]', 'data-type');
+    
+type_handler('select[name="type"]', 'data-type');
     document.querySelector('select[name="type"]') && document.querySelectorAll('select[name="type"]').forEach(element => element.addEventListener('change', () => { type_handler('select[name="type"]', 'data-type'); }));
 </script>
 <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>

@@ -23,25 +23,24 @@ defined('ALTUMCODE') || die();
 class AdminDynamicOgImages extends Controller {
 
     public function index() {
+
         /* Clear files caches */
         clearstatcache();
 
-        /* Get the data */
-        $images = [];
-
-        /* get all .webp and .pending files */
+        /* Get all .webp and .pending files */
+        $all_images = [];
         foreach(glob(UPLOADS_PATH . \Altum\Uploads::get_path('dynamic_og_images') . '*.{webp,pending}', GLOB_BRACE) as $file_path) {
 
-            /* extract file name and extension */
+            /* Extract file name and extension */
             $file_name_with_extension = basename($file_path);
             $file_extension = pathinfo($file_name_with_extension, PATHINFO_EXTENSION);
             $file_name = pathinfo($file_name_with_extension, PATHINFO_FILENAME);
 
-            /* get last modified time */
+            /* Get last modified time */
             $file_last_modified = filemtime($file_path);
 
-            /* build image object */
-            $images[] = (object) [
+            /* Build image object */
+            $all_images[] = (object) [
                 'name' => $file_name,
                 'full_name' => $file_name_with_extension,
                 'extension' => $file_extension,
@@ -51,28 +50,41 @@ class AdminDynamicOgImages extends Controller {
             ];
         }
 
-        /* sort images: .pending first, then .webp; both by last_modified desc */
-        usort($images, function($first_image, $second_image) {
-            /* prioritize .pending */
+        /* Sort images: .pending first, then .webp; both by last_modified desc */
+        usort($all_images, function($first_image, $second_image) {
             if($first_image->extension === 'pending' && $second_image->extension !== 'pending') {
                 return -1;
             } elseif($first_image->extension !== 'pending' && $second_image->extension === 'pending') {
                 return 1;
             }
 
-            /* if same extension, sort by last_modified desc */
             return strtotime($second_image->last_modified) - strtotime($first_image->last_modified);
         });
+
+        /* Prepare the paginator */
+        $total_rows = count($all_images);
+        $paginator = new \Altum\Paginator(
+            $total_rows,
+            $this->user->preferences->default_results_per_page ?? settings()->main->default_results_per_page,
+            $_GET['page'] ?? 1,
+            url('admin/dynamic-og-images?page=%d')
+        );
+
+        /* Slice images for current page */
+        $images = array_slice($all_images, $paginator->getSqlOffset(), $paginator->getItemsPerPage());
+
+        /* Prepare the pagination view */
+        $pagination = (new \Altum\View('partials/admin_pagination', (array) $this))->run(['paginator' => $paginator]);
 
         /* Main View */
         $data = [
             'images' => $images,
+            'pagination' => $pagination
         ];
 
         $view = new \Altum\View('admin/dynamic-og-images/index', (array) $this);
 
         $this->add_view_content('content', $view->run($data));
-
     }
 
     public function bulk() {
@@ -99,6 +111,8 @@ class AdminDynamicOgImages extends Controller {
         if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
             set_time_limit(0);
+
+            session_write_close();
 
             switch($_POST['type']) {
                 case 'delete':
@@ -127,6 +141,8 @@ class AdminDynamicOgImages extends Controller {
                     break;
             }
 
+            session_start();
+            
             /* Set a nice success message */
             Alerts::add_success(l('bulk_delete_modal.success_message'));
 

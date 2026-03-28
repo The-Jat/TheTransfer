@@ -53,6 +53,14 @@ class AccountDelete extends Controller {
                         [
                             '{{NAME}}' => $this->user->name,
                             '{{EMAIL}}' => $this->user->email,
+                            '{{SOURCE}}' => $this->user->source,
+                            '{{IP}}' => $this->user->ip,
+                            '{{COUNTRY_NAME}}' => $this->user->country ? get_country_from_country_code($this->user->country) : l('global.unknown'),
+                            '{{CITY_NAME}}' => $this->user->city_name ?? l('global.unknown'),
+                            '{{DEVICE_TYPE}}' => l('global.device.' . $this->user->device_type),
+                            '{{OS_NAME}}' => $this->user->os_name,
+                            '{{BROWSER_NAME}}' => $this->user->browser_name,
+                            '{{ACCOUNT_AGE}}' => \Altum\Date::get_elapsed_time($this->user->datetime),
                         ],
                         l('global.emails.admin_delete_user_notification.body')
                     );

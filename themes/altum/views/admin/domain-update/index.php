@@ -1,14 +1,14 @@
 <?php defined('ALTUMCODE') || die() ?>
 
 <?php if(settings()->main->breadcrumbs_is_enabled): ?>
-<nav aria-label="breadcrumb">
-    <ol class="custom-breadcrumbs small">
-        <li>
-            <a href="<?= url('admin/domains') ?>"><?= l('admin_domains.breadcrumb') ?></a><i class="fas fa-fw fa-angle-right"></i>
-        </li>
-        <li class="active" aria-current="page"><?= l('admin_domain_update.breadcrumb') ?></li>
-    </ol>
-</nav>
+    <nav aria-label="breadcrumb">
+        <ol class="custom-breadcrumbs small">
+            <li>
+                <a href="<?= url('admin/domains') ?>"><?= l('admin_domains.breadcrumb') ?></a><i class="fas fa-fw fa-angle-right"></i>
+            </li>
+            <li class="active" aria-current="page"><?= l('admin_domain_update.breadcrumb') ?></li>
+        </ol>
+    </nav>
 <?php endif ?>
 
 <?php $url = parse_url(SITE_URL); $host = $url['host'] . (mb_strlen($url['path']) > 1 ? $url['path'] : null); ?>
@@ -17,12 +17,6 @@
     <div class="d-flex justify-content-between">
         <div class="d-flex align-items-center">
             <h1 class="h3 mb-0 text-truncate"><i class="fas fa-fw fa-xs fa-globe text-primary-900 mr-2"></i> <?= l('admin_domain_update.header') ?></h1>
-
-            <div class="ml-2">
-                <span data-toggle="tooltip" data-html="true" title="<?= sprintf(l('admin_domains.helper'), '<strong>' . (settings()->transfers->domains_custom_main_ip ?: $_SERVER['SERVER_ADDR']) . '</strong>', '<strong>' . $host . '</strong>') ?>">
-                    <i class="fas fa-fw fa-info-circle text-muted"></i>
-                </span>
-            </div>
         </div>
 
         <?= include_view(THEME_PATH . 'views/admin/domains/admin_domain_dropdown_button.php', ['id' => $data->domain->domain_id, 'resource_name' => $data->domain->host]) ?>
@@ -31,22 +25,64 @@
 
 <?= \Altum\Alerts::output_alerts() ?>
 
+<div class="alert alert-secondary">
+    <span class="h6">1.</span> <?= sprintf(l('admin_domains.info_one'), '<strong>' . (settings()->links->domains_custom_main_ip ?: $_SERVER['SERVER_ADDR']) . '</strong>', '<strong>' . $host . '</strong>') ?>
+</div>
+
+<div class="alert alert-secondary">
+    <span class="h6">2.</span> <?= l('admin_domains.info_two') ?>
+</div>
+
 <div class="card <?= \Altum\Alerts::has_field_errors() ? 'border-danger' : null ?>">
     <div class="card-body">
 
         <form action="" method="post" role="form">
             <input type="hidden" name="token" value="<?= \Altum\Csrf::get() ?>" />
 
-            <div class="form-group card bg-gray-50">
-                <div class="card-body d-flex">
-                    <img src="<?= get_user_avatar($data->user->avatar, $data->user->email) ?>" class="user-avatar rounded-circle mr-3" alt="" />
+            <div class="form-group">
+                <label for="user"><i class="fas fa-fw fa-user fa-sm text-muted mr-1"></i> <?= l('global.user') ?></label>
+                <div class=" card bg-gray-50">
+                    <div class="card-body d-flex">
+                        <img src="<?= get_user_avatar($data->user->avatar, $data->user->email) ?>" class="user-avatar rounded-circle mr-3" alt="" />
 
-                    <div class="d-flex flex-column">
-                        <div>
-                            <a href="<?= url('admin/user-view/' . $data->user->user_id) ?>"><?= $data->user->name ?></a>
+                        <div class="d-flex flex-column">
+                            <div>
+                                <a href="<?= url('admin/user-view/' . $data->user->user_id) ?>"><?= $data->user->name ?></a>
+                            </div>
+
+                            <span class="text-muted"><?= $data->user->email ?></span>
                         </div>
+                    </div>
+                </div>
+            </div>
 
-                        <span class="text-muted"><?= $data->user->email ?></span>
+            <div class="form-group">
+                <label for="dns"><i class="fas fa-fw fa-server fa-sm text-muted mr-1"></i> <?= l('admin_domains.dns') ?></label>
+                <div class="card bg-gray-50">
+                    <div class="card-body">
+                        <?php
+                        $dns_record_a = @dns_get_record($data->domain->host . '.', DNS_A);
+                        $dns_record_cname = @dns_get_record($data->domain->host . '.', DNS_CNAME);
+                        $dns_records = array_merge($dns_record_a ?: [], $dns_record_cname ?: []);
+                        ?>
+
+                        <?php if (!empty($dns_records)): ?>
+                            <?php foreach($dns_records as $dns_record): ?>
+                                <div class="row">
+                                    <div class="col font-weight-bold"><?= l('global.host') ?></div>
+                                    <div class="col font-weight-bold"><?= l('global.type') ?></div>
+                                    <div class="col font-weight-bold"><?= l('global.ip') ?></div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col"><?= $dns_record['host'] ?></div>
+                                    <div class="col"><?= $dns_record['type'] ?></div>
+                                    <div class="col"><?= $dns_record['ip'] ?></div>
+                                </div>
+                            <?php endforeach ?>
+                        <?php else: ?>
+                            <span class="text-muted"><?= l('global.none') ?></span>
+                        <?php endif ?>
                     </div>
                 </div>
             </div>
@@ -66,31 +102,6 @@
                 <small class="form-text text-muted"><?= l('admin_domains.host_help') ?></small>
             </div>
 
-            <div class="form-group">
-                <label for="dns"><i class="fas fa-fw fa-server fa-sm text-muted mr-1"></i> <?= l('admin_domains.dns') ?></label>
-                <div class="card bg-gray-50">
-                    <div class="card-body">
-                        <?php
-                        $dns_record_a = @dns_get_record($data->domain->host . '.', DNS_A);
-                        $dns_record_cname = @dns_get_record($data->domain->host . '.', DNS_CNAME);
-                        $dns_records = array_merge($dns_record_a ?: [], $dns_record_cname ?: []);
-                        ?>
-
-                        <?php if(count($dns_records)): ?>
-                            <?php foreach($dns_records as $dns_record): ?>
-                                <div class="row">
-                                    <div class="col"><?= $dns_record['host'] ?></div>
-                                    <div class="col"><?= $dns_record['type'] ?></div>
-                                    <div class="col"><?= $dns_record['ip'] ?></div>
-                                </div>
-                            <?php endforeach ?>
-                        <?php else: ?>
-                            <span class="text-muted"><?= l('global.none') ?></span>
-                        <?php endif ?>
-                    </div>
-                </div>
-                <small class="form-text text-muted"><?= l('admin_domains.dns_help') ?></small>
-            </div>
 
             <div class="form-group">
                 <label for="custom_index_url"><i class="fas fa-fw fa-sitemap fa-sm text-muted mr-1"></i> <?= l('admin_domains.custom_index_url') ?></label>

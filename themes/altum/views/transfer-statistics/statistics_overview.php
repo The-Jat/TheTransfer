@@ -1,5 +1,37 @@
 <?php defined('ALTUMCODE') || die() ?>
 
+<div class="mb-4">
+    <div class="row m-n2">
+        <div class="col-12 col-sm-6 p-2 position-relative text-truncate">
+            <div class="card d-flex flex-row h-100 overflow-hidden">
+                <div class="pl-3 d-flex flex-column justify-content-center">
+                    <div class="p-2 rounded-2x index-widget-icon d-flex align-items-center justify-content-center bg-gray-100">
+                        <i class="fas fa-fw fa-sm fa-eye"></i>
+                    </div>
+                </div>
+
+                <div class="card-body text-truncate">
+                    <span class="h6"><?= nr($data->totals['pageviews']) . ' ' . l('transfer_statistics.pageviews') ?></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 p-2 position-relative text-truncate">
+            <div class="card d-flex flex-row h-100 overflow-hidden">
+                <div class="pl-3 d-flex flex-column justify-content-center">
+                    <div class="p-2 rounded-2x index-widget-icon d-flex align-items-center justify-content-center bg-gray-100">
+                        <i class="fas fa-fw fa-sm fa-users"></i>
+                    </div>
+                </div>
+
+                <div class="card-body text-truncate">
+                    <span class="h6"><?= nr($data->totals['visitors']) . ' ' . l('transfer_statistics.visitors') ?></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card mt-3 mb-5">
     <div class="card-body">
         <div class="chart-container">
@@ -31,11 +63,17 @@
                     <div class="mt-4">
                         <div class="d-flex justify-content-between mb-1">
                             <div class="text-truncate">
-                                <span class=""><?= $key ? get_continent_from_continent_code($key) : l('global.unknown') ?></span>
+                                <?php if($key): ?>
+                                    <a href="<?= url('transfer-statistics/' . $data->transfer->transfer_id . '?type=country&continent_code=' . $key . '&start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>" title="<?= $key ?>" class="">
+                                        <?= get_continent_from_continent_code($key) ?>
+                                    </a>
+                                <?php else: ?>
+                                    <span class=""><?= $key ? get_continent_from_continent_code($key) : l('global.unknown') ?></span>
+                                <?php endif ?>
                             </div>
 
                             <div>
-                                <small class="text-muted"><?= nr($percentage) . '%' ?></small>
+                                <small class="text-muted"><?= nr($percentage, 2, false) . '%' ?></small>
                                 <span class="ml-3"><?= nr($value) ?></span>
                             </div>
                         </div>
@@ -74,7 +112,7 @@
                             </div>
 
                             <div>
-                                <small class="text-muted"><?= nr($percentage) . '%' ?></small>
+                                <small class="text-muted"><?= nr($percentage, 2, false) . '%' ?></small>
                                 <span class="ml-3"><?= nr($value) ?></span>
                             </div>
                         </div>
@@ -108,7 +146,7 @@
                             </div>
 
                             <div>
-                                <small class="text-muted"><?= nr($percentage) . '%' ?></small>
+                                <small class="text-muted"><?= nr($percentage, 2, false) . '%' ?></small>
                                 <span class="ml-3"><?= nr($value) ?></span>
                             </div>
                         </div>
@@ -150,7 +188,7 @@
                             </div>
 
                             <div>
-                                <small class="text-muted"><?= nr($percentage) . '%' ?></small>
+                                <small class="text-muted"><?= nr($percentage, 2, false) . '%' ?></small>
                                 <span class="ml-3"><?= nr($value) ?></span>
                             </div>
                         </div>
@@ -188,7 +226,7 @@
                             </div>
 
                             <div>
-                                <small class="text-muted"><?= nr($percentage) . '%' ?></small>
+                                <small class="text-muted"><?= nr($percentage, 2, false) . '%' ?></small>
                                 <span class="ml-3"><?= nr($value) ?></span>
                             </div>
                         </div>
@@ -223,7 +261,7 @@
                             </div>
 
                             <div>
-                                <small class="text-muted"><?= nr($percentage) . '%' ?></small>
+                                <small class="text-muted"><?= nr($percentage, 2, false) . '%' ?></small>
                                 <span class="ml-3"><?= nr($value) ?></span>
                             </div>
                         </div>
@@ -258,7 +296,7 @@
                             </div>
 
                             <div>
-                                <small class="text-muted"><?= nr($percentage) . '%' ?></small>
+                                <small class="text-muted"><?= nr($percentage, 2, false) . '%' ?></small>
                                 <span class="ml-3"><?= nr($value) ?></span>
                             </div>
                         </div>
@@ -296,7 +334,7 @@
                             </div>
 
                             <div>
-                                <small class="text-muted"><?= nr($percentage) . '%' ?></small>
+                                <small class="text-muted"><?= nr($percentage, 2, false) . '%' ?></small>
                                 <span class="ml-3"><?= nr($value) ?></span>
                             </div>
                         </div>
@@ -398,7 +436,7 @@
 
             <tr>
                 <td colspan="7">
-                    <a href="<?= url('transfer-statistics/' . $data->transfer->transfer_id . '?type=entries&start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>" class="text-muted">
+                    <a href="<?= url('transfer-statistics/' . $data->transfer->transfer_id . '?type=entries&start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>" class="text-muted text-decoration-none small">
                         <i class="fas fa-angle-right fa-sm fa-fw mr-1"></i> <?= l('global.view_more') ?>
                     </a>
                 </td>
@@ -415,8 +453,8 @@
 
 <script>
     'use strict';
-
-    <?php if(count($data->pageviews)): ?>
+    
+<?php if (!empty($data->pageviews)): ?>
     let css = window.getComputedStyle(document.body);
     let pageviews_color = css.getPropertyValue('--primary');
     let visitors_color = css.getPropertyValue('--primary-200');

@@ -353,90 +353,7 @@ footer button, footer button:hover {
     opacity: .5;
 }
 
-/* Badge colors */
-.badge {
-    padding: 0.45em 0.9em;
-}
 
-.badge-primary {
-    color: hsl(211, 100%, 35%);
-    background-color: hsl(211, 100%, 85%);
-}
-
-[data-theme-style="dark"] .badge-primary {
-    background-color: hsl(211, 100%, 35%);
-    color: hsl(211, 100%, 85%);
-}
-
-.badge-secondary {
-    color: hsl(208, 7%, 35%);
-    background-color: hsl(208, 7%, 85%);
-}
-
-[data-theme-style="dark"] .badge-secondary {
-    background-color: hsl(208, 7%, 35%);
-    color: hsl(208, 7%, 85%);
-}
-
-.badge-success {
-    color: hsla(134, 50%, 30%, 1);
-    background-color: hsla(134, 50%, 85%, 1);
-}
-
-[data-theme-style="dark"] .badge-success {
-    background-color: hsla(134, 50%, 30%, 1);
-    color: hsla(134, 50%, 85%, 1);
-}
-
-.badge-danger {
-    color: hsla(354, 70%, 35%, 1);
-    background-color: hsla(354, 70%, 85%, 1);
-}
-
-[data-theme-style="dark"] .badge-danger {
-    background-color: hsla(354, 70%, 35%, 1);
-    color: hsla(354, 70%, 85%, 1);
-}
-
-.badge-warning {
-    background-color: hsla(45, 100%, 85%, 1);
-    color: hsla(40, 80%, 30%, 1);
-}
-
-[data-theme-style="dark"] .badge-warning {
-    background-color: hsla(50, 10%, 20%, 1);
-    color: hsla(45, 100%, 85%, 1);
-}
-
-.badge-info {
-    color: hsla(188, 60%, 30%, 1);
-    background-color: hsla(188, 78%, 85%, 1);
-}
-
-[data-theme-style="dark"] .badge-info {
-    background-color: hsla(188, 60%, 30%, 1);
-    color: hsla(188, 78%, 85%, 1);
-}
-
-.badge-light {
-    color: hsla(210, 15%, 35%, 1);
-    background-color: hsl(210, 17%, 95%);
-}
-
-[data-theme-style="dark"] .badge-light {
-    background-color: hsla(210, 15%, 35%, 1);
-    color: hsl(210, 17%, 95%);
-}
-
-.badge-dark {
-    color: hsla(210, 10%, 90%, 1);
-    background-color: hsla(210, 10%, 20%, 1);
-}
-
-[data-theme-style="dark"] .badge-dark {
-    background-color: hsla(210, 10%, 90%, 1);
-    color: hsla(210, 10%, 20%, 1);
-}
 
 /* Round circles */
 .round-circle-md {
@@ -522,9 +439,6 @@ footer button, footer button:hover {
 .custom-breadcrumbs > li > svg {
     color: var(--gray-400);
     margin-left: .5rem;
-}
-
-.custom-breadcrumbs > li.active {
 }
 
 /* Base animation */
@@ -802,6 +716,10 @@ i {
     cursor: grab !important;
 }
 
+.cursor-pointer {
+    cursor: pointer;
+}
+
 /* Custom Radio Boxes */
 .custom-radio-box {
     cursor: pointer;
@@ -816,17 +734,17 @@ i {
     font-size: 1.25rem;
 }
 
-.custom-radio-box input[type="radio"] + div {
+.custom-radio-box input[type="radio"] + div, .custom-radio-box input[type="checkbox"] + div {
     transition: all .3s ease-in-out;
     border: 2px solid var(--gray-200);
     background: var(--white);
 }
 
-.custom-radio-box input[type="radio"]:checked + div {
+.custom-radio-box input[type="radio"]:checked + div, .custom-radio-box input[type="checkbox"]:checked + div {
     border: 2px solid var(--primary);
 }
 
-.custom-radio-box input[type="radio"]:hover + div {
+.custom-radio-box input[type="radio"]:hover + div, .custom-radio-box input[type="checkbox"]:hover + div {
     border: 2px solid var(--primary);
 }
 
@@ -839,6 +757,51 @@ i {
     border-radius: var(--border-radius);
     border: 1px solid var(--gray-200);
     font-size: .9rem;
+}
+
+/* Editor js buttons */
+.ce-toolbar__plus, .ce-toolbar__settings-btn {
+    color: var(--body-color) !important;
+}
+
+.ce-toolbar__plus:hover, .ce-toolbar__settings-btn:hover {
+    background-color: var(--body-bg) !important;
+}
+
+/* Ajax loading overlay */
+.loading-overlay {
+    padding: 1.25rem;
+    border-radius: var(--border-radius);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: var(--white);
+    z-index: 100;
+    opacity: 0.8;
+}
+
+[data-theme-style="dark"] .loading-overlay {
+    background: var(--gray-50);
+}
+
+/* Helper */
+.font-size-little-small {
+    font-size: .95rem;
+}
+
+.font-size-small {
+    font-size: .9rem;
+}
+
+.font-weight-450 {
+    font-weight: 450;
+}
+
+.font-weight-500 {
+    font-weight: 500;
 }
 
 /* Teams */

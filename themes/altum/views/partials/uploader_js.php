@@ -11,11 +11,12 @@
             upload_button_selector: '#upload_select_files',
             upload_folder_button_selector: '#upload_select_folders',
             upload_area_selector: '#upload_main_dropzone',
+            is_direct_offload_upload: <?= json_encode((bool) settings()->transfers->is_direct_offload_upload) ?>,
 
             parallel_file_uploading: <?= json_encode((bool) settings()->transfers->parallel_file_uploading) ?>,
             auto_upload: <?= json_encode((bool) $this->user->preferences->transfers_auto_file_upload) ?>,
             auto_form_submission: <?= json_encode($this->user->preferences->transfers_auto_transfer_create ? '#upload_form' : false) ?>,
-            upload_file_endpoint_url: <?= json_encode(url('files/create_api')) ?>,
+            upload_file_endpoint_url: <?= json_encode(url(settings()->transfers->is_direct_offload_upload ? 'files/create_api_offload' : 'files/create_api')) ?>,
             upload_file_endpoint_params: {
                 global_token
             },
@@ -40,6 +41,19 @@
                 files_per_transfer_limit: <?= json_encode(l('transfer.error_message.files_per_transfer_limit')) ?>,
                 transfer_size_limit: <?= json_encode(l('transfer.error_message.transfer_size_limit')) ?>,
                 storage_size_limit: <?= json_encode(l('transfer.error_message.storage_size_limit')) ?>,
+                duplicate_file: <?= json_encode(l('transfer.error_message.duplicate_file')) ?>,
+            }
+        });
+
+        /* Uploading files */
+        altum_uploader.on('uploading_files', () => {
+            form_submit_elements_processing();
+        });
+
+        /* Finished uploading files */
+        altum_uploader.on('finished_uploading_files', () => {
+            if(altum_uploader.options.auto_upload) {
+                form_submit_elements_reset();
             }
         });
 
@@ -121,6 +135,8 @@
             let basic_error = <?= json_encode(l('global.error_message.file_upload')) ?>;
             let error = data?.response_data?.errors[0].title || basic_error;
             alert(error);
+
+            form_submit_elements_reset();
         });
 
         /* Form submit start */
@@ -139,7 +155,7 @@
             submit_element.setAttribute('data-inner-text', btoa(unescape(encodeURIComponent(submit_element.innerHTML))));
 
             /* Show a loading spinner instead of the text */
-            submit_element.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> <span class="ml-2" id="total_upload_progress">0%</span>';
+            submit_element.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> <span class="ml-2" id="total_upload_progress"></span>';
         }
 
         let form_submit_elements_reset = () => {
@@ -160,14 +176,18 @@
         document.querySelector('#upload_form').addEventListener('submit', async event => {
             event.preventDefault();
 
-            form_submit_elements_processing();
-
             /* Start the upload process */
             let upload_files = await altum_uploader.upload_files();
 
             if(!upload_files) {
                 form_submit_elements_reset();
                 return;
+            }
+
+            let timeout = 500;
+
+            if(altum_uploader.options.auto_upload && !altum_uploader.options.auto_form_submission) {
+                timeout = 0;
             }
 
             setTimeout(async () => {
@@ -189,12 +209,12 @@
                     alert(data?.errors[0].title);
                 } else {
                     /* Redirect */
-                    redirect(`transfer/${data?.data.id}`);
+                    redirect(data?.data.view_url, true);
                 }
 
                 form_submit_elements_reset();
 
-            }, 500);
+            }, timeout);
         });
 
         /* Helper functions */

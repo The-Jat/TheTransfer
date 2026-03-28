@@ -18,6 +18,7 @@ namespace Altum\Controllers;
 
 use Altum\Alerts;
 use Altum\Logger;
+use Altum\Meta;
 use Altum\Models\User;
 
 defined('ALTUMCODE') || die();
@@ -31,7 +32,7 @@ class ResetPassword extends Controller {
         $md5email = (isset($this->params[0])) ? $this->params[0] : null;
         $lost_password_code = (isset($this->params[1])) ? $this->params[1] : null;
         $redirect = process_and_get_redirect_params() ?? 'dashboard';
-        $welcome = isset($_GET['welcome']) ? '&welcome=' . $_GET['welcome'] : null;
+        $welcome = isset($_GET['welcome']) ? 'welcome=' . $_GET['welcome'] : null;
 
         if(!$md5email || !$lost_password_code || mb_strlen($lost_password_code) < 1) redirect();
 
@@ -39,11 +40,20 @@ class ResetPassword extends Controller {
         $user = db()->where('lost_password_code', $lost_password_code)->getOne('users', ['user_id', 'email', 'name', 'password']);
 
         if(!$user) {
-            redirect();
+            redirect('not-found');
         }
 
         if(md5($user->email) != $md5email) {
-            redirect();
+            redirect('not-found');
+        }
+
+        /* Meta */
+        Meta::set_robots('noindex');
+        Meta::set_canonical_url(url('reset-password'));
+
+        /* Disable OG Image */
+        if(\Altum\Plugin::is_active('dynamic-og-images') && settings()->dynamic_og_images->is_enabled) {
+            \Altum\Plugin\DynamicOgImages::$should_process = false;
         }
 
         if(!empty($_POST)) {
@@ -75,8 +85,8 @@ class ResetPassword extends Controller {
                 Alerts::add_success(l('reset_password.success_message'));
 
                 /* Log the user in */
-                $_SESSION['user_id'] = $user->user_id;
-                $_SESSION['user_password_hash'] = md5($new_password);
+                session_set('user_id', $user->user_id);
+                session_set('user_password_hash', md5($new_password));
 
                 (new User())->login_aftermath_update($user->user_id);
                 Alerts::add_info(sprintf(l('login.info_message.logged_in'), $user->name));
@@ -84,7 +94,7 @@ class ResetPassword extends Controller {
                 /* Clear the cache */
                 cache()->deleteItemsByTag('user_id=' . $user->user_id);
 
-                redirect($redirect . $welcome);
+                redirect(append_query_param($redirect, $welcome));
             }
         }
 

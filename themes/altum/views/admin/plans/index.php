@@ -1,10 +1,29 @@
 <?php defined('ALTUMCODE') || die() ?>
 
 <div class="d-flex flex-column flex-md-row justify-content-between mb-4">
-    <h1 class="h3 mb-3 mb-md-0"><i class="fas fa-fw fa-xs fa-box-open text-primary-900 mr-2"></i> <?= l('admin_plans.header') ?></h1>
+    <h1 class="h3 mb-3 mb-md-0 text-truncate"><i class="fas fa-fw fa-xs fa-box-open text-primary-900 mr-2"></i> <?= l('admin_plans.header') ?></h1>
 
-    <div class="col-auto p-0">
-        <a href="<?= url('admin/plan-create') ?>" class="btn btn-primary"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_plans.create') ?></a>
+    <div class="d-flex position-relative">
+        <div>
+            <a href="<?= url('admin/plan-create') ?>" class="btn btn-primary text-nowrap"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_plans.create') ?></a>
+        </div>
+
+        <div class="ml-3">
+            <div class="dropdown">
+                <button type="button" class="btn btn-gray-300 dropdown-toggle-simple" data-toggle="dropdown" data-boundary="viewport" data-tooltip title="<?= l('global.export') ?>" data-tooltip-hide-on-click>
+                    <i class="fas fa-fw fa-sm fa-download"></i>
+                </button>
+
+                <div class="dropdown-menu dropdown-menu-right d-print-none">
+                    <a href="<?= url('admin/plans?export=json') ?>" target="_blank" class="dropdown-item <?= $this->user->plan_settings->export->json ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->json ? null : get_plan_feature_disabled_info() ?>>
+                        <i class="fas fa-fw fa-sm fa-file-code mr-2"></i> <?= sprintf(l('global.export_to'), 'JSON') ?>
+                    </a>
+                    <a href="#" class="dropdown-item <?= $this->user->plan_settings->export->pdf ? null : 'disabled pointer-events-all' ?>" <?= $this->user->plan_settings->export->pdf ? $this->user->plan_settings->export->pdf ? 'onclick="event.preventDefault(); window.print();"' : 'disabled pointer-events-all' : get_plan_feature_disabled_info() ?>>
+                        <i class="fas fa-fw fa-sm fa-file-pdf mr-2"></i> <?= sprintf(l('global.export_to'), 'PDF') ?>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -29,7 +48,7 @@
                     <a href="<?= url('admin/plan-update/guest') ?>"><?= settings()->plan_guest->name ?></a>
                     <a href="<?= url('pay/guest') ?>" target="_blank" rel="noreferrer"><i class="fas fa-fw fa-xs fa-external-link-alt ml-1"></i></a>
                 </td>
-                <td class="text-nowrap">-</td>
+                <td class="text-nowrap"><?= settings()->plan_guest->price ?></td>
                 <td class="text-nowrap">-</td>
                 <td class="text-nowrap">
                     <?php if(settings()->plan_guest->status == 0): ?>
@@ -42,11 +61,11 @@
                 </td>
 
                 <td class="text-nowrap">
-                    <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= l('global.order') . '<br />-' ?>">
+                    <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= l('global.order') . '<br />' . l('global.na') ?>">
                         <i class="fas fa-fw fa-sort text-muted"></i>
                     </span>
 
-                    <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.datetime_tooltip'), (null ? \Altum\Date::get(null, 2) . ' - <small>' . \Altum\Date::get(null, 3) . '</small>' : '<br />-')) ?>">
+                    <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.datetime_tooltip'), (null ? \Altum\Date::get(null, 2) . ' - <small>' . \Altum\Date::get(null, 3) . '</small>' : '<br />' . l('global.na'))) ?>">
                         <i class="fas fa-fw fa-calendar text-muted"></i>
                     </span>
                 </td>
@@ -64,7 +83,7 @@
                 <a href="<?= url('admin/plan-update/free') ?>"><?= settings()->plan_free->name ?></a>
                 <a href="<?= url('pay/free') ?>" target="_blank" rel="noreferrer"><i class="fas fa-fw fa-xs fa-external-link-alt ml-1"></i></a>
             </td>
-            <td class="text-nowrap">-</td>
+            <td class="text-nowrap"><?= settings()->plan_free->price ?></td>
             <td class="text-nowrap">
                 <a href="<?= url('admin/users?plan_id=free') ?>" class="badge badge-light">
                     <i class="fas fa-fw fa-sm fa-users mr-1"></i>
@@ -84,11 +103,11 @@
             </td>
 
             <td class="text-nowrap">
-                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= l('global.order') . '<br />-' ?>">
+                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= l('global.order') . '<br />' . l('global.na') ?>">
                     <i class="fas fa-fw fa-sort text-muted"></i>
                 </span>
 
-                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.datetime_tooltip'), (null ? \Altum\Date::get(null, 2) . ' - <small>' . \Altum\Date::get(null, 3) . '</small>' : '<br />-')) ?>">
+                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.datetime_tooltip'), (null ? \Altum\Date::get(null, 2) . ' - <small>' . \Altum\Date::get(null, 3) . '</small>' : '<br />' . l('global.na'))) ?>">
                     <i class="fas fa-fw fa-calendar text-muted"></i>
                 </span>
             </td>
@@ -105,7 +124,7 @@
                 <a href="<?= url('admin/plan-update/custom') ?>"><?= settings()->plan_custom->name ?></a>
                 <span data-toggle="tooltip" title="<?= l('admin_plans.table.custom_help') ?>"><i class="fas fa-fw fa-sm fa-info-circle text-muted ml-1"></i></span>
             </td>
-            <td class="text-nowrap">-</td>
+            <td class="text-nowrap"><?= settings()->plan_custom->price ?></td>
             <td class="text-nowrap">
                 <a href="<?= url('admin/users?plan_id=custom') ?>" class="badge badge-light">
                     <i class="fas fa-fw fa-sm fa-users mr-1"></i>
@@ -125,11 +144,11 @@
             </td>
 
             <td class="text-nowrap">
-                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= l('global.order') . '<br />-' ?>">
+                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= l('global.order') . '<br />' . l('global.na') ?>">
                     <i class="fas fa-fw fa-sort text-muted"></i>
                 </span>
                 
-                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.datetime_tooltip'), (null ? \Altum\Date::get(null, 2) . ' - <small>' . \Altum\Date::get(null, 3) . '</small>' : '<br />-')) ?>">
+                <span class="mr-2" data-toggle="tooltip" data-html="true" title="<?= sprintf(l('global.datetime_tooltip'), (null ? \Altum\Date::get(null, 2) . ' - <small>' . \Altum\Date::get(null, 3) . '</small>' : '<br />' . l('global.na'))) ?>">
                     <i class="fas fa-fw fa-calendar text-muted"></i>
                 </span>
             </td>
@@ -143,13 +162,16 @@
 
         <?php foreach($data->plans as $row): ?>
             <?php
-            $row->prices = json_decode($row->prices);
 
             $tooltips = [];
 
             foreach((array) settings()->payment->currencies as $currency => $currency_data) {
                 foreach(['monthly', 'quarterly', 'biannual', 'annual', 'lifetime'] as $payment_frequency) {
-                    $tooltips[$payment_frequency] .= $row->prices->monthly->{$currency} . ' ' . $currency . '<br />';
+                    if(isset($tooltips[$payment_frequency])) {
+                        $tooltips[$payment_frequency] .= $row->prices->{$payment_frequency}->{$currency} . ' ' . $currency . '<br />';
+                    } else {
+                        $tooltips[$payment_frequency] = $row->prices->{$payment_frequency}->{$currency} . ' ' . $currency . '<br />';
+                    }
                 }
             }
             ?>
@@ -164,7 +186,11 @@
                 <td class="text-nowrap">
                     <div class="d-flex flex-column text-muted small">
                         <?php foreach(['monthly', 'quarterly', 'biannual', 'annual', 'lifetime'] as $payment_frequency): ?>
-                            <div><span data-toggle="tooltip" data-html="true" title="<?= $tooltips[$payment_frequency] ?>"><?= l('plan.custom_plan.' . $payment_frequency) ?></span></div>
+                            <div>
+                                <span data-toggle="tooltip" data-html="true" title="<?= $tooltips[$payment_frequency] ?>">
+                                    <?= $row->prices->{$payment_frequency}->{settings()->payment->default_currency} . ' ' . settings()->payment->default_currency ?> &#x2022; <?= l('plan.custom_plan.' . $payment_frequency) ?>
+                                </span>
+                            </div>
                         <?php endforeach ?>
                     </div>
                 </td>

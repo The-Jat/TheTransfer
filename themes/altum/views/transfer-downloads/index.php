@@ -83,7 +83,7 @@
         </a>
     </p>
 
-    <div class="row row-cols-2 row-cols-md-3 row-cols-xl-6 mx-lg-n2">
+    <div class="row row-cols-2 row-cols-md-3 row-cols-xl-6 mx-lg-n2 mb-3">
         <div class="p-1 p-lg-2 text-truncate">
             <a class="btn btn-block btn-custom text-truncate <?= $data->type == 'overview' ? 'active' : null ?>" href="<?= url('transfer-downloads/' . $data->transfer->transfer_id . '?type=overview&start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>">
                 <i class="fas fa-fw fa-sm fa-list mr-1"></i>
@@ -201,10 +201,13 @@
             ranges: {
                 <?= json_encode(l('global.date.today')) ?>: [moment(), moment()],
                 <?= json_encode(l('global.date.yesterday')) ?>: [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                <?= json_encode(l('global.date.last_7_days')) ?>: [moment().subtract(6, 'days'), moment()],
+                <?= json_encode(l('global.date.this_week')) ?>: [moment().startOf('week'), moment().endOf('week')],
+                
                 <?= json_encode(l('global.date.last_30_days')) ?>: [moment().subtract(29, 'days'), moment()],
                 <?= json_encode(l('global.date.this_month')) ?>: [moment().startOf('month'), moment().endOf('month')],
                 <?= json_encode(l('global.date.last_month')) ?>: [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                <?= json_encode(l('global.date.this_year')) ?>: [moment().startOf('year'), moment()],
+                <?= json_encode(l('global.date.last_year')) ?>: [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
                 <?= json_encode(l('global.date.all_time')) ?>: [moment($('#daterangepicker').data('min-date')), moment()]
             },
             alwaysShowCalendars: true,

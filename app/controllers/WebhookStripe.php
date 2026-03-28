@@ -24,6 +24,14 @@ class WebhookStripe extends Controller {
 
     public function index() {
 
+        if(!in_array(settings()->license->type, ['Extended License', 'extended'])) {
+            redirect('not-found');
+        }
+
+        if((strtoupper($_SERVER['REQUEST_METHOD']) != 'POST')) {
+            redirect('not-found');
+        }
+
         /* Initiate Stripe */
         \Stripe\Stripe::setApiKey(settings()->stripe->secret_key);
         \Stripe\Stripe::setApiVersion('2023-10-16');
@@ -38,7 +46,7 @@ class WebhookStripe extends Controller {
             echo $exception->getMessage(); http_response_code(400); die();
         }
 
-        if(!in_array($event->type, ['invoice.paid', 'checkout.session.completed'])) {
+        if(!in_array($event->type, ['invoice.paid', 'checkout.session.completed', 'customer.subscription.created'])) {
             die('Event type not needed to be handled, returning ok.');
         }
 
@@ -46,6 +54,35 @@ class WebhookStripe extends Controller {
         $external_payment_id = $session->id;
 
         switch($event->type) {
+            /* Handle trial start */
+            case 'customer.subscription.created':
+
+                /* Only run when the subscription starts with a trial */
+                if($session->status === 'trialing') {
+
+                    $metadata = $session->metadata;
+
+                    $user_id = (int) $metadata->user_id;
+                    $plan_id = (int) $metadata->plan_id;
+                    $payment_frequency = $metadata->payment_frequency;
+                    $code = isset($metadata->code) ? $metadata->code : '';
+                    $discount_amount = isset($metadata->discount_amount) ? $metadata->discount_amount : 0;
+                    $base_amount = isset($metadata->base_amount) ? $metadata->base_amount : 0;
+                    $taxes_ids = isset($metadata->taxes_ids) ? $metadata->taxes_ids : null;
+
+                    $payment_type = 'recurring';
+                    $payment_subscription_id = $session->id;
+
+                    /* Set to 0 since no payment yet */
+                    $payer_email = null;
+                    $payer_name = null;
+                    $payment_currency = settings()->payment->default_currency;
+                    $payment_total = 0;
+
+                }
+
+                break;
+
             /* Handling recurring payments */
             case 'invoice.paid':
 
@@ -53,7 +90,7 @@ class WebhookStripe extends Controller {
                 $payer_name = $session->customer_name;
 
                 $payment_currency = mb_strtoupper($session->currency);
-                $payment_total = in_array($payment_currency, ['MGA', 'BIF', 'CLP', 'PYG', 'DJF', 'RWF', 'GNF', 'UGX', 'JPY', 'VND', 'VUV', 'XAF', 'KMF', 'KRW', 'XOF', 'XPF']) ? $session->amount_paid : $session->amount_paid / 100;
+                $payment_total = in_array($payment_currency, get_zero_decimal_currencies_array()) ? $session->amount_paid : $session->amount_paid / 100;
 
                 /* Process meta data */
                 $metadata = $session->lines->data[0]->metadata;
@@ -67,8 +104,12 @@ class WebhookStripe extends Controller {
                 $taxes_ids = isset($metadata->taxes_ids) ? $metadata->taxes_ids : null;
 
                 /* Vars */
-                $payment_type = $session->subscription ? 'recurring' : 'one_time';
-                $payment_subscription_id = $payment_type == 'recurring' ? $session->subscription : '';
+                $payment_subscription_id =
+                    $session->subscription ??
+                    ($session->parent->subscription_details->subscription ?? null) ??
+                    ($session->lines->data[0]->parent->subscription_item_details->subscription ?? null);
+
+                $payment_type = $payment_subscription_id ? 'recurring' : 'one_time';
 
                 break;
 
@@ -84,7 +125,7 @@ class WebhookStripe extends Controller {
                 $payer_name = $session->customer_details->name;
 
                 $payment_currency = mb_strtoupper($session->currency);
-                $payment_total = in_array($payment_currency, ['MGA', 'BIF', 'CLP', 'PYG', 'DJF', 'RWF', 'GNF', 'UGX', 'JPY', 'VND', 'VUV', 'XAF', 'KMF', 'KRW', 'XOF', 'XPF']) ? $session->amount_total : $session->amount_total / 100;
+                $payment_total = in_array($payment_currency, get_zero_decimal_currencies_array()) ? $session->amount_total : $session->amount_total / 100;
 
                 /* Process meta data */
                 $metadata = $session->metadata;

@@ -48,7 +48,7 @@ class AdminApiDynamicOgImages extends Controller {
 
         /* Check for any errors */
         foreach($required_fields as $field) {
-            if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]) && $_POST[$field] != '0')) {
+            if(!isset($_POST[$field]) || trim($_POST[$field]) === '') {
                 $this->response_error(l('global.error_message.empty_fields'), 401);
                 break 1;
             }
@@ -63,8 +63,7 @@ class AdminApiDynamicOgImages extends Controller {
             Response::json($message, 'error');
         };
 
-        $file_extension = explode('.', $_FILES['image']['name']);
-        $file_extension = mb_strtolower(end($file_extension));
+        $file_extension = mb_strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
         $file_temp = $_FILES['image']['tmp_name'];
 
         if($_FILES['image']['error'] == UPLOAD_ERR_INI_SIZE) {

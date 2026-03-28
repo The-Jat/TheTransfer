@@ -186,6 +186,13 @@ class ApiTransfers extends Controller {
 
     private function patch() {
 
+        /* Check for the plan limit */
+        $total_rows = db()->where('user_id', $this->api_user->user_id)->getValue('transfers', 'count(`transfer_id`)');
+
+        if($this->api_user->plan_settings->transfers_limit != -1 && $total_rows > $this->api_user->plan_settings->transfers_limit) {
+            $this->response_error(sprintf(settings()->payment->is_enabled ? l('global.info_message.plan_feature_limit_removal_with_upgrade') : l('global.info_message.plan_feature_limit_removal'), $total_rows - $this->user->plan_settings->transfers_limit, mb_strtolower(l('transfers.title')), l('global.info_message.plan_upgrade')), 401);
+        }
+
         $transfer_id = isset($this->params[0]) ? (int) $this->params[0] : null;
 
         /* Try to get details about the resource id */

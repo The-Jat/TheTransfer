@@ -2,18 +2,18 @@
 
 <div class="container">
     <?php if(settings()->main->breadcrumbs_is_enabled): ?>
-<nav aria-label="breadcrumb">
-        <ol class="custom-breadcrumbs small">
-            <li><a href="<?= url() ?>"><?= l('index.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
-            <li><a href="<?= url('pages') ?>"><?= l('pages.index.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
-            <li class="active" aria-current="page"><?= l('pages.pages_category.breadcrumb') ?></li>
-        </ol>
-    </nav>
-<?php endif ?>
+        <nav aria-label="breadcrumb">
+            <ol class="custom-breadcrumbs small">
+                <li><a href="<?= url() ?>"><?= l('index.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
+                <li><a href="<?= url('pages') ?>"><?= l('pages.index.breadcrumb') ?></a> <i class="fas fa-fw fa-angle-right"></i></li>
+                <li class="active" aria-current="page"><?= l('pages.pages_category.breadcrumb') ?></li>
+            </ol>
+        </nav>
+    <?php endif ?>
 
     <h1 class="h4"><?= $data->pages_category->title ?></h1>
 
-    <?php if(count($data->pages)): ?>
+    <?php if (!empty($data->pages)): ?>
         <div class="mt-4">
             <div class="row">
                 <?php foreach($data->pages as $row): ?>
@@ -35,7 +35,7 @@
         </div>
 
     <?php else: ?>
-    <div class="mt-4">
+        <div class="mt-4">
             <?= include_view(THEME_PATH . 'views/partials/no_data.php', [
                 'filters_get' => $data->filters->get ?? [],
                 'name' => 'pages',
@@ -46,15 +46,15 @@
 </div>
 
 <?php ob_start() ?>
-    <script type="application/ld+json">
-        {
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-                {
-                    "@type": "ListItem",
-                    "position": 1,
-                    "name": "<?= l('index.title') ?>",
+<script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "<?= l('index.title') ?>",
                     "item": "<?= url() ?>"
                 },
                 {
@@ -71,5 +71,5 @@
                 }
             ]
         }
-    </script>
+</script>
 <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>

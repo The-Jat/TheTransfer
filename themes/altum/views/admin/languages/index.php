@@ -1,13 +1,13 @@
 <?php defined('ALTUMCODE') || die() ?>
 
-<?php if(count(\Altum\Language::$languages)): ?>
+<?php if (!empty(\Altum\Language::$languages)): ?>
 
     <div class="d-flex flex-column flex-md-row justify-content-between mb-4">
-        <h1 class="h3 mb-3 mb-md-0"><i class="fas fa-fw fa-xs fa-language text-primary-900 mr-2"></i> <?= l('admin_languages.header') ?></h1>
+        <h1 class="h3 mb-3 mb-md-0 text-truncate"><i class="fas fa-fw fa-xs fa-language text-primary-900 mr-2"></i> <?= l('admin_languages.header') ?></h1>
 
         <div class="d-flex position-relative">
             <div>
-                <a href="<?= url('admin/language-create') ?>" class="btn btn-primary"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_language_create.menu') ?></a>
+                <a href="<?= url('admin/language-create') ?>" class="btn btn-primary text-nowrap"><i class="fas fa-fw fa-plus-circle fa-sm mr-1"></i> <?= l('admin_language_create.menu') ?></a>
             </div>
         </div>
     </div>
@@ -24,6 +24,7 @@
                 <th><?= l('global.status') ?></th>
                 <th></th>
                 <th></th>
+                <th></th>
             </tr>
             </thead>
             <tbody>
@@ -36,14 +37,6 @@
                         <?php endif ?>
 
                         <a href="<?= url('admin/language-update/' . replace_space_with_plus($language['name'])) ?>"><?= $language['name'] ?></a>
-
-                        <?php if($language['name'] == settings()->main->default_language): ?>
-                            <span class="mx-1 badge badge-success"><?= l('admin_languages.default_language') ?></span>
-                        <?php endif ?>
-
-                        <?php if($language['name'] == \Altum\Language::$main_name): ?>
-                            <span class="mx-1 badge badge-info"><?= l('admin_languages.main') ?></span>
-                        <?php endif ?>
                     </td>
 
                     <td>
@@ -60,11 +53,25 @@
                     </td>
 
                     <td>
-                        <?php if((settings()->languages->{$language['name']}->status ?? $language['status'])): ?>
-                            <span class="badge badge-success"><i class="fas fa-fw fa-sm fa-check mr-1"></i> <?= l('global.active') ?></span>
-                        <?php else: ?>
-                            <span class="badge badge-warning"><i class="fas fa-fw fa-sm fa-eye-slash mr-1"></i> <?= l('global.disabled') ?></span>
-                        <?php endif ?>
+                        <div class="d-flex flex-column">
+                            <?php if((settings()->languages->{$language['name']}->status ?? $language['status'])): ?>
+                                <span class="badge badge-success"><i class="fas fa-fw fa-sm fa-check mr-1"></i> <?= l('global.active') ?></span>
+                            <?php else: ?>
+                                <span class="badge badge-warning"><i class="fas fa-fw fa-sm fa-eye-slash mr-1"></i> <?= l('global.disabled') ?></span>
+                            <?php endif ?>
+
+                    </td>
+
+                    <td class="text-nowrap">
+                        <div class="d-flex flex-column">
+                            <?php if($language['name'] == settings()->main->default_language): ?>
+                                <div class="mb-1 badge badge-primary"><?= l('admin_languages.default_language') ?></div>
+                            <?php endif ?>
+
+                            <?php if($language['name'] == \Altum\Language::$main_name): ?>
+                                <div class="badge badge-info"><?= l('admin_languages.main') ?></div>
+                            <?php endif ?>
+                        </div>
                     </td>
 
                     <td class="text-nowrap">

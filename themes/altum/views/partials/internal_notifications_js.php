@@ -3,6 +3,7 @@
 <?php ob_start() ?>
 <script>
     'use strict';
+    
     /* PWA */
     <?php if(\Altum\Plugin::is_active('pwa') && settings()->pwa->is_enabled): ?>
     if('setAppBadge' in navigator) {

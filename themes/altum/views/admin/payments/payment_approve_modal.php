@@ -28,11 +28,13 @@
 
 <?php ob_start() ?>
 <script>
+    'use strict';
+    
     /* On modal show load new data */
     $('#payment_approve_modal').on('show.bs.modal', event => {
         let payment_id = $(event.relatedTarget).data('payment-id');
 
-        $(event.currentTarget).find('#payment_approve_modal_url').attr('href', `${url}admin/payments/approve/${payment_id}&global_token=${global_token}`);
+        $(event.currentTarget).find('#payment_approve_modal_url').attr('href', `${url}admin/payments/approve/${payment_id}?global_token=${global_token}`);
     });
 </script>
 <?php \Altum\Event::add_content(ob_get_clean(), 'javascript') ?>
