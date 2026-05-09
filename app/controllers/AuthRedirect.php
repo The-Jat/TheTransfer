@@ -14,12 +14,12 @@ class AuthRedirect extends Controller {
         $query = http_build_query([
             'client_id' => AUTH_CLIENT_ID,
             'redirect_uri' => url('auth-callback'),
-            'response_type' => 'code',
-            'scope' => 'profile email',
+            // 'response_type' => 'code',
+            // 'scope' => 'profile email',
             'state' => $state,
         ]);
 
-        header('Location: ' . AUTH_BASE_URL . '/auth/login?' . $query);
+        header('Location: ' . AUTH_BASE_URL . AUTH_AUTHORIZE_ENDPOINT .'?' . $query);
         exit;
     }
 }
