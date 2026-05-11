@@ -31,7 +31,7 @@ class AuthRedirect extends Controller {
         );
 
         $query = http_build_query([
-            'client_id' => AUTH_CLIENT_ID,
+            'client_id' => OAUTH_CLIENT_ID,
             'redirect_uri' => url('auth-callback'),
             // 'response_type' => 'code',
             // 'scope' => 'profile email',
@@ -40,7 +40,7 @@ class AuthRedirect extends Controller {
             'code_challenge_method' => 'S256',
         ]);
 
-        header('Location: ' . AUTH_BASE_URL . AUTH_AUTHORIZE_ENDPOINT .'?' . $query);
+        header('Location: ' . OAUTH_BASE_URL . OAUTH_AUTHORIZE_ENDPOINT .'?' . $query);
         exit;
     }
 }

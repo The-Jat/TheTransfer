@@ -25,14 +25,14 @@ class AuthCallback extends Controller {
         $code = $_GET['code'];
 
         /* Token request */
-        $token_response = json_decode(file_get_contents(AUTH_BASE_URL . '/auth/token', false, stream_context_create([
+        $token_response = json_decode(file_get_contents(OAUTH_BASE_URL . OAUTH_TOKEN_ENDPOINT, false, stream_context_create([
             'http' => [
                 'method' => 'POST',
                 'header' => "Content-Type: application/x-www-form-urlencoded",
                 'content' => http_build_query([
                     'grant_type' => 'authorization_code',
-                    'client_id' => AUTH_CLIENT_ID,
-                    'client_secret' => AUTH_CLIENT_SECRET,
+                    'client_id' => OAUTH_CLIENT_ID,
+                    'client_secret' => OAUTH_CLIENT_SECRET,
                     'redirect_uri' => url('auth-callback'),
                     'code' => $code,
                     'code_verifier' => $_SESSION['pkce_code_verifier'],
@@ -56,7 +56,7 @@ class AuthCallback extends Controller {
             ]
         ]);
 
-        $user = json_decode(file_get_contents(AUTH_BASE_URL . '/auth/me', false, $context), true);
+        $user = json_decode(file_get_contents(OAUTH_BASE_URL . OAUTH_PROFILE_ENDPOINT, false, $context), true);
 
         if(!$user || !isset($user['email'])) {
             die('User fetch failed');
