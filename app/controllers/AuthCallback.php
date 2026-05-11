@@ -35,9 +35,12 @@ class AuthCallback extends Controller {
                     'client_secret' => AUTH_CLIENT_SECRET,
                     'redirect_uri' => url('auth-callback'),
                     'code' => $code,
+                    'code_verifier' => $_SESSION['pkce_code_verifier'],
                 ])
             ]
         ])), true);
+
+        unset($_SESSION['pkce_code_verifier']);
 
         if(!isset($token_response['access_token'])) {
             die('Token failed');
